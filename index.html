@@ -147,10 +147,20 @@
         <span class="text-green-500">🤖</span>
         <span class="text-sm font-medium text-green-700 dark:text-green-300">AI 录入库存</span>
       </div>
-      <div class="flex gap-2">
+      <div class="flex gap-2 mb-2">
         <textarea id="inv-ai-input" rows="1" placeholder='例如："我买了2个番茄、一瓶生抽、500克猪肉"' class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-green-400 resize-none"></textarea>
         <button onclick="AI.inventoryInput()" class="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 text-sm whitespace-nowrap">识别</button>
       </div>
+      <div class="flex gap-2">
+        <button onclick="BarcodeScanner.start()" class="flex-1 flex items-center justify-center gap-1.5 text-sm bg-white dark:bg-gray-800 border border-green-300 dark:border-green-700 text-green-700 dark:text-green-300 px-3 py-2 rounded-lg hover:bg-green-50 dark:hover:bg-green-900 transition">
+          📷 扫条形码
+        </button>
+        <button onclick="ReceiptScanner.openPicker()" class="flex-1 flex items-center justify-center gap-1.5 text-sm bg-white dark:bg-gray-800 border border-green-300 dark:border-green-700 text-green-700 dark:text-green-300 px-3 py-2 rounded-lg hover:bg-green-50 dark:hover:bg-green-900 transition">
+          🧾 拍小票/选图片
+        </button>
+      </div>
+      <!-- hidden inputs for receipt scanning -->
+      <input type="file" id="receipt-file-input" accept="image/*" class="hidden" onchange="ReceiptScanner.handleFile(this.files[0]);this.value=''" />
     </div>
     <!-- Search + Filter -->
     <div class="flex gap-2 mb-3">
@@ -495,6 +505,32 @@
 </div>
 
 <!-- AI Confirm Modal -->
+<!-- Barcode Scanner Modal -->
+<div id="modal-barcode" class="modal-overlay" onclick="if(event.target===this)BarcodeScanner.stop()">
+  <div class="bg-black rounded-2xl overflow-hidden w-full max-w-sm mx-4">
+    <div class="relative bg-black" style="aspect-ratio:4/3">
+      <video id="barcode-video" autoplay playsinline muted class="w-full h-full object-cover"></video>
+      <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div class="relative w-52 h-36 border-2 border-green-400 rounded-lg">
+          <div id="barcode-scan-line" class="absolute left-0 right-0 h-0.5 bg-green-400" style="top:50%;animation:scanline 1.5s ease-in-out infinite"></div>
+          <div class="absolute -top-0.5 -left-0.5 w-4 h-4 border-t-4 border-l-4 border-green-400 rounded-tl"></div>
+          <div class="absolute -top-0.5 -right-0.5 w-4 h-4 border-t-4 border-r-4 border-green-400 rounded-tr"></div>
+          <div class="absolute -bottom-0.5 -left-0.5 w-4 h-4 border-b-4 border-l-4 border-green-400 rounded-bl"></div>
+          <div class="absolute -bottom-0.5 -right-0.5 w-4 h-4 border-b-4 border-r-4 border-green-400 rounded-br"></div>
+        </div>
+      </div>
+    </div>
+    <div class="p-4 bg-gray-900 text-center">
+      <p id="barcode-status" class="text-white text-sm mb-3">将条形码对准框内</p>
+      <div class="flex gap-2">
+        <button onclick="BarcodeScanner.stop()" class="flex-1 bg-gray-700 text-white py-2 rounded-lg text-sm hover:bg-gray-600">取消</button>
+        <button onclick="BarcodeScanner.manualInput()" class="flex-1 bg-green-700 text-white py-2 rounded-lg text-sm hover:bg-green-600">手动输码</button>
+      </div>
+    </div>
+  </div>
+</div>
+<style>@keyframes scanline { 0%,100%{top:10%} 50%{top:85%} }</style>
+
 <!-- History Modal -->
 <div id="modal-history" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-lg mx-4 max-h-[85vh] flex flex-col">
@@ -996,6 +1032,156 @@ const Cloud = {
   },
 };
 
+// ==================== BARCODE SCANNER ====================
+const BarcodeScanner = {
+  _stream: null,
+  _frame: null,
+  _detector: null,
+  _found: false,
+
+  async start() {
+    if (!('BarcodeDetector' in window)) {
+      // 浏览器不支持，退而求其次让用户手动输入条形码
+      this.manualInput();
+      return;
+    }
+    this._found = false;
+    try {
+      this._detector = new BarcodeDetector({ formats: ['ean_13','ean_8','upc_a','upc_e','code_128','code_39','qr_code'] });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 } }
+      });
+      this._stream = stream;
+      const video = document.getElementById('barcode-video');
+      video.srcObject = stream;
+      await video.play();
+      document.getElementById('barcode-status').textContent = '将条形码对准框内';
+      document.getElementById('modal-barcode').classList.add('open');
+      this._scan(video);
+    } catch(e) {
+      showToast('无法访问摄像头，请检查权限设置', 'error');
+    }
+  },
+
+  async _scan(video) {
+    if (!this._stream || this._found) return;
+    try {
+      const barcodes = await this._detector.detect(video);
+      if (barcodes.length > 0) {
+        this._found = true;
+        const code = barcodes[0].rawValue;
+        document.getElementById('barcode-status').textContent = '✅ 识别到: ' + code;
+        setTimeout(() => { this.stop(); this._lookup(code); }, 400);
+        return;
+      }
+    } catch(e) {}
+    this._frame = requestAnimationFrame(() => this._scan(video));
+  },
+
+  stop() {
+    if (this._stream) { this._stream.getTracks().forEach(t => t.stop()); this._stream = null; }
+    if (this._frame) { cancelAnimationFrame(this._frame); this._frame = null; }
+    document.getElementById('modal-barcode').classList.remove('open');
+  },
+
+  manualInput() {
+    this.stop();
+    const code = prompt('请输入条形码数字：');
+    if (code && code.trim()) this._lookup(code.trim());
+  },
+
+  async _lookup(barcode) {
+    showLoading('查询商品信息...');
+    try {
+      const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
+      const data = await res.json();
+      hideLoading();
+      if (data.status !== 1 || !data.product) {
+        showToast(`条形码 ${barcode} 未收录，请手动填写`, 'warn');
+        Modal.showAddInventory({ notes: '条形码: ' + barcode });
+        return;
+      }
+      const p = data.product;
+      // 优先取中文名，其次英文、法文、荷兰文、通用名
+      const nameCn = p.product_name_zh || p.product_name || p.product_name_en || p.product_name_fr || p.product_name_nl || barcode;
+      const nameEn = p.product_name_en || p.product_name_fr || p.product_name_nl || p.product_name || '';
+      const qty = this._parseQty(p.quantity || p.net_weight || '');
+      Modal.showAddInventory({
+        nameCn, nameEn,
+        quantity: qty.amount, unit: qty.unit,
+        category: this._guessCategory(p),
+        notes: '条形码: ' + barcode,
+      });
+    } catch(e) {
+      hideLoading();
+      showToast('查询失败，请手动填写', 'error');
+      Modal.showAddInventory({ notes: '条形码: ' + barcode });
+    }
+  },
+
+  _guessCategory(p) {
+    const text = ((p.categories_tags || []).join(' ') + ' ' + (p.product_name || '')).toLowerCase();
+    if (/meat|poultry|chicken|beef|pork|fish|seafood|vlees|vis|viande|poulet/.test(text)) return 'meat';
+    if (/vegetable|fruit|légume|groente|tomato|carrot|onion|potato|apple/.test(text)) return 'vegetables';
+    if (/dairy|milk|cheese|yogurt|cream|butter|lait|fromage|melk|kaas/.test(text)) return 'dairy';
+    if (/bread|pasta|rice|noodle|cereal|flour|grain|pain|brood|riz|meel/.test(text)) return 'staples';
+    if (/sauce|spice|condiment|vinegar|oil|seasoning|épice|kruid|saus/.test(text)) return 'seasoning';
+    if (/snack|chip|crisp|cookie|biscuit|chocolate|candy|snoep/.test(text)) return 'snacks';
+    if (/drink|juice|water|soda|beer|wine|coffee|tea|boisson|drank/.test(text)) return 'drinks';
+    if (/frozen|ice cream|surgelé|diepvries/.test(text)) return 'frozen';
+    if (/clean|detergent|dishwash|laundry|nettoyage|schoonmaak/.test(text)) return 'cleaning';
+    if (/shampoo|soap|hygiene|toothpaste|body|care|soin|verzorging/.test(text)) return 'personal';
+    return 'other';
+  },
+
+  _parseQty(str) {
+    if (!str) return { amount: 1, unit: '个' };
+    const m = str.match(/([\d.,]+)\s*(kg|g|L|ml|cl|pieces?|stuks?|pièces?)?/i);
+    if (!m) return { amount: 1, unit: '个' };
+    let amount = parseFloat(m[1].replace(',', '.'));
+    const u = (m[2] || '').toLowerCase();
+    let unit = '个';
+    if (u === 'g') unit = '克';
+    else if (u === 'kg') unit = '千克';
+    else if (u === 'ml') unit = '毫升';
+    else if (u === 'l') unit = '升';
+    else if (u === 'cl') { amount = Math.round(amount * 10); unit = '毫升'; }
+    return { amount, unit };
+  },
+};
+
+// ==================== RECEIPT SCANNER ====================
+const ReceiptScanner = {
+  openPicker() {
+    // 弹出选择：拍照 or 选图库
+    const choice = confirm('点「确定」拍照，点「取消」从图库选图片');
+    const input = document.getElementById('receipt-file-input');
+    if (choice) {
+      input.setAttribute('capture', 'environment');
+    } else {
+      input.removeAttribute('capture');
+    }
+    input.click();
+  },
+
+  async handleFile(file) {
+    if (!file) return;
+    showLoading('AI 识别小票中...');
+    try {
+      const base64 = await new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload = e => res(e.target.result.split(',')[1]);
+        reader.onerror = rej;
+        reader.readAsDataURL(file);
+      });
+      await AI.scanReceipt(base64, file.type || 'image/jpeg');
+    } catch(e) {
+      hideLoading();
+      showToast('图片读取失败: ' + e.message, 'error');
+    }
+  },
+};
+
 // ==================== HISTORY ====================
 const History = {
   who() { return localStorage.getItem('hsl_username') || '未知'; },
@@ -1241,7 +1427,8 @@ function compareQty(invQty, invUnit, recQty, recUnit) {
 
 // ==================== AI SERVICE ====================
 const AI = {
-  async call(systemPrompt, userMsg, maxTokens = 4096) {
+  // imageBase64: base64 string (no data: prefix), imageMimeType: 'image/jpeg' etc.
+  async call(systemPrompt, userMsg, maxTokens = 4096, imageBase64 = null, imageMimeType = 'image/jpeg') {
     const key = (State.settings.claudeApiKey || '').replace(/[^\x20-\x7E]/g, '');
     if (!key) { showToast('请先在设置页填入 API Key', 'warn'); return null; }
     const provider = State.settings.provider || 'gemini';
@@ -1249,12 +1436,15 @@ const AI = {
       if (provider === 'gemini') {
         const model = State.settings.model || 'gemini-2.0-flash';
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+        const parts = [];
+        if (imageBase64) parts.push({ inlineData: { mimeType: imageMimeType, data: imageBase64 } });
+        parts.push({ text: userMsg });
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             systemInstruction: { parts: [{ text: systemPrompt }] },
-            contents: [{ role: 'user', parts: [{ text: userMsg }] }],
+            contents: [{ role: 'user', parts }],
             generationConfig: { maxOutputTokens: maxTokens },
           }),
         });
@@ -1266,6 +1456,10 @@ const AI = {
         return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
       } else {
         // Claude
+        const msgContent = imageBase64
+          ? [{ type: 'image', source: { type: 'base64', media_type: imageMimeType, data: imageBase64 } },
+             { type: 'text', text: userMsg }]
+          : userMsg;
         const res = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: {
@@ -1278,7 +1472,7 @@ const AI = {
             model: State.settings.model || 'claude-haiku-4-5-20251001',
             max_tokens: maxTokens,
             system: systemPrompt,
-            messages: [{ role: 'user', content: userMsg }],
+            messages: [{ role: 'user', content: msgContent }],
           }),
         });
         if (!res.ok) {
@@ -1292,6 +1486,31 @@ const AI = {
       showToast(`AI 错误: ${e.message}`, 'error');
       return null;
     }
+  },
+
+  async scanReceipt(imageBase64, imageMimeType) {
+    const cats = Object.keys(getCategories()).join(',');
+    const sys = `You are a receipt/invoice parser. Extract ALL purchased items from the image.
+The receipt may be in ANY language (Dutch, French, English, Chinese, etc.).
+For every item return:
+- nameCn: Chinese name (translate accurately, use common Chinese grocery/household terms)
+- nameEn: English name
+- quantity: number (default 1 if not shown)
+- unit: one of [个,克,千克,毫升,升,袋,瓶,盒,包,罐,条,块,束,片,支,卷]
+- category: one of [${cats}]
+- price: price as number if visible (optional field)
+
+CRITICAL: Return ONLY a raw JSON array, no markdown fences, no explanation.
+Example: [{"nameCn":"番茄","nameEn":"Tomato","quantity":2,"unit":"个","category":"vegetables","price":1.29}]`;
+    const text = await this.call(sys, '请识别这张小票上的所有商品', 4096, imageBase64, imageMimeType);
+    hideLoading();
+    if (!text) return;
+    const items = extractJSON(text);
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      showToast('无法识别小票内容，请使用更清晰的图片', 'warn');
+      return;
+    }
+    Modal.showEditableInventoryConfirm(items);
   },
 
   invCtx() {
