@@ -221,6 +221,21 @@
   <div id="tab-settings" class="tab-content">
     <h2 class="text-xl font-bold mb-4">⚙️ 设置 Settings</h2>
     <div class="space-y-4 max-w-lg">
+      <!-- 房间码 -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border-2 border-green-300 dark:border-green-700">
+        <h3 class="font-semibold mb-1 text-green-700 dark:text-green-400">🔗 多设备同步 · 房间码</h3>
+        <p class="text-xs text-gray-500 mb-3">同一房间码的设备实时共享数据。把码发给家人，ta 在设置里输入即可加入。</p>
+        <div class="flex items-center gap-2 mb-2">
+          <span class="font-mono text-xl font-bold tracking-widest text-green-700 dark:text-green-300" id="display-room-code">------</span>
+          <button onclick="Settings.copyRoomCode()" class="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded-lg hover:bg-green-200">📋 复制</button>
+        </div>
+        <div class="flex gap-2">
+          <input type="text" id="input-room-code" maxlength="10" placeholder="输入别人的房间码加入" class="flex-1 font-mono text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-green-400 uppercase" />
+          <button onclick="Settings.joinRoom()" class="text-sm bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700">加入</button>
+        </div>
+        <p class="text-xs text-orange-500 mt-2">⚠️ 加入新房间会切换到对方的数据，当前数据仍保留在云端（原房间码可找回）</p>
+      </div>
+
       <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
         <h3 class="font-semibold mb-3 text-blue-600 dark:text-blue-400">🤖 AI 设置</h3>
         <div class="space-y-3">
@@ -810,6 +825,37 @@ const Cloud = {
   _db: null,
   _lastPushed: null,
   _pushTimer: null,
+  _ready: false,
+  _listener: null,
+
+  // 获取当前房间码，没有就自动生成并保存
+  getCode() {
+    let code = localStorage.getItem('hsl_room_code');
+    if (!code) {
+      code = Math.random().toString(36).slice(2, 8).toUpperCase(); // 6位大写
+      localStorage.setItem('hsl_room_code', code);
+    }
+    return code;
+  },
+
+  // 切换到新房间码（加入别人的房间 or 重置）
+  setCode(code) {
+    code = code.trim().toUpperCase();
+    if (!code) return false;
+    // 先断开旧监听
+    if (this._listener && this._db) {
+      this._db.ref(`h/${localStorage.getItem('hsl_room_code')}`).off();
+    }
+    localStorage.setItem('hsl_room_code', code);
+    this._ready = false;
+    this._lastPushed = null;
+    this.init();
+    return true;
+  },
+
+  _ref() {
+    return this._db.ref(`h/${this.getCode()}`);
+  },
 
   init() {
     try {
@@ -817,12 +863,23 @@ const Cloud = {
       this._db = firebase.database();
       this._setStatus('connecting');
 
-      // 实时监听远端变化
-      this._db.ref('household').on('value', snapshot => {
+      this._ref().on('value', snapshot => {
         const data = snapshot.val();
+
+        if (!this._ready) {
+          // 第一次收到 snapshot：用云端数据覆盖本地（如果云端有数据）
+          if (data) {
+            this._applyRemote(data);
+            App.renderAll();
+          }
+          this._ready = true;
+          this._setStatus('synced');
+          return;
+        }
+
+        // 后续 snapshot：判断是否是自己刚推的回弹
         const incoming = JSON.stringify(data);
         if (incoming === this._lastPushed) {
-          // 是我们自己刚推的数据回弹，忽略
           this._setStatus('synced');
           return;
         }
@@ -833,6 +890,7 @@ const Cloud = {
         this._setStatus('synced');
       }, err => {
         console.error('Firebase error', err);
+        this._ready = true; // 出错也要解锁，否则本地操作无法推送
         this._setStatus('error');
       });
 
@@ -842,19 +900,20 @@ const Cloud = {
       });
     } catch(e) {
       console.error('Cloud init error', e);
+      this._ready = true;
       this._setStatus('error');
     }
   },
 
   push() {
-    if (!this._db) return;
+    if (!this._db || !this._ready) return; // 未初始化完成前不推送
     clearTimeout(this._pushTimer);
     this._pushTimer = setTimeout(() => {
       const payload = this._buildPayload();
       const json = JSON.stringify(payload);
       this._lastPushed = json;
       this._setStatus('syncing');
-      this._db.ref('household').set(payload)
+      this._ref().set(payload)
         .then(() => this._setStatus('synced'))
         .catch(e => { console.error('Cloud push error', e); this._setStatus('error'); });
     }, 600); // 600ms 防抖，避免频繁写入
@@ -1434,13 +1493,53 @@ const Cart = {
   moveAllBoughtToInventory() {
     const bought = State.cart.filter(i => i.checked);
     if (bought.length === 0) { showToast('没有已购买的物品', 'info'); return; }
-    bought.forEach(item => {
-      Inventory.add({ nameCn: item.nameCn, nameEn: item.nameEn, quantity: item.quantity, unit: item.unit, category: item.category || 'other', minStock: 0, notes: item.notes || '', store: item.store || '' });
-    });
-    State.cart = State.cart.filter(i => !i.checked);
-    State.save(['cart']);
-    this.render();
-    showToast(`${bought.length} 件物品已入库`, 'success');
+
+    const html = `<div class="space-y-2">
+      ${bought.map((item, idx) => `
+        <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-3">
+          <div class="flex items-center gap-2 mb-2 flex-wrap">
+            <span class="font-medium">${item.nameCn}</span>
+            ${item.nameEn ? `<span class="text-gray-400 text-sm">${item.nameEn}</span>` : ''}
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="text-xs text-gray-500 mb-1 block">数量</label>
+              <input type="number" id="bulk-qty-${idx}" value="${item.quantity}" min="0" step="0.1"
+                class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 focus:outline-none" />
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 mb-1 block">单位</label>
+              <select id="bulk-unit-${idx}" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 focus:outline-none">
+                ${unitOptions(item.unit)}
+              </select>
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 mb-1 block">存放分类</label>
+              <select id="bulk-cat-${idx}" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 focus:outline-none">
+                ${catOptions(item.category || 'other')}
+              </select>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+      <p class="text-xs text-gray-400 pt-1">确认后以上 ${bought.length} 件物品将加入库存并从购物车移除</p>
+    </div>`;
+
+    Modal.showAIConfirm(`📥 确认入库（${bought.length} 件）`, null, 'bulk-inventory', html);
+    document.getElementById('ai-confirm-btn').textContent = `✅ 确认入库 ${bought.length} 件`;
+    document.getElementById('ai-confirm-btn').onclick = () => {
+      bought.forEach((item, idx) => {
+        const qty  = parseFloat(document.getElementById(`bulk-qty-${idx}`)?.value) || item.quantity;
+        const unit = document.getElementById(`bulk-unit-${idx}`)?.value || item.unit;
+        const cat  = document.getElementById(`bulk-cat-${idx}`)?.value || item.category || 'other';
+        Inventory.add({ nameCn: item.nameCn, nameEn: item.nameEn, quantity: qty, unit, category: cat, minStock: 0, notes: item.notes || '', store: item.store || '' });
+      });
+      State.cart = State.cart.filter(i => !i.checked);
+      State.save(['cart']);
+      Cart.render();
+      Modal.closeAIConfirm();
+      showToast(`${bought.length} 件物品已入库`, 'success');
+    };
   },
 
   render() {
@@ -1857,6 +1956,10 @@ const Settings = {
   },
 
   render() {
+    // 显示当前房间码
+    const codeEl = document.getElementById('display-room-code');
+    if (codeEl) codeEl.textContent = Cloud.getCode();
+
     const s = State.settings;
     const providerEl = document.getElementById('settings-provider');
     const keyEl = document.getElementById('settings-api-key');
@@ -2081,6 +2184,24 @@ const Settings = {
     State.save(['settings']);
     App.applyLanguage();
     showToast('设置已保存', 'success');
+  },
+
+  copyRoomCode() {
+    const code = Cloud.getCode();
+    navigator.clipboard.writeText(code).then(() => showToast(`房间码 ${code} 已复制`, 'success')).catch(() => {
+      showToast(`房间码：${code}`, 'info');
+    });
+  },
+
+  joinRoom() {
+    const input = document.getElementById('input-room-code')?.value.trim().toUpperCase();
+    if (!input || input.length < 4) { showToast('请输入有效的房间码', 'warn'); return; }
+    if (input === Cloud.getCode()) { showToast('已经在这个房间了', 'info'); return; }
+    if (!confirm(`确认加入房间 ${input}？\n\n当前数据会切换为该房间的云端数据。`)) return;
+    Cloud.setCode(input);
+    document.getElementById('display-room-code').textContent = input;
+    document.getElementById('input-room-code').value = '';
+    showToast(`已加入房间 ${input}，正在同步...`, 'success');
   },
 
   async testApiKey() {
