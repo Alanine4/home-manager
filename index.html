@@ -850,35 +850,25 @@ const Cloud = {
   _lastPushed: null,
   _pushTimer: null,
   _ready: false,
-  _listener: null,
+  _activeRef: null, // 当前监听的 ref，切换房间时先 off() 再换
 
-  // 获取当前房间码，没有就自动生成并保存
   getCode() {
     let code = localStorage.getItem('hsl_room_code');
     if (!code) {
-      code = Math.random().toString(36).slice(2, 8).toUpperCase(); // 6位大写
+      code = Math.random().toString(36).slice(2, 8).toUpperCase();
       localStorage.setItem('hsl_room_code', code);
     }
     return code;
   },
 
-  // 切换到新房间码（加入别人的房间 or 重置）
+  // 切换房间：断开旧监听，保存新码，重新挂载
   setCode(code) {
     code = code.trim().toUpperCase();
     if (!code) return false;
-    // 先断开旧监听
-    if (this._listener && this._db) {
-      this._db.ref(`h/${localStorage.getItem('hsl_room_code')}`).off();
-    }
     localStorage.setItem('hsl_room_code', code);
-    this._ready = false;
     this._lastPushed = null;
-    this.init();
+    this._attachListener(); // 会先断开旧监听再挂新的
     return true;
-  },
-
-  _ref() {
-    return this._db.ref(`h/${this.getCode()}`);
   },
 
   init() {
@@ -886,41 +876,10 @@ const Cloud = {
       if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
       this._db = firebase.database();
       this._setStatus('connecting');
-
-      this._ref().on('value', snapshot => {
-        const data = snapshot.val();
-
-        if (!this._ready) {
-          // 第一次收到 snapshot：用云端数据覆盖本地（如果云端有数据）
-          if (data) {
-            this._applyRemote(data);
-            App.renderAll();
-          }
-          this._ready = true;
-          this._setStatus('synced');
-          return;
-        }
-
-        // 后续 snapshot：判断是否是自己刚推的回弹
-        const incoming = JSON.stringify(data);
-        if (incoming === this._lastPushed) {
-          this._setStatus('synced');
-          return;
-        }
-        if (data) {
-          this._applyRemote(data);
-          App.renderAll();
-        }
-        this._setStatus('synced');
-      }, err => {
-        console.error('Firebase error', err);
-        this._ready = true; // 出错也要解锁，否则本地操作无法推送
-        this._setStatus('error');
-      });
-
-      // 检测在线/离线状态
+      this._attachListener();
+      // 检测在线/离线
       this._db.ref('.info/connected').on('value', snap => {
-        if (!snap.val()) this._setStatus('offline');
+        if (!snap.val() && this._ready) this._setStatus('offline');
       });
     } catch(e) {
       console.error('Cloud init error', e);
@@ -929,18 +888,59 @@ const Cloud = {
     }
   },
 
+  _attachListener() {
+    // 断开旧监听，防止多个监听器同时活跃
+    if (this._activeRef) { this._activeRef.off('value'); this._activeRef = null; }
+    this._ready = false;
+    this._activeRef = this._db.ref(`h/${this.getCode()}`);
+
+    this._activeRef.on('value', snapshot => {
+      const data = snapshot.val();
+
+      if (!this._ready) {
+        if (data) {
+          // 云端有数据 → 覆盖本地
+          this._applyRemote(data);
+          App.renderAll();
+        } else {
+          // 云端为空（新房间）且本地有数据 → 把本地数据推上去初始化
+          const hasLocal = State.inventory.length || State.recipes.length || State.cart.length;
+          if (hasLocal) {
+            this._ready = true;   // 先解锁才能推
+            this.push();
+            this._setStatus('synced');
+            return;
+          }
+        }
+        this._ready = true;
+        this._setStatus('synced');
+        return;
+      }
+
+      // 后续 snapshot：忽略自己的回弹
+      const incoming = JSON.stringify(data);
+      if (incoming === this._lastPushed) { this._setStatus('synced'); return; }
+      if (data) { this._applyRemote(data); App.renderAll(); }
+      this._setStatus('synced');
+    }, err => {
+      console.error('Firebase error', err);
+      this._ready = true;
+      this._setStatus('error');
+    });
+  },
+
   push() {
-    if (!this._db || !this._ready) return; // 未初始化完成前不推送
+    if (!this._db || !this._ready || !this._activeRef) return;
     clearTimeout(this._pushTimer);
     this._pushTimer = setTimeout(() => {
       const payload = this._buildPayload();
       const json = JSON.stringify(payload);
       this._lastPushed = json;
       this._setStatus('syncing');
-      this._ref().set(payload)
+      this._activeRef.set(payload)
         .then(() => this._setStatus('synced'))
         .catch(e => { console.error('Cloud push error', e); this._setStatus('error'); });
-    }, 600); // 600ms 防抖，避免频繁写入
+    }, 600);
   },
 
   _buildPayload() {
