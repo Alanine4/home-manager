@@ -1723,7 +1723,7 @@ const Inventory = {
       <div class="flex items-center gap-1 shrink-0">
         <button onclick="Modal.showEditInventory('${item.id}')" class="text-xs text-blue-500 hover:text-blue-700 px-1">✏️</button>
         ${!unlimited ? `<button onclick="Inventory.addToCart('${item.id}')" class="text-xs text-green-500 hover:text-green-700 px-1" title="加入购物车">🛒</button>` : ''}
-        <button onclick="if(confirm('删除？'))Inventory.remove('${item.id}')" class="text-xs text-red-400 hover:text-red-600 px-1">🗑</button>
+        <button onclick="Inventory.remove('${item.id}')" class="text-xs text-red-400 hover:text-red-600 px-1">🗑</button>
       </div>
     </div>`;
   },
@@ -2079,7 +2079,7 @@ const Recipes = {
           </div>
           <div class="flex gap-1 shrink-0">
             <button onclick="Modal.showEditRecipe('${recipe.id}')" class="text-xs text-blue-500 hover:text-blue-700">✏️</button>
-            <button onclick="if(confirm('删除？'))Recipes.remove('${recipe.id}')" class="text-xs text-red-400 hover:text-red-600">🗑</button>
+            <button onclick="Recipes.remove('${recipe.id}')" class="text-xs text-red-400 hover:text-red-600">🗑</button>
           </div>
         </div>
         ${recipe.description ? `<p class="text-sm text-gray-500 dark:text-gray-400 mb-2">${recipe.description}</p>` : ''}
@@ -2184,7 +2184,7 @@ const Household = {
             </div>
             <div class="flex items-center gap-1 shrink-0">
               <button onclick="Household.addToCart('${item.id}')" class="text-xs text-green-500 hover:text-green-700 px-1" title="加入购物车">🛒</button>
-              <button onclick="if(confirm('删除？'))Household.remove('${item.id}')" class="text-xs text-red-400 hover:text-red-600 px-1">🗑</button>
+              <button onclick="Household.remove('${item.id}')" class="text-xs text-red-400 hover:text-red-600 px-1">🗑</button>
             </div>
           </div>`;
         }).join('')}</div>
