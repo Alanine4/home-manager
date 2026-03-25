@@ -1,0 +1,2741 @@
+<!DOCTYPE html>
+<html lang="zh" class="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>家庭购物管家 Home Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: {} }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .toast { animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s forwards; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes fadeOut { to { opacity: 0; transform: translateX(100%); } }
+    .item-card:hover { transform: translateY(-1px); }
+    .item-card { transition: transform 0.15s; }
+    .checked-item { opacity: 0.5; }
+    .checked-item label { text-decoration: line-through; }
+    input[type=range] { accent-color: #3b82f6; }
+    .ai-input-bar textarea { resize: none; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .dark ::-webkit-scrollbar-thumb { background: #475569; }
+    .ingredient-ok { color: #16a34a; }
+    .ingredient-low { color: #d97706; }
+    .ingredient-missing { color: #dc2626; }
+    .store-colruyt { background: #fef2f2; border-color: #fca5a5; color: #dc2626; }
+    .store-carrefour { background: #eff6ff; border-color: #93c5fd; color: #2563eb; }
+    .store-lidl { background: #fefce8; border-color: #fde047; color: #ca8a04; }
+    .store-other { background: #f8fafc; border-color: #cbd5e1; color: #64748b; }
+    .dark .store-colruyt { background: #450a0a; border-color: #7f1d1d; color: #fca5a5; }
+    .dark .store-carrefour { background: #172554; border-color: #1e40af; color: #93c5fd; }
+    .dark .store-lidl { background: #422006; border-color: #713f12; color: #fde047; }
+    .dark .store-other { background: #1e293b; border-color: #475569; color: #94a3b8; }
+    .chat-bubble-user { background: #3b82f6; color: white; border-radius: 18px 18px 4px 18px; }
+    .chat-bubble-ai { background: white; color: #1e293b; border-radius: 18px 18px 18px 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    .dark .chat-bubble-ai { background: #1e293b; color: #e2e8f0; }
+    .recipe-availability-bar { height: 6px; border-radius: 3px; background: #e2e8f0; }
+    .recipe-availability-fill { height: 100%; border-radius: 3px; background: linear-gradient(to right, #22c55e, #86efac); transition: width 0.5s; }
+    /* 语言切换 */
+    body.lang-zh  .name-en, body.lang-zh  .label-en  { display: none !important; }
+    body.lang-en  .name-cn, body.lang-en  .label-cn  { display: none !important; }
+    body.lang-fr  .name-cn, body.lang-fr  .label-cn  { display: none !important; }
+
+    @media (max-width: 640px) {
+      .desktop-nav { display: none; }
+      .main-content { padding-bottom: 80px; }
+    }
+    @media (min-width: 641px) {
+      .mobile-nav { display: none; }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+
+<!-- HEADER -->
+<header class="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+  <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="text-xl">🛒</span>
+      <span class="font-bold text-lg text-blue-600 dark:text-blue-400">家庭购物管家</span>
+      <span class="text-xs text-gray-400 hidden sm:inline">Home Manager</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span id="sync-status" class="text-xs text-gray-400 flex items-center gap-1" title="云同步状态">🔄 <span class="hidden sm:inline">连接中...</span></span>
+      <button onclick="App.toggleTheme()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300" title="切换主题 Theme">
+        <span id="theme-icon">🌙</span>
+      </button>
+      <button onclick="App.switchTab('settings')" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300" title="设置 Settings">
+        ⚙️
+      </button>
+    </div>
+  </div>
+  <!-- Desktop Nav -->
+  <div class="desktop-nav max-w-5xl mx-auto px-4 flex gap-1 pb-2">
+    <button class="nav-tab" data-tab="cart">🛒 <span data-i18n="cart">购物车</span></button>
+    <button class="nav-tab" data-tab="inventory">📦 <span data-i18n="inventory">库存</span></button>
+    <button class="nav-tab" data-tab="recipes">🍳 <span data-i18n="recipes">食谱</span></button>
+    <button class="nav-tab" data-tab="household">🏠 <span data-i18n="household">家居必备</span></button>
+    <button class="nav-tab" data-tab="ai">🤖 <span data-i18n="ai">AI助手</span></button>
+  </div>
+</header>
+
+<style>
+.nav-tab { padding: 6px 14px; border-radius: 8px; font-size: 14px; color: #64748b; transition: all 0.15s; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+.nav-tab:hover { background: #f1f5f9; color: #1e293b; }
+.nav-tab.active { background: #eff6ff; color: #2563eb; font-weight: 600; }
+.dark .nav-tab { color: #94a3b8; }
+.dark .nav-tab:hover { background: #1e293b; color: #e2e8f0; }
+.dark .nav-tab.active { background: #1e3a8a; color: #93c5fd; }
+</style>
+
+<!-- MAIN CONTENT -->
+<main class="main-content max-w-5xl mx-auto px-4 py-4">
+
+  <!-- ===== CART TAB ===== -->
+  <div id="tab-cart" class="tab-content">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-xl font-bold" data-i18n="cartTitle">🛒 购物车</h2>
+      <div class="flex gap-2">
+        <button onclick="Cart.moveAllBoughtToInventory()" class="text-sm bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-3 py-1.5 rounded-lg hover:bg-green-200 dark:hover:bg-green-800 transition" data-i18n="boughtToInv">✅ 已购入库</button>
+        <button onclick="Modal.showAddCart()" class="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition" data-i18n="add">+ 添加</button>
+      </div>
+    </div>
+    <!-- AI Input -->
+    <div class="ai-input-bar mb-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 rounded-xl p-3 border border-blue-200 dark:border-blue-800">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-purple-500">🤖</span>
+        <span class="text-sm font-medium text-purple-700 dark:text-purple-300">AI 购物建议</span>
+      </div>
+      <div class="flex gap-2">
+        <textarea id="cart-ai-input" rows="1" placeholder="告诉AI你想买什么，或让它根据库存推荐... (需要API Key)" class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400 resize-none"></textarea>
+        <button onclick="AI.cartSuggest()" class="bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 text-sm whitespace-nowrap">发送</button>
+      </div>
+    </div>
+    <!-- Group toggle -->
+    <div class="flex gap-2 mb-3">
+      <button id="cart-group-store" onclick="Cart.setGroupBy('store')" class="text-xs px-3 py-1 rounded-full bg-blue-600 text-white">按商店</button>
+      <button id="cart-group-category" onclick="Cart.setGroupBy('category')" class="text-xs px-3 py-1 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300">按分类</button>
+    </div>
+    <div id="cart-list"></div>
+  </div>
+
+  <!-- ===== INVENTORY TAB ===== -->
+  <div id="tab-inventory" class="tab-content">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-xl font-bold" data-i18n="invTitle">📦 库存</h2>
+      <button onclick="Modal.showAddInventory()" class="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition" data-i18n="add">+ 添加</button>
+    </div>
+    <!-- AI Input -->
+    <div class="ai-input-bar mb-4 bg-gradient-to-r from-green-50 to-teal-50 dark:from-green-950 dark:to-teal-950 rounded-xl p-3 border border-green-200 dark:border-green-800">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-green-500">🤖</span>
+        <span class="text-sm font-medium text-green-700 dark:text-green-300">AI 录入库存</span>
+      </div>
+      <div class="flex gap-2">
+        <textarea id="inv-ai-input" rows="1" placeholder='例如："我买了2个番茄、一瓶生抽、500克猪肉"' class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-green-400 resize-none"></textarea>
+        <button onclick="AI.inventoryInput()" class="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 text-sm whitespace-nowrap">识别</button>
+      </div>
+    </div>
+    <!-- Search + Filter -->
+    <div class="flex gap-2 mb-3">
+      <input id="inv-search" type="text" placeholder="搜索..." oninput="Inventory.render()" class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
+      <select id="inv-cat-filter" onchange="Inventory.render()" class="text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none">
+        <option value="">全部分类</option>
+      </select>
+    </div>
+    <div id="inventory-list"></div>
+  </div>
+
+  <!-- ===== RECIPES TAB ===== -->
+  <div id="tab-recipes" class="tab-content">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-xl font-bold" data-i18n="recTitle">🍳 食谱</h2>
+      <div class="flex gap-2">
+        <button onclick="AI.recipeRecommend()" class="text-sm bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 px-3 py-1.5 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-800 transition">
+          🤖 AI推荐
+        </button>
+        <button onclick="Modal.showAddRecipe()" class="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition">+ 添加</button>
+      </div>
+    </div>
+    <!-- AI Recipe Input -->
+    <div class="ai-input-bar mb-4 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950 dark:to-yellow-950 rounded-xl p-3 border border-orange-200 dark:border-orange-800">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-orange-500">🤖</span>
+        <span class="text-sm font-medium text-orange-700 dark:text-orange-300">AI 添加食谱</span>
+      </div>
+      <div class="flex gap-2">
+        <textarea id="recipe-ai-input" rows="1" placeholder='例如："教我做番茄炒蛋" 或 "add pasta carbonara recipe"' class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-400 resize-none"></textarea>
+        <button onclick="AI.recipeInput()" class="bg-orange-600 text-white px-3 py-2 rounded-lg hover:bg-orange-700 text-sm whitespace-nowrap">生成</button>
+      </div>
+    </div>
+    <div id="recipes-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+  </div>
+
+  <!-- ===== HOUSEHOLD TAB ===== -->
+  <div id="tab-household" class="tab-content">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-xl font-bold">🏠 家居必备 Household</h2>
+      <button onclick="Modal.showAddHousehold()" class="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition">+ 添加</button>
+    </div>
+    <div id="household-low-stock" class="mb-3"></div>
+    <div id="household-list"></div>
+  </div>
+
+  <!-- ===== AI CHAT TAB ===== -->
+  <div id="tab-ai" class="tab-content">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-xl font-bold">🤖 AI助手 Assistant</h2>
+      <button onclick="AIChat.clear()" class="text-xs text-gray-400 hover:text-gray-600">清空对话</button>
+    </div>
+    <!-- Suggestion chips -->
+    <div class="flex flex-wrap gap-2 mb-3" id="ai-chips">
+      <button onclick="AIChat.quickSend(this.textContent)" class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800">根据库存推荐今晚晚饭</button>
+      <button onclick="AIChat.quickSend(this.textContent)" class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800">我需要补充哪些调料？</button>
+      <button onclick="AIChat.quickSend(this.textContent)" class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800">帮我规划本周购物清单</button>
+      <button onclick="AIChat.quickSend(this.textContent)" class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800">Colruyt有什么值得买的？</button>
+      <button onclick="AIChat.quickSend(this.textContent)" class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800">家里缺什么生活用品？</button>
+    </div>
+    <div id="ai-chat-messages" class="space-y-3 mb-4 min-h-32" style="max-height: 50vh; overflow-y: auto;"></div>
+    <div class="flex gap-2 sticky bottom-4">
+      <textarea id="ai-chat-input" rows="2" placeholder="问AI任何关于购物、食谱、库存的问题..." class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-400 resize-none"></textarea>
+      <button onclick="AIChat.send()" class="bg-blue-600 text-white px-4 rounded-xl hover:bg-blue-700 text-sm font-medium">发送</button>
+    </div>
+  </div>
+
+  <!-- ===== SETTINGS TAB ===== -->
+  <div id="tab-settings" class="tab-content">
+    <h2 class="text-xl font-bold mb-4">⚙️ 设置 Settings</h2>
+    <div class="space-y-4 max-w-lg">
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+        <h3 class="font-semibold mb-3 text-blue-600 dark:text-blue-400">🤖 AI 设置</h3>
+        <div class="space-y-3">
+          <div>
+            <label class="text-sm font-medium mb-1 block">AI 提供商 Provider</label>
+            <select id="settings-provider" onchange="Settings.onProviderChange()" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none">
+              <option value="gemini">Google Gemini</option>
+              <option value="claude">Anthropic Claude</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm font-medium mb-1 block">API Key</label>
+            <div class="flex gap-2">
+              <input type="password" id="settings-api-key" placeholder="" class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
+              <button onclick="Settings.testApiKey()" class="text-sm bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">测试</button>
+            </div>
+            <p id="settings-key-hint" class="text-xs text-gray-400 mt-1">⚠️ API Key 仅存储在浏览器本地，请勿分享此文件</p>
+          </div>
+          <div>
+            <label class="text-sm font-medium mb-1 block">AI 模型 Model</label>
+            <select id="settings-model" onchange="Settings.onModelChange()" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none">
+            </select>
+            <input type="text" id="settings-model-custom" placeholder="输入模型 ID，例如 gemini-2.5-flash" class="hidden w-full mt-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
+          </div>
+        </div>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+        <h3 class="font-semibold mb-3">🌐 界面设置</h3>
+        <div class="space-y-3">
+          <div>
+            <label class="text-sm font-medium mb-1 block">界面语言 Language</label>
+            <select id="settings-language" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2">
+              <option value="bilingual">中英双语 Bilingual</option>
+              <option value="zh">中文</option>
+              <option value="en">English</option>
+              <option value="fr">Français</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm font-medium mb-1 block">常用商店 Preferred Store</label>
+            <select id="settings-store" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2">
+              <option value="">不设置</option>
+              <option value="colruyt">🔴 Colruyt</option>
+              <option value="carrefour">🔵 Carrefour</option>
+              <option value="lidl">🟡 Lidl 大黑狮</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <button onclick="Settings.save()" class="w-full bg-blue-600 text-white py-2.5 rounded-xl hover:bg-blue-700 font-medium">保存设置 Save</button>
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+        <h3 class="font-semibold mb-3 text-purple-600">🗂 分类管理</h3>
+        <p class="text-xs text-gray-400 mb-3">所有分类均可删除，删除时可选择迁移物品</p>
+        <div id="cat-builtin" class="flex flex-wrap gap-1 mb-3"></div>
+        <div id="cat-custom" class="space-y-2 mb-3"></div>
+        <div class="flex gap-2">
+          <input type="text" id="new-cat-icon" placeholder="🍱" class="w-12 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-2 focus:outline-none text-center" />
+          <input type="text" id="new-cat-cn" placeholder="中文名" class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
+          <input type="text" id="new-cat-en" placeholder="English" class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
+          <input type="text" id="new-cat-fr" placeholder="Français" class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
+          <button onclick="Settings.addCategory()" class="text-sm bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700">添加</button>
+        </div>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+        <h3 class="font-semibold mb-3 text-orange-600">📋 数据管理</h3>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="App.loadMyData()" class="text-sm bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-3 py-2 rounded-lg hover:bg-green-200">📄 导入我的PDF库存</button>
+          <button onclick="App.loadSampleData()" class="text-sm bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 px-3 py-2 rounded-lg hover:bg-orange-200">加载示例数据</button>
+          <button onclick="App.exportData()" class="text-sm bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">导出数据</button>
+          <button onclick="App.importData()" class="text-sm bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">导入数据</button>
+          <button onclick="App.clearAllData()" class="text-sm bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-3 py-2 rounded-lg hover:bg-red-200">清空所有数据</button>
+        </div>
+        <input type="file" id="import-file" accept=".json" onchange="App.handleImport(event)" class="hidden" />
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- MOBILE BOTTOM NAV -->
+<nav class="mobile-nav fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-40">
+  <div class="flex">
+    <button class="mobile-nav-tab flex-1 py-2 flex flex-col items-center gap-0.5" data-tab="cart">
+      <span class="text-xl">🛒</span><span class="text-xs" data-i18n="cart">购物车</span>
+    </button>
+    <button class="mobile-nav-tab flex-1 py-2 flex flex-col items-center gap-0.5" data-tab="inventory">
+      <span class="text-xl">📦</span><span class="text-xs" data-i18n="inventory">库存</span>
+    </button>
+    <button class="mobile-nav-tab flex-1 py-2 flex flex-col items-center gap-0.5" data-tab="recipes">
+      <span class="text-xl">🍳</span><span class="text-xs" data-i18n="recipes">食谱</span>
+    </button>
+    <button class="mobile-nav-tab flex-1 py-2 flex flex-col items-center gap-0.5" data-tab="household">
+      <span class="text-xl">🏠</span><span class="text-xs" data-i18n="household">家居必备</span>
+    </button>
+    <button class="mobile-nav-tab flex-1 py-2 flex flex-col items-center gap-0.5" data-tab="ai">
+      <span class="text-xl">🤖</span><span class="text-xs" data-i18n="ai">AI助手</span>
+    </button>
+  </div>
+</nav>
+<style>
+.mobile-nav-tab { color: #94a3b8; transition: color 0.15s; }
+.mobile-nav-tab.active { color: #2563eb; }
+.dark .mobile-nav-tab.active { color: #93c5fd; }
+</style>
+
+<!-- ===== MODALS ===== -->
+
+<!-- Item Edit Modal (Inventory & Cart shared) -->
+<div id="modal-item" class="modal-overlay" onclick="if(event.target===this)Modal.closeItem()">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-md mx-4 max-h-screen overflow-y-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h3 id="modal-item-title" class="text-lg font-bold">添加物品</h3>
+      <button onclick="Modal.closeItem()" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+    </div>
+    <form id="item-form" onsubmit="Modal.submitItem(event)" class="space-y-3">
+      <input type="hidden" id="item-id" />
+      <input type="hidden" id="item-type" />
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-sm font-medium mb-1 block">中文名称 *</label>
+          <input type="text" id="item-namecn" required placeholder="番茄" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
+        </div>
+        <div>
+          <label class="text-sm font-medium mb-1 block">English Name</label>
+          <input type="text" id="item-nameen" placeholder="Tomato" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-sm font-medium mb-1 block">数量 Qty</label>
+          <input type="number" id="item-qty" value="1" min="0" step="0.1" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
+        </div>
+        <div>
+          <label class="text-sm font-medium mb-1 block">单位 Unit</label>
+          <select id="item-unit" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none">
+            <option value="个">个 pcs</option>
+            <option value="克">克 g</option>
+            <option value="千克">千克 kg</option>
+            <option value="毫升">毫升 ml</option>
+            <option value="升">升 L</option>
+            <option value="袋">袋 bag</option>
+            <option value="瓶">瓶 bottle</option>
+            <option value="盒">盒 box</option>
+            <option value="包">包 pack</option>
+            <option value="罐">罐 can</option>
+            <option value="条">条</option>
+            <option value="块">块</option>
+            <option value="束">束 bunch</option>
+            <option value="片">片 slice</option>
+            <option value="支">支</option>
+            <option value="卷">卷 roll</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="text-sm font-medium mb-1 block">分类 Category</label>
+        <select id="item-category" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none"></select>
+      </div>
+      <div>
+        <label class="text-sm font-medium mb-1 block">商店 Store</label>
+        <select id="item-store" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none">
+          <option value="">未指定</option>
+          <option value="colruyt">🔴 Colruyt</option>
+          <option value="carrefour">🔵 Carrefour</option>
+          <option value="lidl">🟡 Lidl 大黑狮</option>
+          <option value="other">🏪 其他</option>
+        </select>
+      </div>
+      <div id="item-minstock-row">
+        <label class="text-sm font-medium mb-1 block">最低库存提醒 Min Stock</label>
+        <input type="number" id="item-minstock" value="0" min="0" step="0.1" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
+      </div>
+      <div>
+        <label class="text-sm font-medium mb-1 block">备注 Notes</label>
+        <input type="text" id="item-notes" placeholder="可选备注..." class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button type="button" onclick="Modal.closeItem()" class="flex-1 py-2 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700">取消</button>
+        <button type="submit" class="flex-1 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium">保存 Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Recipe Add/Edit Modal -->
+<div id="modal-recipe" class="modal-overlay" onclick="if(event.target===this)Modal.closeRecipe()">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-lg mx-4 max-h-screen overflow-y-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h3 id="modal-recipe-title" class="text-lg font-bold">添加食谱</h3>
+      <button onclick="Modal.closeRecipe()" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+    </div>
+    <form id="recipe-form" onsubmit="Modal.submitRecipe(event)" class="space-y-3">
+      <input type="hidden" id="recipe-id" />
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-sm font-medium mb-1 block">菜名（中文）*</label>
+          <input type="text" id="recipe-namecn" required placeholder="番茄炒蛋" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
+        </div>
+        <div>
+          <label class="text-sm font-medium mb-1 block">Recipe Name (EN)</label>
+          <input type="text" id="recipe-nameen" placeholder="Tomato & Egg Stir Fry" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
+        </div>
+      </div>
+      <div>
+        <label class="text-sm font-medium mb-1 block">描述 Description</label>
+        <input type="text" id="recipe-desc" placeholder="简单快手的家常菜..." class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-sm font-medium mb-1 block">份数 Servings</label>
+          <input type="number" id="recipe-servings" value="2" min="1" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
+        </div>
+        <div>
+          <label class="text-sm font-medium mb-1 block">标签 Tags</label>
+          <input type="text" id="recipe-tags" placeholder="中式,快手菜" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
+        </div>
+      </div>
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-sm font-medium">食材 Ingredients</label>
+          <button type="button" onclick="Modal.addIngredientRow()" class="text-xs text-blue-600 hover:underline">+ 添加食材</button>
+        </div>
+        <div id="ingredients-list" class="space-y-2"></div>
+      </div>
+      <div>
+        <label class="text-sm font-medium mb-1 block">步骤 Steps（每行一步）</label>
+        <textarea id="recipe-steps" rows="4" placeholder="1. 番茄切块&#10;2. 鸡蛋打散..." class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400"></textarea>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button type="button" onclick="Modal.closeRecipe()" class="flex-1 py-2 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700">取消</button>
+        <button type="submit" class="flex-1 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium">保存 Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Recipe Detail Modal -->
+<div id="modal-recipe-detail" class="modal-overlay" onclick="if(event.target===this)Modal.closeRecipeDetail()">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-lg mx-4 max-h-screen overflow-y-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h3 id="recipe-detail-title" class="text-lg font-bold"></h3>
+      <button onclick="Modal.closeRecipeDetail()" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+    </div>
+    <div id="recipe-detail-content"></div>
+  </div>
+</div>
+
+<!-- AI Confirm Modal -->
+<div id="modal-ai-confirm" class="modal-overlay" onclick="if(event.target===this)Modal.closeAIConfirm()">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-lg mx-4 max-h-screen overflow-y-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h3 id="ai-confirm-title" class="text-lg font-bold">🤖 AI 建议确认</h3>
+      <button onclick="Modal.closeAIConfirm()" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+    </div>
+    <div id="ai-confirm-content"></div>
+    <div class="flex gap-2 mt-4">
+      <button onclick="Modal.closeAIConfirm()" class="flex-1 py-2 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700">取消</button>
+      <button id="ai-confirm-btn" class="flex-1 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium">确认添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="modal-overlay" style="background:rgba(0,0,0,0.3)">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 flex flex-col items-center gap-3">
+    <div class="spin text-3xl">⚙️</div>
+    <p class="text-sm text-gray-600 dark:text-gray-300" id="loading-text">AI 思考中...</p>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+
+<!-- Emoji Picker Modal -->
+<div id="modal-emoji" class="modal-overlay" onclick="if(event.target===this)EmojiPicker.close()">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 w-full max-w-sm mx-4 max-h-[80vh] flex flex-col">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-bold text-base">选择图标</h3>
+      <button onclick="EmojiPicker.close()" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+    </div>
+    <div class="flex gap-2 mb-3">
+      <input id="emoji-search" type="text" placeholder="输入关键词搜索，如：蔬菜、肉类..." oninput="EmojiPicker.search(this.value)"
+        class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
+      <button onclick="EmojiPicker.aiSuggest()" class="text-sm bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 whitespace-nowrap">🤖AI推荐</button>
+    </div>
+    <div id="emoji-ai-results" class="flex flex-wrap gap-1 mb-2 hidden"></div>
+    <div id="emoji-grid" class="overflow-y-auto flex-1"></div>
+  </div>
+</div>
+
+<!-- Category Delete Migration Modal -->
+<div id="modal-cat-delete" class="modal-overlay" onclick="if(event.target===this)document.getElementById('modal-cat-delete').classList.remove('open')">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-md mx-4 max-h-[90vh] flex flex-col">
+    <h3 class="font-bold text-base mb-1">⚠️ 删除分类</h3>
+    <p id="cat-delete-msg" class="text-sm text-gray-600 dark:text-gray-300 mb-3"></p>
+    <!-- Item list -->
+    <div id="cat-delete-items" class="hidden overflow-y-auto mb-3 rounded-xl border border-gray-200 dark:border-gray-600 divide-y divide-gray-100 dark:divide-gray-700" style="max-height:220px"></div>
+    <!-- Migration target -->
+    <div id="cat-delete-migrate-row" class="mb-4 hidden">
+      <label class="text-sm font-medium mb-1 block">迁移到哪个分类？</label>
+      <select id="cat-delete-target" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none"></select>
+    </div>
+    <div class="flex gap-2 mt-auto shrink-0">
+      <button onclick="document.getElementById('modal-cat-delete').classList.remove('open')" class="flex-1 py-2 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 text-sm">取消</button>
+      <button id="cat-delete-del-btn" class="flex-1 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 text-sm">🗑 删除物品</button>
+      <button id="cat-delete-move-btn" class="flex-1 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 text-sm">📦 迁移物品</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+'use strict';
+
+// ==================== CONSTANTS ====================
+const CATEGORIES = {
+  vegetables: { cn: '蔬菜', en: 'Vegetables',      fr: 'Légumes',       icon: '🥦' },
+  meat:        { cn: '肉类', en: 'Meat & Fish',     fr: 'Viandes',       icon: '🥩' },
+  dairy:       { cn: '乳制品', en: 'Dairy & Eggs',  fr: 'Laitiers',      icon: '🥚' },
+  grains:      { cn: '主食', en: 'Grains',          fr: 'Céréales',      icon: '🍚' },
+  condiments:  { cn: '调料', en: 'Condiments',      fr: 'Condiments',    icon: '🧂' },
+  snacks:      { cn: '零食', en: 'Snacks',          fr: 'Snacks',        icon: '🍪' },
+  drinks:      { cn: '饮料', en: 'Beverages',       fr: 'Boissons',      icon: '🧃' },
+  frozen:      { cn: '冷冻', en: 'Frozen',          fr: 'Surgelés',      icon: '🧊' },
+  toiletries:  { cn: '洗护', en: 'Toiletries',      fr: 'Soins',         icon: '🧴' },
+  cleaning:    { cn: '清洁', en: 'Cleaning',        fr: 'Nettoyage',     icon: '🧹' },
+  household:   { cn: '家居', en: 'Household',       fr: 'Maison',        icon: '🏠' },
+  other:       { cn: '其他', en: 'Other',           fr: 'Autres',        icon: '📦' },
+  staples:     { cn: '常备基础', en: 'Pantry Staples', fr: 'Provisions', icon: '♾️', unlimited: true },
+};
+
+const STORES = {
+  colruyt:   { name: 'Colruyt', emoji: '🔴', cls: 'store-colruyt' },
+  carrefour: { name: 'Carrefour', emoji: '🔵', cls: 'store-carrefour' },
+  lidl:      { name: 'Lidl 大黑狮', emoji: '🟡', cls: 'store-lidl' },
+  other:     { name: '其他', emoji: '🏪', cls: 'store-other' },
+};
+
+// ==================== i18n ====================
+const TRANSLATIONS = {
+  zh: {
+    cart:'购物车', inventory:'库存', recipes:'食谱', household:'家居必备', ai:'AI助手', settings:'设置',
+    add:'+ 添加', save:'保存设置', cancel:'取消', confirm:'确认',
+    search:'搜索...', allCats:'全部分类',
+    cartTitle:'🛒 购物车', invTitle:'📦 库存', recTitle:'🍳 食谱', houseTitle:'🏠 家居必备', aiTitle:'🤖 AI助手', settingsTitle:'⚙️ 设置',
+    boughtToInv:'✅ 已购入库', groupByStore:'按商店', groupByCat:'按分类',
+    aiSuggest:'AI 购物建议', aiInvInput:'AI 录入库存', aiRecipeInput:'AI 添加食谱',
+    aiSend:'发送', aiRecognize:'识别', aiGenerate:'生成', aiRecommend:'🤖 AI推荐',
+    lowStock:'低库存', inCart:'加入购物车', details:'查看详情',
+    catManage:'🗂 分类管理', catDesc:'所有分类均可删除，删除时可迁移物品', addCat:'添加',
+    catIconPh:'图标', catCnPh:'中文名', catEnPh:'English', catFrPh:'Français',
+    dataManage:'📋 数据管理',
+    invConfirmTitle:'📦 AI识别库存 (可编辑后确认)', invConfirmBtn:'✅ 全部加入库存', addRow:'+ 添加一行',
+    nameCnLabel:'中文名', nameEnLabel:'英文名', qtyLabel:'数量', unitLabel:'单位', catLabel:'分类',
+    canCook:'✅ 可以做', missingN:'🛒 缺',
+  },
+  en: {
+    cart:'Cart', inventory:'Inventory', recipes:'Recipes', household:'Household', ai:'AI Chat', settings:'Settings',
+    add:'+ Add', save:'Save Settings', cancel:'Cancel', confirm:'Confirm',
+    search:'Search...', allCats:'All Categories',
+    cartTitle:'🛒 Shopping Cart', invTitle:'📦 Inventory', recTitle:'🍳 Recipes', houseTitle:'🏠 Household', aiTitle:'🤖 AI Chat', settingsTitle:'⚙️ Settings',
+    boughtToInv:'✅ Move bought to stock', groupByStore:'By Store', groupByCat:'By Category',
+    aiSuggest:'AI Shopping Suggestions', aiInvInput:'AI Add Inventory', aiRecipeInput:'AI Add Recipe',
+    aiSend:'Send', aiRecognize:'Parse', aiGenerate:'Generate', aiRecommend:'🤖 AI Suggest',
+    lowStock:'Low stock', inCart:'Add to cart', details:'Details',
+    catManage:'🗂 Manage Categories', catDesc:'All categories can be deleted; items can be migrated', addCat:'Add',
+    catIconPh:'Icon', catCnPh:'Chinese', catEnPh:'English', catFrPh:'French',
+    dataManage:'📋 Data',
+    invConfirmTitle:'📦 AI detected items (edit then confirm)', invConfirmBtn:'✅ Add all to inventory', addRow:'+ Add row',
+    nameCnLabel:'Chinese', nameEnLabel:'English', qtyLabel:'Qty', unitLabel:'Unit', catLabel:'Category',
+    canCook:'✅ Can cook', missingN:'🛒 Missing ',
+  },
+  fr: {
+    cart:'Panier', inventory:'Inventaire', recipes:'Recettes', household:'Maison', ai:'IA', settings:'Réglages',
+    add:'+ Ajouter', save:'Enregistrer', cancel:'Annuler', confirm:'Confirmer',
+    search:'Chercher...', allCats:'Toutes catégories',
+    cartTitle:'🛒 Panier', invTitle:'📦 Inventaire', recTitle:'🍳 Recettes', houseTitle:'🏠 Maison', aiTitle:'🤖 Assistant IA', settingsTitle:'⚙️ Réglages',
+    boughtToInv:'✅ Acheté→stock', groupByStore:'Par magasin', groupByCat:'Par catégorie',
+    aiSuggest:'Suggestions IA', aiInvInput:'IA ajouter stock', aiRecipeInput:'IA ajouter recette',
+    aiSend:'Envoyer', aiRecognize:'Analyser', aiGenerate:'Générer', aiRecommend:'🤖 IA suggère',
+    lowStock:'Stock bas', inCart:'Ajouter panier', details:'Détails',
+    catManage:'🗂 Catégories', catDesc:'Toutes les catégories peuvent être supprimées', addCat:'Ajouter',
+    catIconPh:'Icône', catCnPh:'Chinois', catEnPh:'Anglais', catFrPh:'Français',
+    dataManage:'📋 Données',
+    invConfirmTitle:'📦 Détection IA (modifiable)', invConfirmBtn:'✅ Tout ajouter', addRow:'+ Ajouter ligne',
+    nameCnLabel:'Chinois', nameEnLabel:'Anglais', qtyLabel:'Qté', unitLabel:'Unité', catLabel:'Catégorie',
+    canCook:'✅ Faisable', missingN:'🛒 Manque ',
+  },
+};
+
+function t(key) {
+  const lang = State.settings.language || 'zh';
+  const l = (lang === 'bilingual') ? 'zh' : lang;
+  return (TRANSLATIONS[l] || TRANSLATIONS.zh)[key] || TRANSLATIONS.zh[key] || key;
+}
+
+function catName(cat) {
+  const cats = getCategories();
+  const c = cats[cat];
+  if (!c) return cat;
+  const lang = State.settings.language || 'zh';
+  if (lang === 'en') return c.en || c.cn;
+  if (lang === 'fr') return c.fr || c.en || c.cn;
+  return c.cn;
+}
+
+const HOUSEHOLD_DEFAULTS = [
+  { nameCn: '卫生纸', nameEn: 'Toilet Paper', category: 'toiletries', unit: '卷', minStock: 4 },
+  { nameCn: '洗洁精', nameEn: 'Dish Soap', category: 'cleaning', unit: '瓶', minStock: 1 },
+  { nameCn: '洗衣液', nameEn: 'Laundry Detergent', category: 'cleaning', unit: '瓶', minStock: 1 },
+  { nameCn: '洗发水', nameEn: 'Shampoo', category: 'toiletries', unit: '瓶', minStock: 1 },
+  { nameCn: '沐浴露', nameEn: 'Body Wash', category: 'toiletries', unit: '瓶', minStock: 1 },
+  { nameCn: '牙膏', nameEn: 'Toothpaste', category: 'toiletries', unit: '支', minStock: 1 },
+  { nameCn: '垃圾袋', nameEn: 'Trash Bags', category: 'household', unit: '包', minStock: 1 },
+  { nameCn: '保鲜膜', nameEn: 'Plastic Wrap', category: 'household', unit: '卷', minStock: 1 },
+  { nameCn: '厨房纸', nameEn: 'Kitchen Towels', category: 'household', unit: '卷', minStock: 2 },
+  { nameCn: '钢丝球', nameEn: 'Steel Wool Pads', category: 'cleaning', unit: '包', minStock: 1 },
+  { nameCn: '洗手液', nameEn: 'Hand Soap', category: 'toiletries', unit: '瓶', minStock: 1 },
+  { nameCn: '牙刷', nameEn: 'Toothbrush', category: 'toiletries', unit: '支', minStock: 2 },
+  { nameCn: '铝箔纸', nameEn: 'Aluminum Foil', category: 'household', unit: '卷', minStock: 1 },
+  { nameCn: '洗碗布', nameEn: 'Sponge', category: 'cleaning', unit: '个', minStock: 2 },
+];
+
+// ===== 从 Lin² One Roof PDF 导入的真实库存 =====
+const MY_PDF_INVENTORY = [
+  // 调料 Condiments
+  { nameCn: '鸡公煲招牌鸡肉酱', nameEn: 'Chicken Pot Sauce', category: 'condiments', quantity: 2, unit: '包', minStock: 0, notes: '保质期 08/05/2026' },
+  { nameCn: '鸡公煲风味干锅酱', nameEn: 'Dry Pot Sauce', category: 'condiments', quantity: 1, unit: '包', minStock: 0, notes: '保质期 26/03/2026 ⚠️快到期' },
+  { nameCn: '东北黏糊麻辣烫', nameEn: 'Malatang Sauce', category: 'condiments', quantity: 2, unit: '包', minStock: 0, notes: '保质期 2027年3月' },
+  { nameCn: '翠宏辣卤调料', nameEn: 'Spicy Braising Sauce', category: 'condiments', quantity: 3, unit: '包', minStock: 0, notes: '保质期 11/10/2026' },
+  { nameCn: '翠宏老卤调料', nameEn: 'Master Braising Sauce', category: 'condiments', quantity: 2, unit: '包', minStock: 0, notes: '保质期 10/10/2026' },
+  { nameCn: '罗望子酱', nameEn: 'Tamarind Paste', category: 'condiments', quantity: 1, unit: '瓶', minStock: 0, notes: '泰式炒河粉用' },
+  // 主食 Grains & Staples
+  { nameCn: '河粉', nameEn: 'Rice Noodles', category: 'grains', quantity: 1, unit: '袋', minStock: 0, notes: '泰式炒河粉用' },
+  { nameCn: '上海阳春面', nameEn: 'Shanghai Noodles', category: 'grains', quantity: 1, unit: '袋', minStock: 0 },
+  { nameCn: '荞麦面', nameEn: 'Soba Noodles', category: 'grains', quantity: 1, unit: '袋', minStock: 0 },
+  { nameCn: '南投意面', nameEn: 'Nantou Noodles', category: 'grains', quantity: 1, unit: '袋', minStock: 0 },
+  { nameCn: '寿司米', nameEn: 'Sushi Rice', category: 'grains', quantity: 2, unit: '袋', minStock: 0 },
+  { nameCn: '顺利牌糯米', nameEn: 'Glutinous Rice', category: 'grains', quantity: 1, unit: '袋', minStock: 0 },
+  { nameCn: 'Spaghetti直面', nameEn: 'Spaghetti', category: 'grains', quantity: 1, unit: '袋', minStock: 0 },
+  { nameCn: 'Fusilli螺旋面', nameEn: 'Fusilli', category: 'grains', quantity: 1, unit: '袋', minStock: 0 },
+  { nameCn: '高筋牛筋面', nameEn: 'High-gluten Noodles', category: 'grains', quantity: 1, unit: '袋', minStock: 0 },
+  { nameCn: '杂粮米', nameEn: 'Mixed Grain Rice', category: 'grains', quantity: 1, unit: '袋', minStock: 0 },
+  { nameCn: '黄小米', nameEn: 'Millet', category: 'grains', quantity: 1, unit: '袋', minStock: 0 },
+  // 汤料 Soup ingredients (干货)
+  { nameCn: '紫菜', nameEn: 'Nori/Seaweed', category: 'other', quantity: 1, unit: '袋', minStock: 0 },
+  { nameCn: '白木耳', nameEn: 'White Fungus', category: 'other', quantity: 1, unit: '袋', minStock: 0 },
+  { nameCn: '海带丝', nameEn: 'Kelp Strips', category: 'other', quantity: 1, unit: '袋', minStock: 0 },
+  { nameCn: '香菇', nameEn: 'Shiitake Mushroom', category: 'other', quantity: 1, unit: '袋', minStock: 0 },
+  // 干货
+  { nameCn: '腐皮丝', nameEn: 'Tofu Skin Strips', category: 'other', quantity: 1, unit: '袋', minStock: 0 },
+  { nameCn: '梅干菜', nameEn: 'Preserved Mustard Greens', category: 'other', quantity: 1, unit: '袋', minStock: 0, notes: '保质期 02/04/202?' },
+  // 蔬菜
+  { nameCn: '上海青', nameEn: 'Shanghai Bok Choy', category: 'vegetables', quantity: 1, unit: '束', minStock: 0 },
+  // 甜品材料
+  { nameCn: '玉米淀粉', nameEn: 'Corn Starch', category: 'other', quantity: 1, unit: '袋', minStock: 0 },
+  { nameCn: '手指饼干', nameEn: 'Ladyfinger Biscuits', category: 'snacks', quantity: 1, unit: '袋', minStock: 0 },
+];
+
+const MY_PDF_CART = [
+  // 短期购物清单
+  { nameCn: '豆芽', nameEn: 'Bean Sprouts', quantity: 1, unit: '袋', category: 'vegetables', store: '', notes: '短期 - 泰式炒河粉用' },
+  { nameCn: '鸡胸肉', nameEn: 'Chicken Breast', quantity: 300, unit: '克', category: 'meat', store: '', notes: '短期' },
+  // 长期购物清单
+  { nameCn: '黑木耳', nameEn: 'Black Fungus', quantity: 1, unit: '袋', category: 'other', store: '', notes: '长期，不着急' },
+];
+
+const MY_PDF_RECIPES = [
+  {
+    nameCn: '泰式炒河粉', nameEn: 'Pad Thai', description: '已有河粉和罗望子酱',
+    servings: 2, tags: ['泰式', '快手菜'],
+    ingredients: [
+      { nameCn: '河粉', nameEn: 'Rice Noodles', quantity: 200, unit: '克', optional: false },
+      { nameCn: '罗望子酱', nameEn: 'Tamarind Paste', quantity: 2, unit: '克', optional: false },
+      { nameCn: '豆芽', nameEn: 'Bean Sprouts', quantity: 100, unit: '克', optional: false },
+      { nameCn: '鸡胸肉', nameEn: 'Chicken Breast', quantity: 150, unit: '克', optional: false },
+      { nameCn: '鸡蛋', nameEn: 'Egg', quantity: 2, unit: '个', optional: false },
+      { nameCn: '生抽', nameEn: 'Soy Sauce', quantity: 1, unit: '克', optional: false },
+    ],
+    steps: ['河粉提前泡软', '鸡肉切丝炒熟，推一旁炒蛋', '加入河粉、罗望子酱翻炒', '加豆芽快炒，调味出锅']
+  },
+  {
+    nameCn: '重庆鸡公煲', nameEn: 'Chongqing Chicken Hot Pot', description: '用鸡公煲招牌酱',
+    servings: 2, tags: ['中式', '重庆'],
+    ingredients: [
+      { nameCn: '鸡公煲招牌鸡肉酱', nameEn: 'Chicken Pot Sauce', quantity: 1, unit: '包', optional: false },
+      { nameCn: '鸡胸肉', nameEn: 'Chicken', quantity: 500, unit: '克', optional: false },
+      { nameCn: '土豆', nameEn: 'Potato', quantity: 2, unit: '个', optional: true },
+      { nameCn: '香菇', nameEn: 'Shiitake', quantity: 5, unit: '个', optional: true },
+    ],
+    steps: ['鸡肉剁块焯水', '按酱料包说明炒制底料', '加鸡肉和配菜焖煮20分钟']
+  },
+];
+
+const SAMPLE_INVENTORY = [
+  { nameCn: '大米', nameEn: 'Rice', category: 'grains', quantity: 3, unit: '千克', minStock: 1 },
+  { nameCn: '番茄', nameEn: 'Tomato', category: 'vegetables', quantity: 4, unit: '个', minStock: 0 },
+  { nameCn: '鸡蛋', nameEn: 'Egg', category: 'dairy', quantity: 8, unit: '个', minStock: 4 },
+  { nameCn: '生抽', nameEn: 'Soy Sauce', category: 'condiments', quantity: 1, unit: '瓶', minStock: 0 },
+  { nameCn: '老抽', nameEn: 'Dark Soy Sauce', category: 'condiments', quantity: 1, unit: '瓶', minStock: 0 },
+  { nameCn: '猪肉', nameEn: 'Pork', category: 'meat', quantity: 300, unit: '克', minStock: 0 },
+  { nameCn: '大蒜', nameEn: 'Garlic', category: 'vegetables', quantity: 1, unit: '头', minStock: 0 },
+  { nameCn: '洋葱', nameEn: 'Onion', category: 'vegetables', quantity: 2, unit: '个', minStock: 0 },
+  { nameCn: '食用油', nameEn: 'Cooking Oil', category: 'condiments', quantity: 1, unit: '瓶', minStock: 0 },
+  { nameCn: '盐', nameEn: 'Salt', category: 'condiments', quantity: 1, unit: '袋', minStock: 0 },
+  { nameCn: '面条', nameEn: 'Noodles', category: 'grains', quantity: 2, unit: '袋', minStock: 0 },
+  { nameCn: '牛奶', nameEn: 'Milk', category: 'dairy', quantity: 1, unit: '升', minStock: 0 },
+];
+
+const SAMPLE_RECIPES = [
+  {
+    nameCn: '番茄炒蛋', nameEn: 'Tomato & Egg Stir Fry', description: '经典家常菜，简单快手',
+    servings: 2, tags: ['中式', '快手菜', '素食'],
+    ingredients: [
+      { nameCn: '番茄', nameEn: 'Tomato', quantity: 3, unit: '个', optional: false },
+      { nameCn: '鸡蛋', nameEn: 'Egg', quantity: 3, unit: '个', optional: false },
+      { nameCn: '食用油', nameEn: 'Cooking Oil', quantity: 2, unit: '克', optional: false },
+      { nameCn: '盐', nameEn: 'Salt', quantity: 1, unit: '克', optional: false },
+      { nameCn: '糖', nameEn: 'Sugar', quantity: 1, unit: '克', optional: true },
+    ],
+    steps: ['番茄切块，鸡蛋打散', '热锅冷油，蛋液炒至半熟盛出', '再倒油炒番茄出汁', '加入鸡蛋翻炒，加盐糖调味']
+  },
+  {
+    nameCn: '蒜香意面', nameEn: 'Garlic Pasta', description: '简单的西式意面',
+    servings: 2, tags: ['西式', '快手菜'],
+    ingredients: [
+      { nameCn: '意大利面', nameEn: 'Spaghetti', quantity: 200, unit: '克', optional: false },
+      { nameCn: '大蒜', nameEn: 'Garlic', quantity: 4, unit: '个', optional: false },
+      { nameCn: '橄榄油', nameEn: 'Olive Oil', quantity: 3, unit: '克', optional: false },
+      { nameCn: '盐', nameEn: 'Salt', quantity: 1, unit: '克', optional: false },
+      { nameCn: '黑胡椒', nameEn: 'Black Pepper', quantity: 1, unit: '克', optional: true },
+    ],
+    steps: ['煮熟意面备用', '蒜切末用橄榄油小火煸香', '加入意面翻炒，加盐和黑胡椒调味']
+  },
+];
+
+// ==================== APP STATE ====================
+const State = {
+  inventory: [],
+  recipes: [],
+  cart: [],
+  household: [],
+  settings: { claudeApiKey: '', model: 'gemini-2.0-flash', provider: 'gemini', language: 'bilingual', preferredStore: '', theme: 'light' },
+  customCategories: {},   // { key: { cn, en, fr, icon, unlimited?, deleted? } }
+  catOrder: [],           // ordered array of category keys
+
+  load() {
+    try {
+      this.inventory        = JSON.parse(localStorage.getItem('hsl_inventory')  || '[]');
+      this.recipes          = JSON.parse(localStorage.getItem('hsl_recipes')    || '[]');
+      this.cart             = JSON.parse(localStorage.getItem('hsl_cart')       || '[]');
+      this.household        = JSON.parse(localStorage.getItem('hsl_household')  || '[]');
+      this.customCategories = JSON.parse(localStorage.getItem('hsl_customcats') || '{}');
+      this.catOrder         = JSON.parse(localStorage.getItem('hsl_catorder')   || '[]');
+      const s               = JSON.parse(localStorage.getItem('hsl_settings')   || '{}');
+      this.settings         = { ...this.settings, ...s };
+    } catch(e) { console.error('State load error', e); }
+  },
+
+  saveLocal(keys) {
+    const ks = keys || ['inventory','recipes','cart','household','settings','customcats','catorder'];
+    ks.forEach(k => {
+      const storeKey = `hsl_${k}`;
+      const val = k === 'customcats' ? this.customCategories : k === 'catorder' ? this.catOrder : this[k];
+      localStorage.setItem(storeKey, JSON.stringify(val));
+    });
+  },
+
+  save(keys) {
+    this.saveLocal(keys);
+    Cloud.push();
+  },
+};
+
+// ==================== CLOUD SYNC ====================
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAi9TtZjbFviK8YYRi_1PPIfbOxUx4BA_c",
+  authDomain: "inventory-management-sys-7860c.firebaseapp.com",
+  databaseURL: "https://inventory-management-sys-7860c-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "inventory-management-sys-7860c",
+  storageBucket: "inventory-management-sys-7860c.firebasestorage.app",
+  messagingSenderId: "291453799411",
+  appId: "1:291453799411:web:47d87389db2a0c52c42086",
+};
+
+const Cloud = {
+  _db: null,
+  _lastPushed: null,
+  _pushTimer: null,
+
+  init() {
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      this._db = firebase.database();
+      this._setStatus('connecting');
+
+      // 实时监听远端变化
+      this._db.ref('household').on('value', snapshot => {
+        const data = snapshot.val();
+        const incoming = JSON.stringify(data);
+        if (incoming === this._lastPushed) {
+          // 是我们自己刚推的数据回弹，忽略
+          this._setStatus('synced');
+          return;
+        }
+        if (data) {
+          this._applyRemote(data);
+          App.renderAll();
+        }
+        this._setStatus('synced');
+      }, err => {
+        console.error('Firebase error', err);
+        this._setStatus('error');
+      });
+
+      // 检测在线/离线状态
+      this._db.ref('.info/connected').on('value', snap => {
+        if (!snap.val()) this._setStatus('offline');
+      });
+    } catch(e) {
+      console.error('Cloud init error', e);
+      this._setStatus('error');
+    }
+  },
+
+  push() {
+    if (!this._db) return;
+    clearTimeout(this._pushTimer);
+    this._pushTimer = setTimeout(() => {
+      const payload = this._buildPayload();
+      const json = JSON.stringify(payload);
+      this._lastPushed = json;
+      this._setStatus('syncing');
+      this._db.ref('household').set(payload)
+        .then(() => this._setStatus('synced'))
+        .catch(e => { console.error('Cloud push error', e); this._setStatus('error'); });
+    }, 600); // 600ms 防抖，避免频繁写入
+  },
+
+  _buildPayload() {
+    return {
+      inventory:        State.inventory,
+      recipes:          State.recipes,
+      cart:             State.cart,
+      household:        State.household,
+      customCategories: State.customCategories,
+      catOrder:         State.catOrder,
+      // 注意：settings (API key 等) 不同步，每台设备各自保存
+    };
+  },
+
+  // Firebase 有时会把数组转成带数字键的对象，这里统一转回数组
+  _toArr(val) {
+    if (!val) return [];
+    if (Array.isArray(val)) return val;
+    if (typeof val === 'object') {
+      const keys = Object.keys(val);
+      if (keys.every(k => /^\d+$/.test(k))) {
+        return keys.sort((a, b) => +a - +b).map(k => val[k]);
+      }
+    }
+    return [];
+  },
+
+  _applyRemote(data) {
+    State.inventory        = this._toArr(data.inventory);
+    State.recipes          = this._toArr(data.recipes);
+    State.cart             = this._toArr(data.cart);
+    State.household        = this._toArr(data.household);
+    State.customCategories = (data.customCategories && typeof data.customCategories === 'object') ? data.customCategories : {};
+    State.catOrder         = this._toArr(data.catOrder);
+    State.saveLocal(); // 缓存到 localStorage，断网时仍可用
+  },
+
+  _setStatus(status) {
+    const el = document.getElementById('sync-status');
+    if (!el) return;
+    const map = {
+      connecting: ['🔄', 'text-gray-400',   '连接中'],
+      syncing:    ['☁️',  'text-blue-500',   '同步中'],
+      synced:     ['✅',  'text-green-500',  '已同步'],
+      offline:    ['📴', 'text-orange-400', '离线'],
+      error:      ['❌',  'text-red-500',    '同步失败'],
+    };
+    const [icon, cls, label] = map[status] || map.error;
+    el.className = `text-xs ${cls} flex items-center gap-1`;
+    el.innerHTML = `<span>${icon}</span><span class="hidden sm:inline">${label}</span>`;
+  },
+};
+
+// ==================== UTILS ====================
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+// 返回内置 + 用户自定义分类的合并对象（已删除的分类不返回，按 catOrder 排序）
+function getCategories() {
+  const result = {};
+  for (const [k, v] of Object.entries(CATEGORIES)) {
+    const override = State.customCategories[k];
+    if (override && override.deleted) continue;
+    result[k] = override ? { ...v, ...override } : v;
+  }
+  for (const [k, v] of Object.entries(State.customCategories)) {
+    if (!CATEGORIES[k] && !v.deleted) result[k] = v;
+  }
+  // Apply catOrder sorting
+  const order = State.catOrder.filter(k => result[k]);
+  const unordered = Object.keys(result).filter(k => !order.includes(k));
+  const sorted = {};
+  [...order, ...unordered].forEach(k => { sorted[k] = result[k]; });
+  return sorted;
+}
+
+function catLabel(cat) {
+  const cats = getCategories();
+  const c = cats[cat];
+  if (!c) return cat;
+  return `${c.icon} ${catName(cat)}`;
+}
+
+// 生成分类 <option> 列表（语言感知）
+function catOptions(selected) {
+  return Object.entries(getCategories()).map(([k,v]) =>
+    `<option value="${k}" ${selected===k?'selected':''}>${v.icon} ${catName(k)}</option>`
+  ).join('');
+}
+
+// 生成单位 <option> 列表
+const ALL_UNITS = ['个','克','千克','毫升','升','袋','瓶','盒','包','罐','条','块','束','片','支','卷','头','瓣','份','勺'];
+function unitOptions(selected) {
+  return ALL_UNITS.map(u => `<option value="${u}" ${selected===u?'selected':''}>${u}</option>`).join('');
+}
+
+function storeBadge(store) {
+  if (!store) return '';
+  const s = STORES[store];
+  if (!s) return '';
+  return `<span class="text-xs px-2 py-0.5 rounded-full border ${s.cls}">${s.emoji} ${s.name}</span>`;
+}
+
+function storeClass(store) {
+  return STORES[store] ? STORES[store].cls : '';
+}
+
+function showToast(msg, type = 'success') {
+  const colors = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-blue-500', warn: 'bg-yellow-500' };
+  const el = document.createElement('div');
+  el.className = `toast ${colors[type]||colors.info} text-white text-sm px-4 py-3 rounded-xl shadow-lg max-w-xs`;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+function showLoading(text = 'AI 思考中...') {
+  document.getElementById('loading-text').textContent = text;
+  document.getElementById('loading-overlay').classList.add('open');
+}
+
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.remove('open');
+}
+
+function extractJSON(text) {
+  if (!text) return null;
+  // 用捕获组剥离围栏：把 ```json\n...\n``` 替换成内容本身，无论末尾有无换行
+  text = text.replace(/```(?:json)?\s*([\s\S]*?)\s*```/gi, '$1').trim();
+  const tryParse = s => {
+    try { return JSON.parse(s); } catch {
+      try { return JSON.parse(s.replace(/,\s*([}\]])/g, '$1')); } catch { return null; }
+    }
+  };
+  // 先尝试整体 parse（AI 完全按要求输出时最快）
+  let r = tryParse(text);
+  if (r !== null) return r;
+  // 再尝试从文本中提取 [...] 或 {...}
+  const arr = text.match(/\[[\s\S]*\]/);
+  if (arr) { r = tryParse(arr[0]); if (r !== null) return r; }
+  const obj = text.match(/\{[\s\S]*\}/);
+  if (obj) { r = tryParse(obj[0]); if (r !== null) return r; }
+  return null;
+}
+
+function fuzzyMatch(a, b) {
+  if (!a || !b) return false;
+  const normalize = s => s.toLowerCase().replace(/\s+/g,'').replace(/[^\u4e00-\u9fa5a-z0-9]/g,'');
+  const na = normalize(String(a)), nb = normalize(String(b));
+  return na === nb || na.includes(nb) || nb.includes(na);
+}
+
+function findInInventory(nameCn, nameEn) {
+  return State.inventory.find(item =>
+    fuzzyMatch(item.nameCn, nameCn) || fuzzyMatch(item.nameEn, nameEn) ||
+    (nameCn && fuzzyMatch(item.nameCn, nameCn)) || (nameEn && fuzzyMatch(item.nameEn, nameEn))
+  );
+}
+
+function formatQty(qty, unit) {
+  const n = parseFloat(qty);
+  return `${Number.isInteger(n) ? n : n.toFixed(1)} ${unit}`;
+}
+
+// ── 单位换算 ──
+const _UNIT_WEIGHT = new Set(['克','千克','斤','g','kg']);
+const _UNIT_VOLUME = new Set(['毫升','升','ml','L']);
+// 其余都视为"件数单位"（个/袋/瓶/包/条/块/片/支/卷/头/瓣/盒/罐/份/束/勺）
+
+function _toBase(qty, unit) {
+  // Returns [baseValue, unitType]
+  switch (unit) {
+    case '千克': case 'kg': return [qty * 1000, 'g'];
+    case '斤':              return [qty * 500,  'g'];
+    case '克':  case 'g':  return [qty,         'g'];
+    case '升':  case 'L':  return [qty * 1000, 'ml'];
+    case '毫升': case 'ml': return [qty,        'ml'];
+    default: return [qty, unit]; // count unit keeps its own type
+  }
+}
+
+// Returns { status:'ok'|'low'|'missing'|'mismatch', ratio, invUnit }
+// 'mismatch' = units are incompatible (e.g. 克 vs 袋) — we have it but can't judge quantity
+function compareQty(invQty, invUnit, recQty, recUnit) {
+  if (!invQty && invQty !== 0) return { status: 'missing', ratio: 0, invUnit };
+  const [baseInv, typeInv] = _toBase(invQty, invUnit);
+  const [baseRec, typeRec] = _toBase(recQty, recUnit);
+  if (typeInv !== typeRec) {
+    // Different unit categories → can't compare numbers
+    return { status: 'mismatch', ratio: null, invUnit };
+  }
+  const ratio = baseRec > 0 ? baseInv / baseRec : 1;
+  if (ratio >= 1)   return { status: 'ok',  ratio, invUnit };
+  if (ratio > 0)    return { status: 'low', ratio, invUnit };
+  return { status: 'missing', ratio: 0, invUnit };
+}
+
+// ==================== AI SERVICE ====================
+const AI = {
+  async call(systemPrompt, userMsg, maxTokens = 4096) {
+    const key = (State.settings.claudeApiKey || '').replace(/[^\x20-\x7E]/g, '');
+    if (!key) { showToast('请先在设置页填入 API Key', 'warn'); return null; }
+    const provider = State.settings.provider || 'gemini';
+    try {
+      if (provider === 'gemini') {
+        const model = State.settings.model || 'gemini-2.0-flash';
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            contents: [{ role: 'user', parts: [{ text: userMsg }] }],
+            generationConfig: { maxOutputTokens: maxTokens },
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error?.message || `HTTP ${res.status}`);
+        }
+        const data = await res.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      } else {
+        // Claude
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'x-api-key': key,
+            'anthropic-version': '2023-06-01',
+            'content-type': 'application/json',
+            'anthropic-dangerous-direct-browser-access': 'true',
+          },
+          body: JSON.stringify({
+            model: State.settings.model || 'claude-haiku-4-5-20251001',
+            max_tokens: maxTokens,
+            system: systemPrompt,
+            messages: [{ role: 'user', content: userMsg }],
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error?.message || `HTTP ${res.status}`);
+        }
+        const data = await res.json();
+        return data.content?.[0]?.text || '';
+      }
+    } catch(e) {
+      showToast(`AI 错误: ${e.message}`, 'error');
+      return null;
+    }
+  },
+
+  invCtx() {
+    return State.inventory.map(i => `${i.nameCn}(${i.nameEn}): ${i.quantity}${i.unit}`).join(', ') || '无库存';
+  },
+
+  async inventoryInput() {
+    const input = document.getElementById('inv-ai-input').value.trim();
+    if (!input) { showToast('请输入内容', 'warn'); return; }
+    showLoading('AI 识别食材中...');
+    const sys = `你是一个家庭库存管理助手。从用户的描述中提取食材/物品信息并返回JSON数组。
+可用分类: ${Object.entries(getCategories()).map(([k,v])=>`${k}(${v.cn})`).join(', ')}
+可用单位: 个, 克, 千克, 毫升, 升, 袋, 瓶, 盒, 包, 罐, 条, 块, 束, 片, 支, 卷, 头
+只返回JSON，不要解释。格式: [{"nameCn":"番茄","nameEn":"Tomato","quantity":2,"unit":"个","category":"vegetables"}]`;
+    const text = await this.call(sys, input);
+    hideLoading();
+    if (!text) return;
+    const items = extractJSON(text);
+    if (!items || !Array.isArray(items) || items.length === 0) { showToast(`AI未能识别，原文: ${(text||'').slice(0,60)}`, 'warn'); return; }
+    Modal.showEditableInventoryConfirm(items);
+    document.getElementById('inv-ai-input').value = '';
+  },
+
+  async cartSuggest() {
+    const input = document.getElementById('cart-ai-input').value.trim();
+    const prompt = input || '根据我的当前库存，推荐我需要补充购买的食材和调料';
+    showLoading('AI 生成购物建议...');
+    const sys = `你是购物助手，用户在比利时鲁汶（Leuven），附近有Colruyt、Carrefour、Lidl（大黑狮）。
+当前库存: ${this.invCtx()}
+当前购物车: ${State.cart.map(i=>i.nameCn).join(', ')||'空'}
+根据用户需求推荐购物清单，尽量标注推荐商店。
+只返回JSON数组，格式: [{"nameCn":"番茄","nameEn":"Tomato","quantity":2,"unit":"个","category":"vegetables","store":"colruyt","notes":""}]
+可用商店: colruyt, carrefour, lidl, other
+只返回JSON，不要解释。`;
+    const text = await this.call(sys, prompt);
+    hideLoading();
+    if (!text) return;
+    const items = extractJSON(text);
+    if (!items || !Array.isArray(items) || items.length === 0) { showToast('AI暂无建议', 'info'); return; }
+    Modal.showEditableCartConfirm(items);
+    document.getElementById('cart-ai-input').value = '';
+  },
+
+  async recipeRecommend() {
+    showLoading('AI 分析库存，推荐食谱...');
+    const invList = this.invCtx();
+    const sys = `You are a cooking assistant for a Chinese student couple in Leuven, Belgium. They have access to Colruyt, Carrefour, and Lidl.
+Current inventory: ${invList}
+Suggest 2-3 recipes they can make NOW (prioritize ingredients already in stock) or with minimal extra shopping. Prefer Chinese home-cooking.
+IMPORTANT: Respond with ONLY a valid JSON array, no explanation, no markdown.
+CRITICAL: Do NOT wrap in markdown code fences. Output raw JSON only.
+Format: [{"nameCn":"菜名","nameEn":"Dish","description":"描述","servings":2,"tags":["中式"],"ingredients":[{"nameCn":"番茄","nameEn":"Tomato","quantity":2,"unit":"个","optional":false}],"steps":["步骤1"]}]`;
+    const text = await this.call(sys, 'Recommend recipes based on my current inventory.', 8192);
+    hideLoading();
+    if (!text) return;
+    const recipes = extractJSON(text);
+    if (!recipes || !Array.isArray(recipes) || recipes.length === 0) {
+      showToast(`AI返回内容无法解析，原始: ${(text||'').slice(0,80)}...`, 'warn');
+      return;
+    }
+    Modal.showEditableRecipesConfirm(recipes);
+  },
+
+  async recipeInput() {
+    const input = document.getElementById('recipe-ai-input').value.trim();
+    if (!input) { showToast('请输入内容', 'warn'); return; }
+    showLoading('AI 生成食谱...');
+    const sys = `你是厨师助手。根据用户的描述生成一个完整食谱。
+只返回一个JSON对象，格式: {"nameCn":"菜名","nameEn":"Dish Name","description":"描述","servings":2,"tags":["中式"],"ingredients":[{"nameCn":"番茄","nameEn":"Tomato","quantity":2,"unit":"个","optional":false}],"steps":["步骤1","步骤2"]}
+只返回JSON，不要解释。不要用代码块包裹，直接输出JSON。`;
+    const text = await this.call(sys, input, 8192);
+    hideLoading();
+    if (!text) return;
+    let recipe = extractJSON(text);
+    if (Array.isArray(recipe)) recipe = recipe[0];
+    if (!recipe || !recipe.nameCn) { showToast(`AI生成失败，原文: ${(text||'').slice(0,60)}`, 'warn'); return; }
+    Modal.showEditableRecipesConfirm([recipe]);
+    document.getElementById('recipe-ai-input').value = '';
+  },
+};
+
+// ==================== INVENTORY ====================
+const Inventory = {
+  add(item) {
+    // Check for duplicate by name
+    const existing = findInInventory(item.nameCn, item.nameEn);
+    if (existing) {
+      existing.quantity = parseFloat(existing.quantity) + parseFloat(item.quantity || 0);
+      existing.lastUpdated = new Date().toISOString();
+    } else {
+      item.id = uid();
+      item.lastUpdated = new Date().toISOString();
+      State.inventory.push(item);
+    }
+    State.save(['inventory']);
+    this.render();
+  },
+
+  update(id, data) {
+    const idx = State.inventory.findIndex(i => i.id === id);
+    if (idx >= 0) { State.inventory[idx] = { ...State.inventory[idx], ...data, lastUpdated: new Date().toISOString() }; }
+    State.save(['inventory']);
+    this.render();
+  },
+
+  remove(id) {
+    State.inventory = State.inventory.filter(i => i.id !== id);
+    State.save(['inventory']);
+    this.render();
+  },
+
+  adjustQty(id, delta) {
+    const item = State.inventory.find(i => i.id === id);
+    if (!item) return;
+    item.quantity = Math.max(0, parseFloat(item.quantity) + delta);
+    item.lastUpdated = new Date().toISOString();
+    State.save(['inventory']);
+    this.render();
+  },
+
+  render() {
+    const search = (document.getElementById('inv-search')?.value || '').toLowerCase();
+    const catFilter = document.getElementById('inv-cat-filter')?.value || '';
+
+    // Fill category filter dropdown (always refresh for language changes)
+    const catSel = document.getElementById('inv-cat-filter');
+    if (catSel) {
+      const prevVal = catFilter;
+      catSel.innerHTML = `<option value="">${t('allCats')}</option>`;
+      Object.entries(getCategories()).forEach(([k,v]) => {
+        const opt = document.createElement('option'); opt.value = k; opt.textContent = `${v.icon} ${catName(k)}`;
+        catSel.appendChild(opt);
+      });
+      catSel.value = prevVal;
+    }
+
+    const filtered = State.inventory.filter(item => {
+      const matchSearch = !search || item.nameCn?.toLowerCase().includes(search) || item.nameEn?.toLowerCase().includes(search);
+      const matchCat = !catFilter || item.category === catFilter;
+      return matchSearch && matchCat;
+    });
+
+    // Group by category
+    const grouped = {};
+    filtered.forEach(item => {
+      const cat = item.category || 'other';
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(item);
+    });
+
+    const el = document.getElementById('inventory-list');
+    if (!el) return;
+
+    if (filtered.length === 0) {
+      el.innerHTML = `<div class="text-center py-12 text-gray-400"><div class="text-4xl mb-2">📦</div><p>库存为空，添加物品或使用AI录入</p></div>`;
+      return;
+    }
+
+    el.innerHTML = Object.entries(grouped).map(([cat, items]) => {
+      const cats = getCategories();
+      const c = cats[cat] || { cn: cat, en: cat, fr: cat, icon: '📦' };
+      const lowCount = items.filter(i => i.minStock > 0 && i.quantity <= i.minStock).length;
+      return `
+      <div class="mb-4">
+        <div class="flex items-center gap-2 mb-2 text-sm font-semibold text-gray-500 dark:text-gray-400">
+          <span>${c.icon}</span><span>${catName(cat)}</span>
+          ${lowCount > 0 ? `<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full">${lowCount} ${t('lowStock')}</span>` : ''}
+        </div>
+        <div class="space-y-2">
+          ${items.map(item => this.renderItem(item)).join('')}
+        </div>
+      </div>`;
+    }).join('');
+  },
+
+  renderItem(item) {
+    const cats = getCategories();
+    const unlimited = cats[item.category]?.unlimited;
+    const isLow = !unlimited && item.minStock > 0 && item.quantity <= item.minStock;
+    const qtyDisplay = unlimited
+      ? `<span class="text-lg font-bold text-purple-500 min-w-12 text-center">♾️</span>`
+      : `<button onclick="Inventory.adjustQty('${item.id}',-1)" class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 font-bold">−</button>
+        <span class="text-sm font-medium min-w-12 text-center">${formatQty(item.quantity, item.unit)}</span>
+        <button onclick="Inventory.adjustQty('${item.id}',1)" class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 font-bold">+</button>`;
+    return `
+    <div class="item-card bg-white dark:bg-gray-800 rounded-xl p-3 border ${isLow ? 'border-red-300 dark:border-red-700' : unlimited ? 'border-purple-200 dark:border-purple-700' : 'border-gray-200 dark:border-gray-700'} flex items-center gap-3">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="font-medium name-cn">${item.nameCn}</span>
+          ${item.nameEn ? `<span class="text-xs text-gray-400 name-en">${item.nameEn}</span>` : ''}
+          ${isLow ? '<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">低库存</span>' : ''}
+          ${unlimited ? '<span class="text-xs bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded">常备</span>' : ''}
+        </div>
+        <div class="flex items-center gap-1 flex-wrap mt-0.5">
+          <select onchange="Inventory.changeCategory('${item.id}',this.value)" class="text-xs bg-gray-100 dark:bg-gray-700 border-0 rounded px-1 py-0.5 text-gray-500 dark:text-gray-400 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-400">
+            ${catOptions(item.category)}
+          </select>
+          ${item.notes ? `<span class="text-xs text-gray-400">${item.notes}</span>` : ''}
+        </div>
+      </div>
+      <div class="flex items-center gap-1 shrink-0">${qtyDisplay}</div>
+      <div class="flex items-center gap-1 shrink-0">
+        <button onclick="Modal.showEditInventory('${item.id}')" class="text-xs text-blue-500 hover:text-blue-700 px-1">✏️</button>
+        ${!unlimited ? `<button onclick="Inventory.addToCart('${item.id}')" class="text-xs text-green-500 hover:text-green-700 px-1" title="加入购物车">🛒</button>` : ''}
+        <button onclick="if(confirm('删除？'))Inventory.remove('${item.id}')" class="text-xs text-red-400 hover:text-red-600 px-1">🗑</button>
+      </div>
+    </div>`;
+  },
+
+  changeCategory(id, newCat) {
+    const item = State.inventory.find(i => i.id === id);
+    if (!item || item.category === newCat) return;
+    item.category = newCat;
+    item.lastUpdated = new Date().toISOString();
+    State.save(['inventory']);
+    this.render();
+    showToast(`分类已改为 ${catLabel(newCat)}`, 'success');
+  },
+
+  addToCart(id) {
+    const item = State.inventory.find(i => i.id === id);
+    if (!item) return;
+    Cart.addItem({ nameCn: item.nameCn, nameEn: item.nameEn, quantity: 1, unit: item.unit, category: item.category, store: item.store || '' });
+    showToast(`${item.nameCn} 已加入购物车`, 'success');
+  },
+};
+
+// ==================== CART ====================
+const Cart = {
+  groupBy: 'store',
+
+  setGroupBy(mode) {
+    this.groupBy = mode;
+    document.getElementById('cart-group-store').className = mode === 'store'
+      ? 'text-xs px-3 py-1 rounded-full bg-blue-600 text-white'
+      : 'text-xs px-3 py-1 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300';
+    document.getElementById('cart-group-category').className = mode === 'category'
+      ? 'text-xs px-3 py-1 rounded-full bg-blue-600 text-white'
+      : 'text-xs px-3 py-1 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300';
+    this.render();
+  },
+
+  addItem(item) {
+    item.id = uid();
+    item.checked = false;
+    item.addedAt = new Date().toISOString();
+    State.cart.push(item);
+    State.save(['cart']);
+    this.render();
+  },
+
+  update(id, data) {
+    const idx = State.cart.findIndex(i => i.id === id);
+    if (idx >= 0) State.cart[idx] = { ...State.cart[idx], ...data };
+    State.save(['cart']);
+    this.render();
+  },
+
+  remove(id) {
+    State.cart = State.cart.filter(i => i.id !== id);
+    State.save(['cart']);
+    this.render();
+  },
+
+  toggleBought(id) {
+    const item = State.cart.find(i => i.id === id);
+    if (item) { item.checked = !item.checked; State.save(['cart']); this.render(); }
+  },
+
+  moveToInventory(id) {
+    const item = State.cart.find(i => i.id === id);
+    if (!item) return;
+    Inventory.add({ nameCn: item.nameCn, nameEn: item.nameEn, quantity: item.quantity, unit: item.unit, category: item.category || 'other', minStock: 0, notes: item.notes || '', store: item.store || '' });
+    this.remove(id);
+    showToast(`${item.nameCn} 已入库`, 'success');
+  },
+
+  confirmMoveToInventory(id) {
+    const item = State.cart.find(i => i.id === id);
+    if (!item) return;
+    // 单件入库弹窗，可修改数量和分类
+    Modal.showAIConfirm(
+      `📥 确认入库：${item.nameCn}`,
+      [{ id, qty: item.quantity, unit: item.unit, cat: item.category || 'other' }],
+      'cart-single-inventory',
+      `<div class="space-y-3">
+        <div class="flex items-center gap-3">
+          <span class="font-medium name-cn">${item.nameCn}</span>
+          ${item.nameEn ? `<span class="text-gray-400 text-sm name-en">${item.nameEn}</span>` : ''}
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-sm text-gray-500 mb-1 block">入库数量</label>
+            <input type="number" id="single-inv-qty" value="${item.quantity}" min="0" step="0.1" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
+          </div>
+          <div>
+            <label class="text-sm text-gray-500 mb-1 block">单位</label>
+            <input type="text" id="single-inv-unit" value="${item.unit}" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
+          </div>
+        </div>
+        <div>
+          <label class="text-sm text-gray-500 mb-1 block">分类</label>
+          <select id="single-inv-cat" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none">
+            ${catOptions(item.category||'other')}
+          </select>
+        </div>
+        <p class="text-xs text-gray-400">入库后此物品将从购物车移除</p>
+      </div>`
+    );
+    // 覆盖确认按钮行为
+    document.getElementById('ai-confirm-btn').onclick = () => {
+      const qty = parseFloat(document.getElementById('single-inv-qty')?.value) || item.quantity;
+      const unit = document.getElementById('single-inv-unit')?.value || item.unit;
+      const cat = document.getElementById('single-inv-cat')?.value || item.category || 'other';
+      Inventory.add({ nameCn: item.nameCn, nameEn: item.nameEn, quantity: qty, unit, category: cat, minStock: 0, notes: item.notes || '', store: item.store || '' });
+      Cart.remove(id);
+      Modal.closeAIConfirm();
+      showToast(`${item.nameCn} 已入库`, 'success');
+    };
+    document.getElementById('ai-confirm-btn').textContent = '✅ 确认入库';
+  },
+
+  moveAllBoughtToInventory() {
+    const bought = State.cart.filter(i => i.checked);
+    if (bought.length === 0) { showToast('没有已购买的物品', 'info'); return; }
+    bought.forEach(item => {
+      Inventory.add({ nameCn: item.nameCn, nameEn: item.nameEn, quantity: item.quantity, unit: item.unit, category: item.category || 'other', minStock: 0, notes: item.notes || '', store: item.store || '' });
+    });
+    State.cart = State.cart.filter(i => !i.checked);
+    State.save(['cart']);
+    this.render();
+    showToast(`${bought.length} 件物品已入库`, 'success');
+  },
+
+  render() {
+    const el = document.getElementById('cart-list');
+    if (!el) return;
+    const active = State.cart.filter(i => !i.checked);
+    const done = State.cart.filter(i => i.checked);
+    if (State.cart.length === 0) {
+      el.innerHTML = `<div class="text-center py-12 text-gray-400"><div class="text-4xl mb-2">🛒</div><p>购物车为空，从食谱或库存添加物品</p></div>`;
+      return;
+    }
+    let html = '';
+    if (this.groupBy === 'store') {
+      const groups = {};
+      active.forEach(item => { const k = item.store || 'none'; if(!groups[k]) groups[k]=[]; groups[k].push(item); });
+      const order = ['colruyt','carrefour','lidl','other','none'];
+      order.forEach(k => {
+        if (!groups[k]) return;
+        const label = k === 'none' ? '📋 未指定商店' : `${STORES[k]?.emoji||''} ${STORES[k]?.name||k}`;
+        html += `<div class="mb-4"><div class="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-2">${label}<span class="text-xs font-normal bg-gray-100 dark:bg-gray-700 px-1.5 rounded">${groups[k].length}</span></div><div class="space-y-2">${groups[k].map(i=>this.renderItem(i)).join('')}</div></div>`;
+      });
+    } else {
+      const groups = {};
+      active.forEach(item => { const k = item.category || 'other'; if(!groups[k]) groups[k]=[]; groups[k].push(item); });
+      Object.entries(groups).forEach(([k,items]) => {
+        const c = getCategories()[k] || { cn: k, icon: '📦' };
+        html += `<div class="mb-4"><div class="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">${c.icon} ${catName(k)}</div><div class="space-y-2">${items.map(i=>this.renderItem(i)).join('')}</div></div>`;
+      });
+    }
+    if (done.length > 0) {
+      html += `<div class="mt-4"><div class="text-sm font-semibold text-gray-400 mb-2">✅ 已购买 (${done.length})</div><div class="space-y-2">${done.map(i=>this.renderItem(i)).join('')}</div></div>`;
+    }
+    el.innerHTML = html;
+  },
+
+  renderItem(item) {
+    return `
+    <div class="item-card bg-white dark:bg-gray-800 rounded-xl p-3 border border-gray-200 dark:border-gray-700 flex items-center gap-3 ${item.checked?'checked-item':''}">
+      <input type="checkbox" ${item.checked?'checked':''} onchange="Cart.toggleBought('${item.id}')" class="w-5 h-5 rounded accent-blue-600 shrink-0 cursor-pointer" />
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <label class="font-medium cursor-pointer name-cn" onclick="Cart.toggleBought('${item.id}')">${item.nameCn}</label>
+          ${item.nameEn ? `<span class="text-xs text-gray-400 name-en">${item.nameEn}</span>` : ''}
+          ${storeBadge(item.store)}
+        </div>
+        <div class="text-sm text-gray-500 dark:text-gray-400">${formatQty(item.quantity, item.unit)} · ${catLabel(item.category)}</div>
+        ${item.notes ? `<div class="text-xs text-gray-400">${item.notes}</div>` : ''}
+      </div>
+      <div class="flex items-center gap-1 shrink-0">
+        <button onclick="Cart.confirmMoveToInventory('${item.id}')" class="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded-lg hover:bg-green-200 dark:hover:bg-green-800" title="入库">📥入库</button>
+        <button onclick="Modal.showEditCart('${item.id}')" class="text-xs text-blue-500 hover:text-blue-700 px-1">✏️</button>
+        <button onclick="Cart.remove('${item.id}')" class="text-xs text-red-400 hover:text-red-600 px-1">🗑</button>
+      </div>
+    </div>`;
+  },
+};
+
+// ==================== RECIPES ====================
+const Recipes = {
+  add(recipe) {
+    recipe.id = uid();
+    recipe.createdAt = new Date().toISOString();
+    State.recipes.push(recipe);
+    State.save(['recipes']);
+    this.render();
+  },
+
+  update(id, data) {
+    const idx = State.recipes.findIndex(r => r.id === id);
+    if (idx >= 0) State.recipes[idx] = { ...State.recipes[idx], ...data };
+    State.save(['recipes']);
+    this.render();
+  },
+
+  remove(id) {
+    State.recipes = State.recipes.filter(r => r.id !== id);
+    State.save(['recipes']);
+    this.render();
+  },
+
+  checkIngredients(recipe) {
+    const cats = getCategories();
+    return (recipe.ingredients || []).map(ing => {
+      const inv = findInInventory(ing.nameCn, ing.nameEn);
+      let status = 'missing', invQty = 0, invUnit = ing.unit;
+      if (inv) {
+        const unlimited = cats[inv.category]?.unlimited;
+        invQty = inv.quantity;
+        invUnit = inv.unit;
+        if (unlimited) {
+          status = 'ok'; invQty = Infinity;
+        } else {
+          const cmp = compareQty(inv.quantity, inv.unit, ing.quantity, ing.unit);
+          status = cmp.status;
+        }
+      }
+      return { ...ing, status, invQty, invUnit };
+    });
+  },
+
+  addMissingToCart(id) {
+    const recipe = State.recipes.find(r => r.id === id);
+    if (!recipe) return;
+    const checked = this.checkIngredients(recipe);
+    const missing = checked.filter(i => i.status !== 'ok');
+    if (missing.length === 0) { showToast('库存充足，无需购买！', 'success'); return; }
+    const statusIcon = { low: '⚠️', missing: '❌', mismatch: '❓' };
+    Modal.showAIConfirm(
+      `🛒 ${recipe.nameCn} — 缺货清单`,
+      { recipeId: id, missing },
+      'recipe-missing-cart',
+      `<div class="space-y-2">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-sm text-gray-500">选择要加入购物车的食材：</span>
+          <label class="flex items-center gap-1 text-sm cursor-pointer"><input type="checkbox" id="select-all-missing" checked onchange="document.querySelectorAll('.missing-ing-cb').forEach(cb=>cb.checked=this.checked)" class="accent-blue-600" /> 全选</label>
+        </div>
+        ${missing.map((ing, idx) => {
+          const isMismatch = ing.status === 'mismatch';
+          // For same-unit low: show actual shortfall. For mismatch or missing: show full needed qty.
+          const needed = (!isMismatch && ing.invQty > 0 && ing.invUnit === ing.unit)
+            ? Math.max(ing.quantity - ing.invQty, 0.1)
+            : ing.quantity;
+          const haveStr = ing.invQty > 0
+            ? isMismatch
+              ? `<span class="text-orange-500">已有 ${ing.invQty}${ing.invUnit}（单位不同，请确认）</span>`
+              : `已有 ${ing.invQty}${ing.invUnit}`
+            : '';
+          return `<label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+            <input type="checkbox" class="missing-ing-cb w-4 h-4 accent-blue-600" data-idx="${idx}" ${isMismatch ? '' : 'checked'} />
+            <span class="flex-1">
+              <span class="font-medium">${statusIcon[ing.status]||'❌'} ${ing.nameCn}</span>
+              ${ing.optional ? '<span class="text-xs text-gray-400 ml-1">可选</span>' : ''}
+              ${haveStr ? `<span class="block text-xs mt-0.5 text-gray-400">${haveStr}</span>` : ''}
+            </span>
+            <span class="text-sm text-gray-500 shrink-0">需 ${needed}${ing.unit}</span>
+          </label>`;
+        }).join('')}
+      </div>`
+    );
+    document.getElementById('ai-confirm-btn').textContent = '🛒 加入购物车';
+    document.getElementById('ai-confirm-btn').onclick = () => {
+      const cbs = document.querySelectorAll('.missing-ing-cb');
+      let count = 0;
+      cbs.forEach(cb => {
+        if (!cb.checked) return;
+        const ing = missing[parseInt(cb.dataset.idx)];
+        const isMismatch = ing.status === 'mismatch';
+        const needed = (!isMismatch && ing.invQty > 0 && ing.invUnit === ing.unit)
+          ? Math.max(ing.quantity - ing.invQty, 0.1)
+          : ing.quantity;
+        Cart.addItem({ nameCn: ing.nameCn, nameEn: ing.nameEn || '', quantity: needed, unit: ing.unit, category: ing.category || 'other', store: State.settings.preferredStore || '', fromRecipeId: id });
+        count++;
+      });
+      Modal.closeAIConfirm();
+      if (count > 0) { showToast(`${count} 种食材已加入购物车`, 'success'); App.switchTab('cart'); }
+    };
+  },
+
+  render() {
+    const el = document.getElementById('recipes-list');
+    if (!el) return;
+    if (State.recipes.length === 0) {
+      el.innerHTML = `<div class="col-span-2 text-center py-12 text-gray-400"><div class="text-4xl mb-2">🍳</div><p>还没有食谱，点击添加或让AI推荐</p></div>`;
+      return;
+    }
+    el.innerHTML = State.recipes.map(recipe => {
+      const checked = this.checkIngredients(recipe);
+      const total = checked.length;
+      const okCount = checked.filter(i => i.status === 'ok').length;
+      const mismatchCount = checked.filter(i => i.status === 'mismatch' && !i.optional).length;
+      const pct = total > 0 ? Math.round(okCount / total * 100) : 0;
+      const missing = checked.filter(i => (i.status === 'missing' || i.status === 'low') && !i.optional).length;
+      const tags = (recipe.tags || []).map(t => `<span class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">${t}</span>`).join('');
+      return `
+      <div class="item-card bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+        <div class="flex items-start justify-between gap-2 mb-2">
+          <div>
+            <div class="font-semibold name-cn">${recipe.nameCn}</div>
+            ${recipe.nameEn ? `<div class="text-xs text-gray-400 name-en">${recipe.nameEn}</div>` : ''}
+          </div>
+          <div class="flex gap-1 shrink-0">
+            <button onclick="Modal.showEditRecipe('${recipe.id}')" class="text-xs text-blue-500 hover:text-blue-700">✏️</button>
+            <button onclick="if(confirm('删除？'))Recipes.remove('${recipe.id}')" class="text-xs text-red-400 hover:text-red-600">🗑</button>
+          </div>
+        </div>
+        ${recipe.description ? `<p class="text-sm text-gray-500 dark:text-gray-400 mb-2">${recipe.description}</p>` : ''}
+        ${tags ? `<div class="flex flex-wrap gap-1 mb-2">${tags}</div>` : ''}
+        ${total > 0 ? `
+        <div class="mb-2">
+          <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
+            <span>食材备齐度</span><span>${okCount}/${total}</span>
+          </div>
+          <div class="recipe-availability-bar"><div class="recipe-availability-fill" style="width:${pct}%"></div></div>
+        </div>` : ''}
+        <div class="flex gap-2 mt-3">
+          <button onclick="Modal.showRecipeDetail('${recipe.id}')" class="flex-1 text-sm py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">查看详情</button>
+          <button onclick="Recipes.addMissingToCart('${recipe.id}')" class="flex-1 text-sm py-1.5 ${missing > 0 ? 'bg-orange-500 text-white hover:bg-orange-600' : mismatchCount > 0 ? 'bg-yellow-500 text-white hover:bg-yellow-600' : 'bg-green-500 text-white hover:bg-green-600'} rounded-lg">
+            ${missing > 0 ? `🛒 缺${missing}样` : mismatchCount > 0 ? `❓ ${mismatchCount}项待确认` : '✅ 可以做'}
+          </button>
+        </div>
+      </div>`;
+    }).join('');
+  },
+};
+
+// ==================== HOUSEHOLD ====================
+const Household = {
+  init() {
+    if (State.household.length === 0) {
+      State.household = HOUSEHOLD_DEFAULTS.map(d => ({ ...d, id: uid(), quantity: d.minStock + 1 }));
+      State.save(['household']);
+    }
+  },
+
+  adjustQty(id, delta) {
+    const item = State.household.find(i => i.id === id);
+    if (!item) return;
+    item.quantity = Math.max(0, (parseFloat(item.quantity) || 0) + delta);
+    State.save(['household']);
+    this.render();
+  },
+
+  remove(id) {
+    State.household = State.household.filter(i => i.id !== id);
+    State.save(['household']);
+    this.render();
+  },
+
+  addToCart(id) {
+    const item = State.household.find(i => i.id === id);
+    if (!item) return;
+    Cart.addItem({ nameCn: item.nameCn, nameEn: item.nameEn, quantity: item.minStock || 1, unit: item.unit, category: item.category, store: State.settings.preferredStore || '' });
+    showToast(`${item.nameCn} 已加入购物车`, 'success');
+  },
+
+  addAllLowToCart() {
+    const low = State.household.filter(i => i.minStock > 0 && i.quantity <= i.minStock);
+    if (low.length === 0) { showToast('没有低库存物品', 'info'); return; }
+    low.forEach(item => Cart.addItem({ nameCn: item.nameCn, nameEn: item.nameEn, quantity: item.minStock, unit: item.unit, category: item.category, store: State.settings.preferredStore || '' }));
+    showToast(`${low.length} 件低库存物品已加入购物车`, 'success');
+    App.switchTab('cart');
+  },
+
+  render() {
+    const el = document.getElementById('household-list');
+    const lowEl = document.getElementById('household-low-stock');
+    if (!el) return;
+    const low = State.household.filter(i => i.minStock > 0 && i.quantity <= i.minStock);
+    if (low.length > 0) {
+      lowEl.innerHTML = `<div class="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl p-3 mb-4">
+        <div class="flex items-center justify-between mb-2">
+          <span class="font-semibold text-red-700 dark:text-red-400">⚠️ 低库存提醒 (${low.length})</span>
+          <button onclick="Household.addAllLowToCart()" class="text-xs bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700">全部加入购物车</button>
+        </div>
+        <div class="flex flex-wrap gap-1">${low.map(i=>`<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 px-2 py-1 rounded-full">${i.nameCn}: ${i.quantity}${i.unit}</span>`).join('')}</div>
+      </div>`;
+    } else {
+      lowEl.innerHTML = '<div class="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-xl p-3 mb-4 text-green-700 dark:text-green-400 text-sm">✅ 所有家居用品库存充足</div>';
+    }
+    const groups = {};
+    State.household.forEach(item => {
+      const cat = item.category || 'other';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(item);
+    });
+    el.innerHTML = Object.entries(groups).map(([cat, items]) => {
+      const c = getCategories()[cat] || { cn: cat, icon: '📦' };
+      return `<div class="mb-4">
+        <div class="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">${c.icon} ${catName(cat)}</div>
+        <div class="space-y-2">${items.map(item => {
+          const isLow = item.minStock > 0 && item.quantity <= item.minStock;
+          return `<div class="item-card bg-white dark:bg-gray-800 rounded-xl p-3 border ${isLow?'border-red-300 dark:border-red-700':'border-gray-200 dark:border-gray-700'} flex items-center gap-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="font-medium name-cn">${item.nameCn}</span>
+                <span class="text-xs text-gray-400 name-en">${item.nameEn||''}</span>
+                ${isLow?'<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">低库存</span>':''}
+              </div>
+              ${item.minStock > 0 ? `<div class="text-xs text-gray-400">最低库存: ${item.minStock}${item.unit}</div>` : ''}
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <button onclick="Household.adjustQty('${item.id}',-1)" class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 flex items-center justify-center font-bold">−</button>
+              <span class="text-sm font-medium min-w-12 text-center">${formatQty(item.quantity, item.unit)}</span>
+              <button onclick="Household.adjustQty('${item.id}',1)" class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 flex items-center justify-center font-bold">+</button>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <button onclick="Household.addToCart('${item.id}')" class="text-xs text-green-500 hover:text-green-700 px-1" title="加入购物车">🛒</button>
+              <button onclick="if(confirm('删除？'))Household.remove('${item.id}')" class="text-xs text-red-400 hover:text-red-600 px-1">🗑</button>
+            </div>
+          </div>`;
+        }).join('')}</div>
+      </div>`;
+    }).join('');
+  },
+};
+
+// ==================== AI CHAT ====================
+const AIChat = {
+  messages: [],
+
+  clear() {
+    this.messages = [];
+    document.getElementById('ai-chat-messages').innerHTML = '';
+  },
+
+  quickSend(text) {
+    document.getElementById('ai-chat-input').value = text;
+    this.send();
+  },
+
+  async send() {
+    const input = document.getElementById('ai-chat-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+    if (!State.settings.claudeApiKey) { showToast('请先在设置页填入 API Key', 'warn'); return; }
+    input.value = '';
+    this.appendMessage('user', msg);
+    const sys = `你是家庭购物和烹饪助手。用户是在比利时鲁汶的中国留学生情侣，附近有Colruyt、Carrefour、Lidl（大黑狮）。
+当前库存: ${AI.invCtx()}
+购物车: ${State.cart.filter(i=>!i.checked).map(i=>i.nameCn).join(', ')||'空'}
+请用中文回答，简洁实用。如果有具体物品建议，可以在最后用JSON标签包裹: <action type="addToCart">[{"nameCn":"...","quantity":1,"unit":"个","category":"vegetables","store":"colruyt"}]</action>`;
+    this.appendMessage('ai', '...', true);
+    const text = await AI.call(sys, msg);
+    // Remove typing indicator
+    const msgs = document.getElementById('ai-chat-messages');
+    const typing = msgs.querySelector('.typing-indicator');
+    if (typing) typing.remove();
+    if (!text) return;
+    // Parse action tags
+    const cleanText = text.replace(/<action[^>]*>[\s\S]*?<\/action>/g, '').trim();
+    const actionMatch = text.match(/<action type="addToCart">([\s\S]*?)<\/action>/);
+    let actionHtml = '';
+    if (actionMatch) {
+      const items = extractJSON(actionMatch[1]);
+      if (items && items.length > 0) {
+        window._aiChatActionItems = items;
+        actionHtml = `<div class="mt-2"><button onclick="AIChat.applyCartAction()" class="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700">🛒 加入购物车 (${items.length}项)</button></div>`;
+      }
+    }
+    this.appendMessage('ai', cleanText, false, actionHtml);
+    msgs.scrollTop = msgs.scrollHeight;
+  },
+
+  applyCartAction() {
+    const items = window._aiChatActionItems;
+    if (!items) return;
+    items.forEach(item => Cart.addItem({ nameCn: item.nameCn, nameEn: item.nameEn || '', quantity: item.quantity || 1, unit: item.unit || '个', category: item.category || 'other', store: item.store || '', notes: '' }));
+    showToast(`${items.length} 件物品已加入购物车`, 'success');
+    window._aiChatActionItems = null;
+  },
+
+  appendMessage(role, text, typing = false, actionHtml = '') {
+    const msgs = document.getElementById('ai-chat-messages');
+    const div = document.createElement('div');
+    div.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+    if (typing) div.classList.add('typing-indicator');
+    const bubble = role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai';
+    div.innerHTML = `<div class="${bubble} px-4 py-2.5 max-w-xs sm:max-w-sm text-sm">${typing ? '<span class="spin inline-block">⚙️</span> 思考中...' : text.replace(/\n/g,'<br>')}${actionHtml}</div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  },
+};
+
+// ==================== SETTINGS ====================
+const Settings = {
+  GEMINI_MODELS: [
+    { value: 'gemini-1.5-flash-latest', label: 'Gemini 1.5 Flash (稳定可用 ✅)' },
+    { value: 'gemini-1.5-pro-latest', label: 'Gemini 1.5 Pro (稳定可用 ✅)' },
+    { value: 'gemini-2.0-flash-001', label: 'Gemini 2.0 Flash (试试)' },
+    { value: 'custom', label: '✏️ 自定义模型 ID...' },
+  ],
+  CLAUDE_MODELS: [
+    { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (快速)' },
+    { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6 (平衡)' },
+  ],
+
+  onProviderChange() {
+    const provider = document.getElementById('settings-provider')?.value;
+    this._updateModelOptions(provider);
+    this._updateKeyHint(provider);
+  },
+
+  _updateModelOptions(provider) {
+    const modelSel = document.getElementById('settings-model');
+    if (!modelSel) return;
+    const list = provider === 'gemini' ? this.GEMINI_MODELS : this.CLAUDE_MODELS;
+    modelSel.innerHTML = list.map(m => `<option value="${m.value}">${m.label}</option>`).join('');
+    modelSel.value = list[0].value;
+    this.onModelChange();
+  },
+
+  onModelChange() {
+    const val = document.getElementById('settings-model')?.value;
+    const customInput = document.getElementById('settings-model-custom');
+    if (!customInput) return;
+    if (val === 'custom') {
+      customInput.classList.remove('hidden');
+      customInput.focus();
+    } else {
+      customInput.classList.add('hidden');
+    }
+  },
+
+  _updateKeyHint(provider) {
+    const keyEl = document.getElementById('settings-api-key');
+    const hint = document.getElementById('settings-key-hint');
+    if (provider === 'gemini') {
+      if (keyEl) keyEl.placeholder = 'AIza...';
+      if (hint) hint.textContent = '在 aistudio.google.com 获取免费 API Key';
+    } else {
+      if (keyEl) keyEl.placeholder = 'sk-ant-...';
+      if (hint) hint.textContent = '⚠️ API Key 仅存储在浏览器本地，请勿分享此文件';
+    }
+  },
+
+  render() {
+    const s = State.settings;
+    const providerEl = document.getElementById('settings-provider');
+    const keyEl = document.getElementById('settings-api-key');
+    const modelEl = document.getElementById('settings-model');
+    const langEl = document.getElementById('settings-language');
+    const storeEl = document.getElementById('settings-store');
+    const provider = s.provider || 'gemini';
+    if (providerEl) providerEl.value = provider;
+    this._updateModelOptions(provider);
+    this._updateKeyHint(provider);
+    if (keyEl) keyEl.value = s.claudeApiKey || '';
+    if (modelEl) modelEl.value = s.model || (provider === 'gemini' ? 'gemini-1.5-flash-latest' : 'claude-haiku-4-5-20251001');
+    if (langEl) langEl.value = s.language || 'bilingual';
+    if (storeEl) storeEl.value = s.preferredStore || '';
+    this.renderCategories();
+  },
+
+  _catRow(key, v, allKeys) {
+    const idx = allKeys.indexOf(key);
+    const canUp = idx > 0, canDown = idx < allKeys.length - 1;
+    const isUnlimited = !!v.unlimited;
+    const btnBase = 'w-6 h-6 rounded text-xs flex items-center justify-center transition';
+    const btnMove = `${btnBase} bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-500`;
+    const btnDis  = `${btnBase} text-gray-200 dark:text-gray-600 cursor-default`;
+    return `<div class="mb-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-xl">
+      <div class="flex items-center gap-1.5 mb-1.5">
+        <div class="flex flex-col gap-0.5 shrink-0">
+          <button ${canUp ? `onclick="Settings._moveCat('${key}',-1)"` : 'disabled'} class="${canUp ? btnMove : btnDis}" title="上移">▲</button>
+          <button ${canDown ? `onclick="Settings._moveCat('${key}',1)"` : 'disabled'} class="${canDown ? btnMove : btnDis}" title="下移">▼</button>
+        </div>
+        <button onclick="EmojiPicker.open(e=>{Settings._setCatIcon('${key}',e)})"
+          class="text-2xl w-9 h-9 shrink-0 rounded-lg bg-white dark:bg-gray-600 flex items-center justify-center hover:bg-blue-50 dark:hover:bg-gray-500 border border-gray-200 dark:border-gray-500 transition" title="点击更换图标">
+          ${v.icon}
+        </button>
+        <input type="text" value="${(v.cn||'').replace(/"/g,'&quot;')}" placeholder="中文名" onchange="Settings._setCatField('${key}','cn',this.value)"
+          class="flex-1 min-w-0 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-400" />
+        <button onclick="Settings._toggleUnlimited('${key}')" title="${isUnlimited ? '点击取消无限量' : '设为常备(无限量)分类'}"
+          class="shrink-0 px-1.5 py-1 rounded-lg text-sm border transition ${isUnlimited ? 'bg-purple-100 dark:bg-purple-900 border-purple-300 dark:border-purple-600 text-purple-600' : 'bg-white dark:bg-gray-600 border-gray-200 dark:border-gray-500 text-gray-400 hover:border-purple-300'}">♾️</button>
+        <button onclick="Settings._confirmDeleteCat('${key}')" class="text-red-400 hover:text-red-600 px-1 text-lg shrink-0" title="删除">🗑</button>
+      </div>
+      <div class="flex gap-1.5 pl-9">
+        <input type="text" value="${(v.en||'').replace(/"/g,'&quot;')}" placeholder="English" onchange="Settings._setCatField('${key}','en',this.value)"
+          class="flex-1 min-w-0 text-xs bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-2 py-1 focus:outline-none focus:border-blue-400" />
+        <input type="text" value="${(v.fr||'').replace(/"/g,'&quot;')}" placeholder="Français" onchange="Settings._setCatField('${key}','fr',this.value)"
+          class="flex-1 min-w-0 text-xs bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-2 py-1 focus:outline-none focus:border-blue-400" />
+      </div>
+    </div>`;
+  },
+
+  renderCategories() {
+    const el = document.getElementById('cat-builtin');
+    if (!el) return;
+    const allCats = getCategories();
+    const allKeys = Object.keys(allCats);
+    const rows = allKeys.map(k => this._catRow(k, allCats[k], allKeys)).join('');
+    // Deleted built-ins shown at bottom
+    const deletedRows = Object.entries(CATEGORIES)
+      .filter(([k]) => State.customCategories[k]?.deleted)
+      .map(([k,v]) => `<div class="text-xs text-gray-400 flex items-center gap-2 mb-1 px-2">
+        <span class="line-through">${v.icon} ${v.cn}</span>
+        <button onclick="Settings._restoreCat('${k}')" class="text-blue-400 hover:underline">恢复</button>
+      </div>`).join('');
+    el.innerHTML = `<div class="text-xs text-gray-400 mb-2">▲▼排序 / 图标 / 中文名 / ♾️常备 / 🗑删除</div>`
+      + rows + (deletedRows ? `<div class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">${deletedRows}</div>` : '');
+    const customEl = document.getElementById('cat-custom');
+    if (customEl) customEl.innerHTML = '';
+  },
+
+  _setCatIcon(key, emoji) {
+    if (!State.customCategories[key]) State.customCategories[key] = {};
+    State.customCategories[key].icon = emoji;
+    State.save(['customcats']);
+    this.renderCategories();
+  },
+
+  _setCatField(key, field, val) {
+    if (!State.customCategories[key]) State.customCategories[key] = {};
+    State.customCategories[key][field] = val;
+    State.save(['customcats']);
+  },
+
+  _confirmDeleteCat(key) {
+    const cats = getCategories();
+    const cat = cats[key];
+    const affectedInv = State.inventory.filter(i => i.category === key);
+    const affectedH   = State.household.filter(i => i.category === key);
+    const total = affectedInv.length + affectedH.length;
+    const delModal = document.getElementById('modal-cat-delete');
+    const msgEl = document.getElementById('cat-delete-msg');
+    const itemsEl = document.getElementById('cat-delete-items');
+    const migrateRow = document.getElementById('cat-delete-migrate-row');
+    const targetSel = document.getElementById('cat-delete-target');
+    const delBtn = document.getElementById('cat-delete-del-btn');
+    const moveBtn = document.getElementById('cat-delete-move-btn');
+
+    msgEl.textContent = total > 0
+      ? `分类"${cat?.cn||key}"下有 ${total} 件物品（库存 ${affectedInv.length} 件，家居 ${affectedH.length} 件）：`
+      : `确定删除分类"${cat?.cn||key}"？（该分类下没有物品）`;
+
+    // Show item list
+    if (total > 0) {
+      const allItems = [
+        ...affectedInv.map(i => ({ ...i, _src: '库存' })),
+        ...affectedH.map(i => ({ ...i, _src: '家居' })),
+      ];
+      itemsEl.classList.remove('hidden');
+      itemsEl.innerHTML = allItems.map(i => `
+        <div class="flex items-center justify-between px-3 py-2 text-sm">
+          <span class="font-medium">${i.nameCn}${i.nameEn ? ` <span class="text-gray-400 font-normal text-xs">${i.nameEn}</span>` : ''}</span>
+          <span class="text-xs text-gray-400 shrink-0 ml-2">${i._src} · ${i.quantity ?? ''}${i.unit ?? ''}</span>
+        </div>`).join('');
+      migrateRow.classList.remove('hidden');
+      targetSel.innerHTML = Object.entries(getCategories())
+        .filter(([k]) => k !== key)
+        .map(([k,v]) => `<option value="${k}">${v.icon} ${catName(k)}</option>`).join('');
+      delBtn.style.display = '';
+      moveBtn.style.display = '';
+    } else {
+      itemsEl.classList.add('hidden');
+      migrateRow.classList.add('hidden');
+      delBtn.style.display = 'none';
+      moveBtn.style.display = '';
+      moveBtn.textContent = '✅ 确认删除';
+    }
+
+    const doDelete = (migrate) => {
+      const target = (migrate && total > 0) ? targetSel.value : 'other';
+      State.inventory.forEach(i => { if (i.category === key) i.category = target; });
+      State.household.forEach(i => { if (i.category === key) i.category = target; });
+      if (CATEGORIES[key]) {
+        if (!State.customCategories[key]) State.customCategories[key] = {};
+        State.customCategories[key].deleted = true;
+      } else {
+        delete State.customCategories[key];
+      }
+      // Also remove from catOrder
+      State.catOrder = State.catOrder.filter(k => k !== key);
+      State.save(['inventory','household','customcats','catorder']);
+      delModal.classList.remove('open');
+      this.renderCategories();
+      Inventory.render(); Household.render();
+      const msg = total === 0 ? `分类"${cat?.cn||key}"已删除` : migrate ? `分类已删除，${total}件物品迁移到"${catLabel(target)}"` : `分类已删除，${total}件物品移至"其他"`;
+      showToast(msg, migrate || total === 0 ? 'success' : 'info');
+      moveBtn.textContent = '📦 迁移物品'; // reset
+    };
+    delBtn.onclick = () => doDelete(false);
+    moveBtn.onclick = () => doDelete(true);
+    delModal.classList.add('open');
+  },
+
+  addCategory() {
+    const icon = document.getElementById('new-cat-icon')?.value.trim() || '📌';
+    const cn   = document.getElementById('new-cat-cn')?.value.trim();
+    const en   = document.getElementById('new-cat-en')?.value.trim() || cn;
+    const fr   = document.getElementById('new-cat-fr')?.value.trim() || en;
+    if (!cn) { showToast('请输入中文名', 'warn'); return; }
+    const key = 'custom_' + Date.now();
+    State.customCategories[key] = { cn, en, fr, icon };
+    State.save(['customcats']);
+    document.getElementById('new-cat-icon').value = '';
+    document.getElementById('new-cat-cn').value = '';
+    document.getElementById('new-cat-en').value = '';
+    document.getElementById('new-cat-fr').value = '';
+    this.renderCategories();
+    showToast(`分类"${cn}"已添加`, 'success');
+  },
+
+  _restoreCat(key) {
+    if (State.customCategories[key]) delete State.customCategories[key].deleted;
+    if (Object.keys(State.customCategories[key] || {}).length === 0) delete State.customCategories[key];
+    State.save(['customcats']);
+    this.renderCategories();
+    showToast('分类已恢复', 'success');
+  },
+
+  _moveCat(key, dir) {
+    const allKeys = Object.keys(getCategories());
+    // Init catOrder if needed
+    if (!State.catOrder.length || State.catOrder.some(k => !allKeys.includes(k))) {
+      State.catOrder = allKeys.slice();
+    }
+    // Ensure all current keys are in catOrder
+    allKeys.forEach(k => { if (!State.catOrder.includes(k)) State.catOrder.push(k); });
+    const idx = State.catOrder.indexOf(key);
+    if (idx === -1) return;
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= State.catOrder.length) return;
+    [State.catOrder[idx], State.catOrder[newIdx]] = [State.catOrder[newIdx], State.catOrder[idx]];
+    State.save(['catorder']);
+    this.renderCategories();
+    // Re-render inventory/cart category groups
+    Inventory.render(); Household.render();
+  },
+
+  _toggleUnlimited(key) {
+    if (!State.customCategories[key]) State.customCategories[key] = {};
+    const cur = State.customCategories[key].unlimited ?? CATEGORIES[key]?.unlimited ?? false;
+    State.customCategories[key].unlimited = !cur;
+    State.save(['customcats']);
+    this.renderCategories();
+    Inventory.render();
+    showToast(!cur ? '已设为常备分类（无限量，食谱检查永远充足）' : '已取消常备设置', 'info');
+  },
+
+  renameCustomCat(key, field, val) {
+    if (!State.customCategories[key]) State.customCategories[key] = {};
+    State.customCategories[key][field] = val;
+    State.save(['customcats']);
+  },
+
+  deleteCustomCat(key) { this._confirmDeleteCat(key); },
+
+  save() {
+    State.settings.provider = document.getElementById('settings-provider')?.value || 'gemini';
+    State.settings.claudeApiKey = document.getElementById('settings-api-key')?.value.trim() || '';
+    const modelSel = document.getElementById('settings-model')?.value;
+    State.settings.model = modelSel === 'custom'
+      ? (document.getElementById('settings-model-custom')?.value.trim() || 'gemini-1.5-flash-latest')
+      : (modelSel || 'gemini-1.5-flash-latest');
+    State.settings.language = document.getElementById('settings-language')?.value || 'bilingual';
+    State.settings.preferredStore = document.getElementById('settings-store')?.value || '';
+    State.save(['settings']);
+    App.applyLanguage();
+    showToast('设置已保存', 'success');
+  },
+
+  async testApiKey() {
+    const rawKey = document.getElementById('settings-api-key')?.value.trim();
+    const provider = document.getElementById('settings-provider')?.value || 'gemini';
+    if (!rawKey) { showToast('请先输入 API Key', 'warn'); return; }
+    // 过滤掉所有非 ASCII 字符（中文、特殊符号等会导致 header 报错）
+    const key = rawKey.replace(/[^\x20-\x7E]/g, '');
+    if (key !== rawKey) {
+      showToast('⚠️ Key 中含有非法字符（如中文），已自动清除，请核对', 'warn');
+      document.getElementById('settings-api-key').value = key;
+    }
+    if (!key) { showToast('清理后 Key 为空，请重新复制粘贴', 'error'); return; }
+    showLoading('测试 API Key...');
+    try {
+      let res;
+      if (provider === 'gemini') {
+        const modelSel = document.getElementById('settings-model')?.value;
+        const model = modelSel === 'custom'
+          ? (document.getElementById('settings-model-custom')?.value.trim() || 'gemini-1.5-flash-latest')
+          : (modelSel || 'gemini-1.5-flash-latest');
+        res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'hi' }] }], generationConfig: { maxOutputTokens: 10 } }),
+        });
+      } else {
+        res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json', 'anthropic-dangerous-direct-browser-access': 'true' },
+          body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 10, messages: [{ role: 'user', content: 'hi' }] }),
+        });
+      }
+      hideLoading();
+      if (res.ok) {
+        // 测试成功后立即保存，不需要再点"保存设置"
+        const modelSel2 = document.getElementById('settings-model')?.value;
+        State.settings.claudeApiKey = key;
+        State.settings.provider = provider;
+        State.settings.model = modelSel2 === 'custom'
+          ? (document.getElementById('settings-model-custom')?.value.trim() || 'gemini-1.5-flash-latest')
+          : (modelSel2 || 'gemini-1.5-flash-latest');
+        State.save(['settings']);
+        showToast('✅ API Key 有效，已自动保存！', 'success');
+      } else { const e = await res.json().catch(()=>({})); showToast(`❌ 无效: ${e.error?.message||res.status}`, 'error'); }
+    } catch(e) { hideLoading(); showToast(`❌ 连接错误: ${e.message}`, 'error'); }
+  },
+};
+
+// ==================== MODAL ====================
+const Modal = {
+  _aiConfirmAction: null,
+  _aiConfirmData: null,
+
+  showAddInventory() { this._openItem('inventory', null); },
+  showEditInventory(id) {
+    const item = State.inventory.find(i => i.id === id);
+    if (item) this._openItem('inventory', item);
+  },
+  showAddCart() { this._openItem('cart', null); },
+  showEditCart(id) {
+    const item = State.cart.find(i => i.id === id);
+    if (item) this._openItem('cart', item);
+  },
+  showAddHousehold() { this._openItem('household', null); },
+
+  _openItem(type, item) {
+    document.getElementById('item-type').value = type;
+    document.getElementById('item-id').value = item?.id || '';
+    document.getElementById('modal-item-title').textContent = item ? '编辑物品' : '添加物品';
+    document.getElementById('item-namecn').value = item?.nameCn || '';
+    document.getElementById('item-nameen').value = item?.nameEn || '';
+    document.getElementById('item-qty').value = item?.quantity ?? 1;
+    document.getElementById('item-unit').value = item?.unit || '个';
+    document.getElementById('item-store').value = item?.store || '';
+    document.getElementById('item-notes').value = item?.notes || '';
+    document.getElementById('item-minstock').value = item?.minStock ?? 0;
+
+    // Fill category select
+    const catSel = document.getElementById('item-category');
+    catSel.innerHTML = catOptions(item?.category);
+
+    const minsRow = document.getElementById('item-minstock-row');
+    if (type === 'cart') minsRow.style.display = 'none'; else minsRow.style.display = '';
+
+    document.getElementById('modal-item').classList.add('open');
+    setTimeout(() => document.getElementById('item-namecn').focus(), 100);
+  },
+
+  closeItem() { document.getElementById('modal-item').classList.remove('open'); },
+
+  submitItem(e) {
+    e.preventDefault();
+    const type = document.getElementById('item-type').value;
+    const id = document.getElementById('item-id').value;
+    const data = {
+      nameCn: document.getElementById('item-namecn').value.trim(),
+      nameEn: document.getElementById('item-nameen').value.trim(),
+      quantity: parseFloat(document.getElementById('item-qty').value) || 0,
+      unit: document.getElementById('item-unit').value,
+      category: document.getElementById('item-category').value,
+      store: document.getElementById('item-store').value,
+      notes: document.getElementById('item-notes').value.trim(),
+      minStock: parseFloat(document.getElementById('item-minstock').value) || 0,
+    };
+    if (type === 'inventory') {
+      if (id) Inventory.update(id, data); else Inventory.add(data);
+    } else if (type === 'cart') {
+      if (id) Cart.update(id, data); else Cart.addItem(data);
+    } else if (type === 'household') {
+      data.id = uid(); State.household.push(data); State.save(['household']); Household.render();
+    }
+    this.closeItem();
+    showToast('已保存', 'success');
+  },
+
+  showAddRecipe() { this._openRecipe(null); },
+  showEditRecipe(id) {
+    const r = State.recipes.find(r => r.id === id);
+    if (r) this._openRecipe(r);
+  },
+
+  _ingredientRows: [],
+  _openRecipe(recipe) {
+    document.getElementById('recipe-id').value = recipe?.id || '';
+    document.getElementById('modal-recipe-title').textContent = recipe ? '编辑食谱' : '添加食谱';
+    document.getElementById('recipe-namecn').value = recipe?.nameCn || '';
+    document.getElementById('recipe-nameen').value = recipe?.nameEn || '';
+    document.getElementById('recipe-desc').value = recipe?.description || '';
+    document.getElementById('recipe-servings').value = recipe?.servings || 2;
+    document.getElementById('recipe-tags').value = (recipe?.tags || []).join(',');
+    document.getElementById('recipe-steps').value = (recipe?.steps || []).join('\n');
+    this._ingredientRows = (recipe?.ingredients || []).map(i => ({ ...i }));
+    this._renderIngredientRows();
+    document.getElementById('modal-recipe').classList.add('open');
+  },
+
+  _renderIngredientRows() {
+    const el = document.getElementById('ingredients-list');
+    el.innerHTML = this._ingredientRows.map((ing, idx) => `
+      <div class="flex gap-2 items-center">
+        <input type="text" value="${ing.nameCn||''}" placeholder="中文名" oninput="Modal._ingredientRows[${idx}].nameCn=this.value" class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 focus:outline-none" />
+        <input type="text" value="${ing.nameEn||''}" placeholder="EN" oninput="Modal._ingredientRows[${idx}].nameEn=this.value" class="w-20 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 focus:outline-none" />
+        <input type="number" value="${ing.quantity||1}" min="0" step="0.1" oninput="Modal._ingredientRows[${idx}].quantity=parseFloat(this.value)||0" class="w-16 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 focus:outline-none" />
+        <select oninput="Modal._ingredientRows[${idx}].unit=this.value" class="text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-1 py-1.5 focus:outline-none">
+          ${['个','克','千克','毫升','升','袋','瓶','盒','包','束','片','头','瓣'].map(u=>`<option ${ing.unit===u?'selected':''}>${u}</option>`).join('')}
+        </select>
+        <label class="flex items-center gap-1 text-xs text-gray-500 whitespace-nowrap">
+          <input type="checkbox" ${ing.optional?'checked':''} onchange="Modal._ingredientRows[${idx}].optional=this.checked" class="accent-blue-600" />可选
+        </label>
+        <button type="button" onclick="Modal._removeIngredient(${idx})" class="text-red-400 hover:text-red-600 shrink-0">✕</button>
+      </div>`).join('');
+  },
+
+  addIngredientRow() {
+    this._ingredientRows.push({ nameCn: '', nameEn: '', quantity: 1, unit: '个', optional: false });
+    this._renderIngredientRows();
+  },
+
+  _removeIngredient(idx) {
+    this._ingredientRows.splice(idx, 1);
+    this._renderIngredientRows();
+  },
+
+  closeRecipe() { document.getElementById('modal-recipe').classList.remove('open'); },
+
+  submitRecipe(e) {
+    e.preventDefault();
+    const id = document.getElementById('recipe-id').value;
+    const data = {
+      nameCn: document.getElementById('recipe-namecn').value.trim(),
+      nameEn: document.getElementById('recipe-nameen').value.trim(),
+      description: document.getElementById('recipe-desc').value.trim(),
+      servings: parseInt(document.getElementById('recipe-servings').value) || 2,
+      tags: document.getElementById('recipe-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+      steps: document.getElementById('recipe-steps').value.split('\n').map(s=>s.trim()).filter(Boolean),
+      ingredients: this._ingredientRows.filter(i => i.nameCn),
+    };
+    if (id) Recipes.update(id, data); else Recipes.add(data);
+    this.closeRecipe();
+    showToast('食谱已保存', 'success');
+  },
+
+  showRecipeDetail(id) {
+    const recipe = State.recipes.find(r => r.id === id);
+    if (!recipe) return;
+    const checked = Recipes.checkIngredients(recipe);
+    const statusIcon = { ok: '✅', low: '⚠️', missing: '❌', mismatch: '❓' };
+    const statusText = { ok: 'ingredient-ok', low: 'ingredient-low', missing: 'ingredient-missing', mismatch: 'ingredient-low' };
+    document.getElementById('recipe-detail-title').textContent = `${recipe.nameCn} ${recipe.nameEn||''}`;
+    document.getElementById('recipe-detail-content').innerHTML = `
+      ${recipe.description ? `<p class="text-sm text-gray-500 mb-3">${recipe.description}</p>` : ''}
+      <div class="text-sm font-semibold mb-2">🧂 食材清单 (${recipe.servings||2}人份)</div>
+      <div class="space-y-1 mb-4">
+        ${checked.map(ing => {
+          const invDisplay = ing.invQty === Infinity ? '♾️常备'
+            : ing.invQty > 0 ? `${ing.invQty}${ing.invUnit}`
+            : '无';
+          const unitNote = ing.status === 'mismatch' ? `<span class="text-xs text-orange-400 ml-1">单位不同</span>` : '';
+          return `
+          <div class="flex items-center justify-between py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
+            <div class="flex items-center gap-2">
+              <span>${statusIcon[ing.status]||'❌'}</span>
+              <span class="${statusText[ing.status]||'ingredient-missing'} font-medium">${ing.nameCn}</span>
+              ${ing.optional?'<span class="text-xs text-gray-400">可选</span>':''}
+            </div>
+            <div class="text-sm text-right">
+              <span class="${statusText[ing.status]||'ingredient-missing'}">${invDisplay}</span>${unitNote}
+              <span class="text-gray-400"> / 需${ing.quantity}${ing.unit}</span>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      ${recipe.steps && recipe.steps.length > 0 ? `
+      <div class="text-sm font-semibold mb-2">📝 烹饪步骤</div>
+      <div class="space-y-2">
+        ${recipe.steps.map((s,i) => `<div class="flex gap-3"><span class="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-bold shrink-0">${i+1}</span><span class="text-sm text-gray-700 dark:text-gray-300">${s}</span></div>`).join('')}
+      </div>` : ''}
+      <div class="flex gap-2 mt-4">
+        <button onclick="Modal.closeRecipeDetail();Recipes.addMissingToCart('${id}')" class="flex-1 py-2 bg-orange-500 text-white rounded-xl hover:bg-orange-600 text-sm">🛒 选择缺货加购物车</button>
+      </div>`;
+    document.getElementById('modal-recipe-detail').classList.add('open');
+  },
+
+  closeRecipeDetail() { document.getElementById('modal-recipe-detail').classList.remove('open'); },
+
+  showAIConfirm(title, data, action, contentHtml) {
+    this._aiConfirmData = data;
+    this._aiConfirmAction = action;
+    document.getElementById('ai-confirm-title').textContent = title;
+    document.getElementById('ai-confirm-content').innerHTML = `<div class="max-h-64 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">${contentHtml}</div>`;
+    document.getElementById('ai-confirm-btn').onclick = () => this.executeAIAction();
+    document.getElementById('modal-ai-confirm').classList.add('open');
+  },
+
+  executeAIAction() {
+    const data = this._aiConfirmData;
+    const action = this._aiConfirmAction;
+    if (!data) return;
+    if (action === 'inventory-add') {
+      data.forEach(item => Inventory.add({ nameCn: item.nameCn, nameEn: item.nameEn||'', quantity: parseFloat(item.quantity)||1, unit: item.unit||'个', category: item.category||'other', minStock: 0, notes: '' }));
+      showToast(`${data.length} 件物品已加入库存`, 'success');
+      App.switchTab('inventory');
+    } else if (action === 'cart-add') {
+      data.forEach(item => Cart.addItem({ nameCn: item.nameCn, nameEn: item.nameEn||'', quantity: parseFloat(item.quantity)||1, unit: item.unit||'个', category: item.category||'other', store: item.store||'', notes: item.notes||'' }));
+      showToast(`${data.length} 件物品已加入购物车`, 'success');
+      App.switchTab('cart');
+    } else if (action === 'recipe-add') {
+      const items = Array.isArray(data) ? data : [data];
+      items.forEach(r => Recipes.add({ nameCn: r.nameCn, nameEn: r.nameEn||'', description: r.description||'', servings: r.servings||2, tags: r.tags||[], ingredients: r.ingredients||[], steps: r.steps||[] }));
+      showToast(`${items.length} 个食谱已保存`, 'success');
+      App.switchTab('recipes');
+    }
+    this.closeAIConfirm();
+  },
+
+  closeAIConfirm() {
+    document.getElementById('modal-ai-confirm').classList.remove('open');
+    this._aiConfirmData = null;
+    this._aiConfirmAction = null;
+  },
+
+  // ── 可编辑库存录入确认（卡片式，无横向滚动）──
+  showEditableInventoryConfirm(items) {
+    window._editInvItems = items.map(i => ({ ...i }));
+    const renderRows = () => window._editInvItems.map((item, idx) => `
+      <div class="editable-row mb-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
+        <div class="flex gap-2 mb-1.5">
+          <input type="text" value="${(item.nameCn||'').replace(/"/g,'&quot;')}" placeholder="${t('nameCnLabel')} *" oninput="window._editInvItems[${idx}].nameCn=this.value"
+            class="flex-1 min-w-0 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-400" />
+          <input type="text" value="${(item.nameEn||'').replace(/"/g,'&quot;')}" placeholder="${t('nameEnLabel')}" oninput="window._editInvItems[${idx}].nameEn=this.value"
+            class="flex-1 min-w-0 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-400" />
+          <button type="button" onclick="window._editInvItems.splice(${idx},1);Modal.showEditableInventoryConfirm(window._editInvItems)"
+            class="text-red-400 hover:text-red-600 shrink-0 px-1 text-lg">✕</button>
+        </div>
+        <div class="flex gap-2">
+          <input type="number" value="${item.quantity||1}" min="0" step="0.1" oninput="window._editInvItems[${idx}].quantity=parseFloat(this.value)||1"
+            class="w-20 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-2 py-1.5 focus:outline-none" placeholder="${t('qtyLabel')}" />
+          <select onchange="window._editInvItems[${idx}].unit=this.value"
+            class="w-20 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-1 py-1.5 focus:outline-none">
+            ${unitOptions(item.unit)}
+          </select>
+          <select onchange="window._editInvItems[${idx}].category=this.value"
+            class="flex-1 min-w-0 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-1 py-1.5 focus:outline-none">
+            ${catOptions(item.category)}
+          </select>
+        </div>
+      </div>`).join('');
+    document.getElementById('ai-confirm-title').textContent = t('invConfirmTitle');
+    document.getElementById('ai-confirm-content').innerHTML = `
+      <div id="editable-inv-rows">${renderRows()}</div>
+      <button onclick="window._editInvItems.push({nameCn:'',nameEn:'',quantity:1,unit:'个',category:'other'});Modal.showEditableInventoryConfirm(window._editInvItems)"
+        class="mt-2 text-sm text-blue-500 hover:underline">${t('addRow')}</button>`;
+    document.getElementById('ai-confirm-btn').textContent = t('invConfirmBtn');
+    document.getElementById('ai-confirm-btn').onclick = () => {
+      const valid = window._editInvItems.filter(i => i.nameCn && i.nameCn.trim());
+      if (!valid.length) { showToast('没有有效物品', 'warn'); return; }
+      valid.forEach(item => Inventory.add({ ...item, quantity: parseFloat(item.quantity)||1 }));
+      showToast(`${valid.length} 件物品已加入库存`, 'success');
+      this.closeAIConfirm();
+      App.switchTab('inventory');
+    };
+    document.getElementById('modal-ai-confirm').classList.add('open');
+  },
+
+  // ── 可编辑购物车建议确认 ──
+  showEditableCartConfirm(items) {
+    window._editCartItems = items.map(i => ({ ...i }));
+    const renderRows = () => window._editCartItems.map((item, idx) => `
+      <div class="editable-row grid gap-1 mb-2" style="grid-template-columns:1fr 1fr 60px 70px 100px auto">
+        <input type="text" value="${item.nameCn||''}" placeholder="中文名 *" oninput="window._editCartItems[${idx}].nameCn=this.value"
+          class="text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 focus:outline-none" />
+        <input type="text" value="${item.nameEn||''}" placeholder="English"  oninput="window._editCartItems[${idx}].nameEn=this.value"
+          class="text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 focus:outline-none" />
+        <input type="number" value="${item.quantity||1}" min="0" step="0.1" oninput="window._editCartItems[${idx}].quantity=parseFloat(this.value)||1"
+          class="text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 focus:outline-none" />
+        <select onchange="window._editCartItems[${idx}].unit=this.value"
+          class="text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-1 py-1.5 focus:outline-none">
+          ${unitOptions(item.unit)}
+        </select>
+        <select onchange="window._editCartItems[${idx}].store=this.value"
+          class="text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-1 py-1.5 focus:outline-none">
+          <option value="">商店</option>
+          ${Object.entries(STORES).map(([k,s])=>`<option value="${k}" ${item.store===k?'selected':''}>${s.emoji}${s.name}</option>`).join('')}
+        </select>
+        <button type="button" onclick="window._editCartItems.splice(${idx},1);Modal.showEditableCartConfirm(window._editCartItems)"
+          class="text-red-400 hover:text-red-600 px-1">✕</button>
+      </div>`).join('');
+    document.getElementById('ai-confirm-title').textContent = `🛒 AI购物建议 (可编辑后确认)`;
+    document.getElementById('ai-confirm-content').innerHTML = `
+      <div class="text-xs text-gray-400 mb-2 grid gap-1" style="grid-template-columns:1fr 1fr 60px 70px 100px auto">
+        <span>中文名</span><span>英文名</span><span>数量</span><span>单位</span><span>商店</span><span></span>
+      </div>
+      <div id="editable-cart-rows">${renderRows()}</div>
+      <button onclick="window._editCartItems.push({nameCn:'',nameEn:'',quantity:1,unit:'个',category:'other',store:''});Modal.showEditableCartConfirm(window._editCartItems)"
+        class="mt-2 text-sm text-blue-500 hover:underline">+ 添加一行</button>`;
+    document.getElementById('ai-confirm-btn').textContent = '🛒 全部加入购物车';
+    document.getElementById('ai-confirm-btn').onclick = () => {
+      const valid = window._editCartItems.filter(i => i.nameCn && i.nameCn.trim());
+      if (!valid.length) { showToast('没有有效物品', 'warn'); return; }
+      valid.forEach(item => Cart.addItem({ ...item, quantity: parseFloat(item.quantity)||1, category: item.category||'other', notes: item.notes||'' }));
+      showToast(`${valid.length} 件物品已加入购物车`, 'success');
+      this.closeAIConfirm();
+      App.switchTab('cart');
+    };
+    document.getElementById('modal-ai-confirm').classList.add('open');
+  },
+
+  // ── 可编辑食谱确认 ──
+  showEditableRecipesConfirm(recipes) {
+    window._editRecipes = recipes.map(r => ({ ...r }));
+    window._editRecipeSel = recipes.map(() => true); // all selected by default
+    const isSingle = recipes.length === 1;
+
+    const updateConfirmBtn = () => {
+      const n = window._editRecipeSel.filter(Boolean).length;
+      const btn = document.getElementById('ai-confirm-btn');
+      btn.textContent = n === 0 ? '请选择食谱' : `✅ 保存选中的 ${n} 个食谱`;
+      btn.disabled = n === 0;
+      btn.className = n === 0
+        ? 'px-4 py-2 rounded-lg text-sm font-medium bg-gray-300 text-gray-500 cursor-not-allowed'
+        : 'px-4 py-2 rounded-lg text-sm font-medium bg-green-600 hover:bg-green-700 text-white transition';
+    };
+
+    document.getElementById('ai-confirm-title').textContent = isSingle ? '🍳 AI生成食谱 (确认后保存)' : '🍳 AI推荐食谱 (勾选要保存的)';
+
+    document.getElementById('ai-confirm-content').innerHTML =
+      (!isSingle ? `<div class="flex gap-2 mb-3">
+        <button onclick="window._editRecipeSel=window._editRecipeSel.map(()=>true);document.querySelectorAll('.recipe-sel-cb').forEach(c=>c.checked=true);Modal._updateRecipeConfirmBtn()" class="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200">全选</button>
+        <button onclick="window._editRecipeSel=window._editRecipeSel.map(()=>false);document.querySelectorAll('.recipe-sel-cb').forEach(c=>c.checked=false);Modal._updateRecipeConfirmBtn()" class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 hover:bg-gray-200">全不选</button>
+      </div>` : '') +
+      recipes.map((r, idx) => {
+        const invChecked = Recipes.checkIngredients(r);
+        const have = invChecked.filter(i => i.status === 'ok').length;
+        const total = invChecked.length;
+        return `<div class="border-2 rounded-xl p-3 mb-3 transition recipe-confirm-card" id="recipe-card-${idx}"
+            style="border-color: #3b82f6; background: rgba(59,130,246,0.04)">
+          <div class="flex items-start gap-2 mb-1">
+            ${!isSingle ? `<input type="checkbox" checked class="recipe-sel-cb mt-1 w-4 h-4 accent-blue-500 cursor-pointer flex-shrink-0"
+              onchange="window._editRecipeSel[${idx}]=this.checked;Modal._updateRecipeConfirmBtn();document.getElementById('recipe-card-${idx}').style.borderColor=this.checked?'#3b82f6':'#d1d5db';document.getElementById('recipe-card-${idx}').style.background=this.checked?'rgba(59,130,246,0.04)':'transparent'" />` : ''}
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between flex-wrap gap-1">
+                <div>
+                  <input type="text" value="${r.nameCn||''}" oninput="window._editRecipes[${idx}].nameCn=this.value"
+                    class="font-semibold text-base bg-transparent border-b border-dashed border-gray-300 focus:outline-none focus:border-blue-400 w-36" />
+                  <input type="text" value="${r.nameEn||''}" oninput="window._editRecipes[${idx}].nameEn=this.value"
+                    class="text-sm text-gray-400 bg-transparent border-b border-dashed border-gray-200 focus:outline-none focus:border-blue-400 w-32 ml-2" />
+                </div>
+                <span class="text-xs ${have===total?'text-green-600':'text-orange-500'} font-medium flex-shrink-0">${have}/${total} 库存已有</span>
+              </div>
+              <div class="text-sm text-gray-500 mt-1 mb-2">${r.description||''}</div>
+              <div class="text-xs text-gray-400">食材: ${(r.ingredients||[]).map(ing=>{
+                const status = invChecked.find(i=>i.nameCn===ing.nameCn)?.status || 'missing';
+                const c = status==='ok'?'text-green-600':status==='low'?'text-orange-500':'text-red-500';
+                return `<span class="${c}">${ing.nameCn}(${ing.quantity}${ing.unit})</span>`;
+              }).join(' · ')}</div>
+              ${(r.steps||[]).length ? `<div class="mt-1 text-xs text-gray-400">步骤: ${(r.steps||[]).length}步</div>` : ''}
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+
+    Modal._updateRecipeConfirmBtn = updateConfirmBtn;
+    updateConfirmBtn();
+
+    document.getElementById('ai-confirm-btn').onclick = () => {
+      const saved = window._editRecipes.filter((r, i) => window._editRecipeSel[i] && r.nameCn);
+      saved.forEach(r => Recipes.add({ ...r }));
+      showToast(`${saved.length} 个食谱已保存`, 'success');
+      this.closeAIConfirm();
+      App.switchTab('recipes');
+    };
+    document.getElementById('modal-ai-confirm').classList.add('open');
+  },
+};
+
+// ==================== EMOJI PICKER ====================
+const EMOJI_GROUPS = [
+  { label:'🥦 蔬菜', emojis:['🥦','🥕','🍅','🧅','🧄','🌽','🥬','🥒','🫑','🍆','🥔','🫛','🥗','🌿','🌱','🥜','🫘','🍄','🧆','🥑'] },
+  { label:'🥩 肉类海鲜', emojis:['🥩','🍗','🐟','🍤','🦐','🦑','🦀','🐙','🍖','🐠','🐡','🦞','🐄','🐖','🐓','🐑','🦆','🥚','🍳'] },
+  { label:'🥛 乳制品', emojis:['🥛','🧀','🫙','🍼','🧈','🥮','🍦'] },
+  { label:'🍚 主食', emojis:['🍚','🍜','🍝','🍞','🫓','🥐','🥟','🍱','🍘','🍙','🌯','🥙','🍛','🍲','🫕','🍣','🍤','🍥','🥮'] },
+  { label:'🧂 调料', emojis:['🧂','🫙','🥫','🍶','🌶️','🫚','🍋','🧄','🍯','🥢','🫖','🍵','⭐','🌟','✨'] },
+  { label:'🧃 饮料', emojis:['🧃','🍵','☕','🍺','🥤','🧋','🍹','🧊','💧','🥂','🍷','🍾','🫖','🥛','🧉','🍻'] },
+  { label:'🍪 零食甜品', emojis:['🍪','🍩','🍫','🍬','🍭','🥧','🍿','🍰','🎂','🍮','🍡','🍢','🧁','🍦','🍧','🍨','🥐','🧇','🥞'] },
+  { label:'🧊 冷冻', emojis:['🧊','❄️','🫙','🥶','🍦','🧊','🫙'] },
+  { label:'🧹 清洁', emojis:['🧹','🧺','🧻','🪣','🧽','🧼','🪥','🛁','🚿','🪒','🧷','🪤','🪠','🫧','🧴','🫙'] },
+  { label:'🧴 洗护', emojis:['🧴','💊','💉','🩺','🩹','🪥','🧼','💆','🌸','🌺','🌻','💐','🧖','✂️','🪞','🛁'] },
+  { label:'🏠 家居', emojis:['🏠','🛋️','🪴','🧸','🪆','🖼️','🛏️','🚪','🪟','💡','🔦','🕯️','🪔','🛒','📦','🎁'] },
+  { label:'📦 其他', emojis:['📦','🛒','🎁','📋','🔧','🪛','💡','🔋','📱','🖥️','📌','🗂️','📝','🔑','🏷️','⭐','❤️','🌈'] },
+];
+
+const EmojiPicker = {
+  _targetCallback: null,
+  _searchTerm: '',
+
+  open(callback) {
+    this._targetCallback = callback;
+    this._searchTerm = '';
+    document.getElementById('emoji-search').value = '';
+    document.getElementById('emoji-ai-results').classList.add('hidden');
+    document.getElementById('emoji-ai-results').innerHTML = '';
+    this._render(EMOJI_GROUPS);
+    document.getElementById('modal-emoji').classList.add('open');
+    setTimeout(() => document.getElementById('emoji-search').focus(), 100);
+  },
+
+  close() { document.getElementById('modal-emoji').classList.remove('open'); },
+
+  pick(emoji) {
+    if (this._targetCallback) this._targetCallback(emoji);
+    this.close();
+  },
+
+  search(term) {
+    this._searchTerm = term.trim().toLowerCase();
+    if (!this._searchTerm) { this._render(EMOJI_GROUPS); return; }
+    // 简单过滤：把所有 emoji 平铺，匹配组标签关键词
+    const keywords = {
+      '蔬菜':0,'菜':0,'vegetable':0,'veg':0,
+      '肉':1,'鱼':1,'海鲜':1,'meat':1,'fish':1,'seafood':1,
+      '奶':2,'乳':2,'蛋':2,'dairy':2,'milk':2,
+      '饭':3,'面':3,'主食':3,'grain':3,'staple':3,'noodle':3,'rice':3,
+      '调料':4,'酱':4,'sauce':4,'spice':4,'seasoning':4,
+      '饮料':5,'drink':5,'beverage':5,'tea':5,'coffee':5,
+      '零食':6,'甜':6,'糖':6,'snack':6,'sweet':6,'dessert':6,
+      '冷冻':7,'frozen':7,'冰':7,
+      '清洁':8,'清':8,'洗':8,'clean':8,
+      '洗护':9,'护肤':9,'beauty':9,
+      '家居':10,'家':10,'home':10,'house':10,
+      '其他':11,'other':11,
+    };
+    let bestGroup = null;
+    let bestScore = -1;
+    for (const [kw, idx] of Object.entries(keywords)) {
+      if (this._searchTerm.includes(kw) || kw.includes(this._searchTerm)) {
+        if (idx > bestScore) { bestGroup = EMOJI_GROUPS[idx]; bestScore = idx; }
+      }
+    }
+    if (bestGroup) {
+      this._render([bestGroup]);
+    } else {
+      // Show all
+      this._render(EMOJI_GROUPS);
+    }
+  },
+
+  async aiSuggest() {
+    const keyword = document.getElementById('emoji-search').value.trim();
+    if (!keyword) { showToast('请先输入关键词', 'warn'); return; }
+    if (!State.settings.claudeApiKey) { showToast('需要 API Key', 'warn'); return; }
+    const aiEl = document.getElementById('emoji-ai-results');
+    aiEl.innerHTML = '<span class="text-xs text-gray-400">AI推荐中...</span>';
+    aiEl.classList.remove('hidden');
+    const text = await AI.call(
+      'You are an emoji recommender. Given a Chinese or English keyword, return ONLY 8-12 relevant emojis as a JSON array of strings. No explanation.',
+      `Keyword: ${keyword}`
+    );
+    const emojis = extractJSON(text);
+    if (!emojis || !emojis.length) { aiEl.innerHTML = '<span class="text-xs text-red-400">AI无法推荐，请手动选择</span>'; return; }
+    aiEl.innerHTML = '<span class="text-xs text-purple-500 mr-1">🤖AI推荐：</span>' +
+      emojis.map(e => `<button onclick="EmojiPicker.pick('${e}')" class="text-2xl hover:scale-125 transition p-0.5 rounded">${e}</button>`).join('');
+  },
+
+  _render(groups) {
+    document.getElementById('emoji-grid').innerHTML = groups.map(g =>
+      `<div class="mb-3">
+        <div class="text-xs text-gray-400 mb-1">${g.label}</div>
+        <div class="flex flex-wrap gap-1">
+          ${g.emojis.map(e => `<button onclick="EmojiPicker.pick('${e}')" class="text-2xl hover:scale-125 transition p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700">${e}</button>`).join('')}
+        </div>
+      </div>`
+    ).join('');
+  },
+};
+
+// ==================== APP ====================
+const App = {
+  currentTab: 'cart',
+
+  init() {
+    State.load();
+    Cloud.init();
+    Household.init();
+    this.applyTheme();
+    this.applyLanguage();
+    this.bindNav();
+    this.switchTab('cart');
+    Settings.render();
+  },
+
+  renderAll() {
+    this.applyTheme();
+    this.applyLanguage(); // applyLanguage already re-renders all modules
+    Settings.render();
+  },
+
+  applyTheme() {
+    const dark = State.settings.theme === 'dark';
+    document.documentElement.classList.toggle('dark', dark);
+    const icon = document.getElementById('theme-icon');
+    if (icon) icon.textContent = dark ? '☀️' : '🌙';
+  },
+
+  applyLanguage() {
+    const lang = State.settings.language || 'bilingual';
+    document.body.classList.remove('lang-zh', 'lang-en', 'lang-bilingual', 'lang-fr');
+    document.body.classList.add('lang-' + lang);
+    // Apply data-i18n translations
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.dataset.i18n;
+      el.textContent = t(key);
+    });
+    // Re-render modules that use catLabel (language-aware)
+    if (window.Inventory) Inventory.render();
+    if (window.Cart) Cart.render();
+    if (window.Recipes) Recipes.render();
+    if (window.Household) Household.render();
+    if (window.Settings) Settings.renderCategories();
+  },
+
+  toggleTheme() {
+    State.settings.theme = State.settings.theme === 'dark' ? 'light' : 'dark';
+    State.save(['settings']);
+    this.applyTheme();
+  },
+
+  bindNav() {
+    document.querySelectorAll('.nav-tab, .mobile-nav-tab').forEach(btn => {
+      btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
+    });
+  },
+
+  switchTab(tab) {
+    this.currentTab = tab;
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    const el = document.getElementById(`tab-${tab}`);
+    if (el) el.classList.add('active');
+    document.querySelectorAll('.nav-tab, .mobile-nav-tab').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+    // Render current tab
+    if (tab === 'inventory') Inventory.render();
+    else if (tab === 'cart') Cart.render();
+    else if (tab === 'recipes') Recipes.render();
+    else if (tab === 'household') Household.render();
+    else if (tab === 'settings') Settings.render();
+  },
+
+  loadMyData() {
+    if (!confirm('导入你的PDF库存数据（调料、主食、干货等），会追加到现有数据，确定？')) return;
+    MY_PDF_INVENTORY.forEach(item => Inventory.add({ ...item, id: undefined }));
+    MY_PDF_CART.forEach(item => Cart.addItem({ ...item, id: undefined, checked: false, addedAt: new Date().toISOString() }));
+    MY_PDF_RECIPES.forEach(r => Recipes.add({ ...r, id: undefined, createdAt: undefined }));
+    showToast('✅ PDF数据已全部导入！查看库存、购物车和食谱', 'success');
+    this.switchTab('inventory');
+  },
+
+  loadSampleData() {
+    if (!confirm('加载示例数据会在现有数据上追加，确定？')) return;
+    SAMPLE_INVENTORY.forEach(item => Inventory.add({ ...item, id: undefined }));
+    SAMPLE_RECIPES.forEach(r => Recipes.add({ ...r, id: undefined, createdAt: undefined }));
+    showToast('示例数据已加载！', 'success');
+    this.switchTab(this.currentTab);
+  },
+
+  exportData() {
+    const data = { inventory: State.inventory, recipes: State.recipes, cart: State.cart, household: State.household };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `home-manager-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    showToast('数据已导出', 'success');
+  },
+
+  importData() { document.getElementById('import-file').click(); },
+
+  handleImport(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (data.inventory) State.inventory = data.inventory;
+        if (data.recipes) State.recipes = data.recipes;
+        if (data.cart) State.cart = data.cart;
+        if (data.household) State.household = data.household;
+        State.save();
+        showToast('数据已导入', 'success');
+        this.switchTab(this.currentTab);
+      } catch { showToast('导入失败，文件格式错误', 'error'); }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  },
+
+  clearAllData() {
+    if (!confirm('确定清空所有数据？此操作不可恢复！')) return;
+    State.inventory = []; State.recipes = []; State.cart = []; State.household = [];
+    State.save();
+    Household.init();
+    showToast('数据已清空', 'info');
+    this.switchTab(this.currentTab);
+  },
+};
+
+// Keyboard shortcut: Enter to send AI chat
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('ai-chat-input')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); AIChat.send(); }
+  });
+  App.init();
+});
+</script>
+</body>
+</html>
