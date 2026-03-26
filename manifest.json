@@ -1,12 +1,12 @@
 {
-  "name": "家庭购物管家",
-  "short_name": "购物管家",
+  "name": "Lin² One Roof",
+  "short_name": "Lin² One Roof",
   "description": "家庭购物、库存、食谱一体化管理",
   "start_url": "/home-manager/",
   "scope": "/home-manager/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#f97316",
+  "background_color": "#f0ece6",
+  "theme_color": "#1a7870",
   "lang": "zh-CN",
   "orientation": "portrait-primary",
   "icons": [
@@ -14,18 +14,6 @@
       "src": "icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

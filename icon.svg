@@ -1,4 +1,29 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="80" fill="#f97316"/>
-  <text x="256" y="340" font-size="280" text-anchor="middle" font-family="serif">🛒</text>
+  <!-- Warm cream background -->
+  <rect width="512" height="512" rx="96" fill="#f4e8c0"/>
+
+  <!-- House outline: peak → eaves → walls -->
+  <polyline points="68,200 256,68 444,200"
+            fill="none" stroke="#e89520" stroke-width="24"
+            stroke-linejoin="round" stroke-linecap="round"/>
+  <line x1="68"  y1="200" x2="68"  y2="400" stroke="#e89520" stroke-width="24" stroke-linecap="round"/>
+  <line x1="444" y1="200" x2="444" y2="400" stroke="#e89520" stroke-width="24" stroke-linecap="round"/>
+
+  <!-- $Lin text (large bold) -->
+  <text x="58" y="370"
+        font-family="Georgia,'Times New Roman',serif"
+        font-size="142" font-weight="bold" fill="#e89520">$Lin</text>
+
+  <!-- Wavy underline under "Lin" portion -->
+  <path d="M176,388 Q196,400 216,388 Q236,376 256,388 Q276,400 296,388 Q316,376 336,388 Q356,400 376,388"
+        fill="none" stroke="#e89520" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- Pink 4-pointed sparkle -->
+  <polygon points="390,206 396,228 416,234 396,240 390,262 384,240 364,234 384,228"
+           fill="#e86888"/>
+
+  <!-- Superscript 2 -->
+  <text x="406" y="286"
+        font-family="Georgia,serif"
+        font-size="78" font-weight="bold" fill="#e89520">2</text>
 </svg>
