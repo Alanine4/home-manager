@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Icon Generator</title>
+<style>body{font-family:sans-serif;padding:20px;background:#222;color:#fff}
+canvas{border-radius:20px;margin:10px}
+button{padding:10px 20px;margin:8px;background:#e89520;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px}
+button:hover{background:#c87a10}</style>
+</head>
+<body>
+<h2>Lin² One Roof — 图标生成器</h2>
+<canvas id="preview" width="512" height="512"></canvas>
+<br>
+<button onclick="dl('apple-touch-icon.png',180)">📱 下载 180×180 (iOS)</button>
+<button onclick="dl('icon-192.png',192)">🤖 下载 192×192 (Android)</button>
+<button onclick="dl('icon-512.png',512)">🖥 下载 512×512</button>
+<p style="color:#aaa;font-size:13px">下载后把这3个文件上传到 GitHub 仓库</p>
+
+<script>
+function drawIcon(canvas, size) {
+  const ctx = canvas.getContext('2d');
+  const k = size / 512;
+
+  // Background
+  ctx.save();
+  roundRect(ctx, 0, 0, size, size, 96*k);
+  ctx.fillStyle = '#f4e8c0';
+  ctx.fill();
+  ctx.restore();
+
+  // House
+  ctx.strokeStyle = '#e89520';
+  ctx.lineWidth = 24*k;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  // Roof
+  ctx.beginPath();
+  ctx.moveTo(68*k, 200*k);
+  ctx.lineTo(256*k, 68*k);
+  ctx.lineTo(444*k, 200*k);
+  ctx.stroke();
+
+  // Left wall
+  ctx.beginPath();
+  ctx.moveTo(68*k, 200*k);
+  ctx.lineTo(68*k, 400*k);
+  ctx.stroke();
+
+  // Right wall
+  ctx.beginPath();
+  ctx.moveTo(444*k, 200*k);
+  ctx.lineTo(444*k, 400*k);
+  ctx.stroke();
+
+  // $Lin text
+  ctx.fillStyle = '#e89520';
+  ctx.font = `bold ${142*k}px Georgia, serif`;
+  ctx.fillText('$Lin', 58*k, 370*k);
+
+  // Measure "Lin" portion to position underline
+  const dollarW = ctx.measureText('$').width;
+  const linX = (58 + dollarW/k) * k;
+  const linW = ctx.measureText('Lin').width;
+
+  // Wavy underline
+  ctx.strokeStyle = '#e89520';
+  ctx.lineWidth = 7*k;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  const uy = 388*k;
+  const steps = 8;
+  const segW = linW / steps;
+  ctx.moveTo(linX, uy);
+  for (let i = 0; i < steps; i++) {
+    const x1 = linX + (i + 0.5) * segW;
+    const x2 = linX + (i + 1) * segW;
+    const cy1 = uy + (i % 2 === 0 ? 12*k : -12*k);
+    ctx.quadraticCurveTo(x1, cy1, x2, uy);
+  }
+  ctx.stroke();
+
+  // Pink 4-pointed sparkle at (390, 234)
+  const sx = 390*k, sy = 234*k, sr = 28*k, si = 10*k;
+  ctx.fillStyle = '#e86888';
+  ctx.beginPath();
+  ctx.moveTo(sx, sy - sr);
+  ctx.quadraticCurveTo(sx + si, sy - si, sx + sr, sy);
+  ctx.quadraticCurveTo(sx + si, sy + si, sx, sy + sr);
+  ctx.quadraticCurveTo(sx - si, sy + si, sx - sr, sy);
+  ctx.quadraticCurveTo(sx - si, sy - si, sx, sy - sr);
+  ctx.closePath();
+  ctx.fill();
+
+  // Superscript "2"
+  ctx.fillStyle = '#e89520';
+  ctx.font = `bold ${78*k}px Georgia, serif`;
+  ctx.fillText('2', 406*k, 286*k);
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+
+function dl(filename, size) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  drawIcon(c, size);
+  const a = document.createElement('a');
+  a.download = filename;
+  a.href = c.toDataURL('image/png');
+  a.click();
+}
+
+drawIcon(document.getElementById('preview'), 512);
+</script>
+</body>
+</html>
