@@ -213,6 +213,25 @@
       <h2 class="text-xl font-bold">🏠 家居必备 Household</h2>
       <button onclick="Modal.showAddHousehold()" class="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition">+ 添加</button>
     </div>
+    <!-- AI Input -->
+    <div class="ai-input-bar mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 rounded-xl p-3 border border-blue-200 dark:border-blue-800">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-blue-500">🤖</span>
+        <span class="text-sm font-medium text-blue-700 dark:text-blue-300">AI 录入家居用品</span>
+      </div>
+      <div class="flex gap-2">
+        <textarea id="house-ai-input" rows="1" placeholder='例如："买了3卷卫生纸、两瓶洗洁精"' class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400 resize-none"></textarea>
+        <button id="mic-house" onclick="Voice.toggle('house-ai-input','mic-house')" title="语音输入" class="text-lg px-2 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">🎤</button>
+        <button onclick="AI.householdInput()" class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 text-sm whitespace-nowrap">识别</button>
+      </div>
+    </div>
+    <!-- Search + Filter -->
+    <div class="flex gap-2 mb-3">
+      <input id="house-search" type="text" placeholder="搜索..." oninput="Household.render()" class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
+      <select id="house-cat-filter" onchange="Household.render()" class="text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none">
+        <option value="">全部分类</option>
+      </select>
+    </div>
     <div id="household-low-stock" class="mb-3"></div>
     <div id="household-list"></div>
   </div>
@@ -1598,6 +1617,23 @@ Example: [{"nameCn":"番茄","nameEn":"Tomato","quantity":2,"unit":"个","catego
     document.getElementById('inv-ai-input').value = '';
   },
 
+  async householdInput() {
+    const input = document.getElementById('house-ai-input').value.trim();
+    if (!input) { showToast('请输入内容', 'warn'); return; }
+    showLoading('AI 识别家居用品中...');
+    const sys = `你是一个家庭库存管理助手。从用户描述中提取家居/日用品信息并返回JSON数组。
+可用分类: toiletries(洗护), cleaning(清洁), household(家居), other(其他)
+可用单位: 个, 克, 千克, 毫升, 升, 袋, 瓶, 盒, 包, 罐, 条, 块, 束, 片, 支, 卷
+只返回JSON，格式: [{"nameCn":"卫生纸","nameEn":"Toilet Paper","quantity":3,"unit":"卷","category":"toiletries","minStock":2}]`;
+    const text = await this.call(sys, input);
+    hideLoading();
+    if (!text) return;
+    const items = extractJSON(text);
+    if (!items || !Array.isArray(items) || items.length === 0) { showToast(`AI未能识别，原文: ${(text||'').slice(0,60)}`, 'warn'); return; }
+    Modal.showEditableHouseholdConfirm(items);
+    document.getElementById('house-ai-input').value = '';
+  },
+
   async cartSuggest() {
     const input = document.getElementById('cart-ai-input').value.trim();
     const prompt = input || '根据我的当前库存，推荐我需要补充购买的食材和调料';
@@ -1655,6 +1691,30 @@ Format: [{"nameCn":"菜名","nameEn":"Dish","description":"描述","servings":2,
     document.getElementById('recipe-ai-input').value = '';
   },
 };
+
+// ==================== COLLAPSE STATE & CATEGORY MOVE ====================
+const _collapsedCats = {
+  inv:   new Set(JSON.parse(localStorage.getItem('hsl_col_inv')   || '[]')),
+  house: new Set(JSON.parse(localStorage.getItem('hsl_col_house') || '[]')),
+  toggle(page, cat) {
+    if (this[page].has(cat)) this[page].delete(cat); else this[page].add(cat);
+    localStorage.setItem(`hsl_col_${page}`, JSON.stringify([...this[page]]));
+  },
+  has(page, cat) { return this[page].has(cat); },
+};
+
+function moveCat(cat, dir) {
+  const allKeys = Object.keys(getCategories());
+  if (!State.catOrder.length) State.catOrder = allKeys.slice();
+  allKeys.forEach(k => { if (!State.catOrder.includes(k)) State.catOrder.push(k); });
+  const idx = State.catOrder.indexOf(cat);
+  if (idx === -1) return;
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= State.catOrder.length) return;
+  [State.catOrder[idx], State.catOrder[newIdx]] = [State.catOrder[newIdx], State.catOrder[idx]];
+  State.save(['catorder']);
+  Inventory.render(); Household.render();
+}
 
 // ==================== INVENTORY ====================
 const Inventory = {
@@ -1741,22 +1801,33 @@ const Inventory = {
       return;
     }
 
-    el.innerHTML = Object.entries(grouped).map(([cat, items]) => {
+    const catKeys = Object.keys(grouped);
+    el.innerHTML = catKeys.map((cat, idx) => {
       const cats = getCategories();
       const c = cats[cat] || { cn: cat, en: cat, fr: cat, icon: '📦' };
+      const items = grouped[cat];
       const lowCount = items.filter(i => i.minStock > 0 && i.quantity <= i.minStock).length;
+      const collapsed = _collapsedCats.has('inv', cat);
       return `
-      <div class="mb-4">
-        <div class="flex items-center gap-2 mb-2 text-sm font-semibold text-gray-500 dark:text-gray-400">
-          <span>${c.icon}</span><span>${catName(cat)}</span>
-          ${lowCount > 0 ? `<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full">${lowCount} ${t('lowStock')}</span>` : ''}
+      <div class="mb-3">
+        <div class="flex items-center gap-1.5 mb-2 text-sm font-semibold text-gray-500 dark:text-gray-400 select-none">
+          <button onclick="Inventory.toggleCat('${cat}')" class="flex items-center gap-1.5 flex-1 text-left hover:text-gray-700 dark:hover:text-gray-200">
+            <span class="text-xs w-3">${collapsed ? '▶' : '▼'}</span>
+            <span>${c.icon}</span><span>${catName(cat)}</span>
+            <span class="text-xs font-normal text-gray-400">(${items.length})</span>
+            ${lowCount > 0 ? `<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full">${lowCount} ${t('lowStock')}</span>` : ''}
+          </button>
+          <div class="flex gap-0.5 shrink-0">
+            ${idx > 0 ? `<button onclick="moveCat('${cat}',-1)" class="text-xs text-gray-300 hover:text-gray-600 dark:hover:text-gray-200 w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700" title="上移">↑</button>` : '<span class="w-6"></span>'}
+            ${idx < catKeys.length - 1 ? `<button onclick="moveCat('${cat}',1)" class="text-xs text-gray-300 hover:text-gray-600 dark:hover:text-gray-200 w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700" title="下移">↓</button>` : '<span class="w-6"></span>'}
+          </div>
         </div>
-        <div class="space-y-2">
-          ${items.map(item => this.renderItem(item)).join('')}
-        </div>
+        ${collapsed ? '' : `<div class="space-y-2">${items.map(item => this.renderItem(item)).join('')}</div>`}
       </div>`;
     }).join('');
   },
+
+  toggleCat(cat) { _collapsedCats.toggle('inv', cat); this.render(); },
 
   renderItem(item) {
     const cats = getCategories();
@@ -2175,18 +2246,48 @@ const Household = {
     }
   },
 
+  add(item) {
+    const newItem = { ...item, id: uid(), lastUpdated: new Date().toISOString() };
+    State.household.push(newItem);
+    State.save(['household']); Cloud.push();
+    this.render();
+    History.record('add', newItem);
+  },
+
+  update(id, data) {
+    const item = State.household.find(i => i.id === id);
+    if (!item) return;
+    const prev = { ...item };
+    Object.assign(item, data, { lastUpdated: new Date().toISOString() });
+    State.save(['household']); Cloud.push();
+    this.render();
+    History.record('edit', item, prev);
+  },
+
   adjustQty(id, delta) {
     const item = State.household.find(i => i.id === id);
     if (!item) return;
     item.quantity = Math.max(0, (parseFloat(item.quantity) || 0) + delta);
-    State.save(['household']);
+    item.lastUpdated = new Date().toISOString();
+    State.save(['household']); Cloud.push();
     this.render();
   },
 
   remove(id) {
+    const item = State.household.find(i => i.id === id);
+    if (item) History.record('delete', item);
     State.household = State.household.filter(i => i.id !== id);
-    State.save(['household']);
+    State.save(['household']); Cloud.push();
     this.render();
+  },
+
+  changeCategory(id, newCat) {
+    const item = State.household.find(i => i.id === id);
+    if (!item || item.category === newCat) return;
+    item.category = newCat; item.lastUpdated = new Date().toISOString();
+    State.save(['household']); Cloud.push();
+    this.render();
+    showToast(`分类已改为 ${catLabel(newCat)}`, 'success');
   },
 
   addToCart(id) {
@@ -2204,56 +2305,113 @@ const Household = {
     App.switchTab('cart');
   },
 
+  toggleCat(cat) { _collapsedCats.toggle('house', cat); this.render(); },
+
   render() {
     const el = document.getElementById('household-list');
     const lowEl = document.getElementById('household-low-stock');
     if (!el) return;
-    const low = State.household.filter(i => i.minStock > 0 && i.quantity <= i.minStock);
-    if (low.length > 0) {
-      lowEl.innerHTML = `<div class="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl p-3 mb-4">
-        <div class="flex items-center justify-between mb-2">
-          <span class="font-semibold text-red-700 dark:text-red-400">⚠️ 低库存提醒 (${low.length})</span>
-          <button onclick="Household.addAllLowToCart()" class="text-xs bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700">全部加入购物车</button>
-        </div>
-        <div class="flex flex-wrap gap-1">${low.map(i=>`<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 px-2 py-1 rounded-full">${i.nameCn}: ${i.quantity}${i.unit}</span>`).join('')}</div>
-      </div>`;
-    } else {
-      lowEl.innerHTML = '<div class="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-xl p-3 mb-4 text-green-700 dark:text-green-400 text-sm">✅ 所有家居用品库存充足</div>';
+
+    // Fill category filter dropdown
+    const catSel = document.getElementById('house-cat-filter');
+    if (catSel) {
+      const prevVal = catSel.value;
+      catSel.innerHTML = `<option value="">全部分类</option>`;
+      Object.entries(getCategories()).forEach(([k,v]) => {
+        const opt = document.createElement('option'); opt.value = k; opt.textContent = `${v.icon} ${catName(k)}`;
+        catSel.appendChild(opt);
+      });
+      catSel.value = prevVal;
     }
-    const groups = {};
-    State.household.forEach(item => {
-      const cat = item.category || 'other';
-      if (!groups[cat]) groups[cat] = [];
-      groups[cat].push(item);
+
+    const search = (document.getElementById('house-search')?.value || '').toLowerCase();
+    const catFilter = document.getElementById('house-cat-filter')?.value || '';
+
+    const filtered = State.household.filter(item => {
+      const matchSearch = !search || item.nameCn?.toLowerCase().includes(search) || item.nameEn?.toLowerCase().includes(search);
+      const matchCat = !catFilter || item.category === catFilter;
+      return matchSearch && matchCat;
     });
-    el.innerHTML = Object.entries(groups).map(([cat, items]) => {
+
+    // Low stock alert
+    const low = State.household.filter(i => i.minStock > 0 && i.quantity <= i.minStock);
+    if (lowEl) {
+      if (low.length > 0) {
+        lowEl.innerHTML = `<div class="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl p-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-semibold text-red-700 dark:text-red-400">⚠️ 低库存提醒 (${low.length})</span>
+            <button onclick="Household.addAllLowToCart()" class="text-xs bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700">全部加入购物车</button>
+          </div>
+          <div class="flex flex-wrap gap-1">${low.map(i=>`<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 px-2 py-1 rounded-full">${i.nameCn}: ${i.quantity}${i.unit}</span>`).join('')}</div>
+        </div>`;
+      } else {
+        lowEl.innerHTML = '<div class="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-xl p-3 text-green-700 dark:text-green-400 text-sm">✅ 所有家居用品库存充足</div>';
+      }
+    }
+
+    if (filtered.length === 0) {
+      el.innerHTML = `<div class="text-center py-12 text-gray-400"><div class="text-4xl mb-2">🏠</div><p>暂无家居用品，添加或使用AI录入</p></div>`;
+      return;
+    }
+
+    const grouped = {};
+    filtered.forEach(item => {
+      const cat = item.category || 'other';
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(item);
+    });
+
+    const catKeys = Object.keys(grouped);
+    el.innerHTML = catKeys.map((cat, idx) => {
       const c = getCategories()[cat] || { cn: cat, icon: '📦' };
-      return `<div class="mb-4">
-        <div class="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">${c.icon} ${catName(cat)}</div>
-        <div class="space-y-2">${items.map(item => {
-          const isLow = item.minStock > 0 && item.quantity <= item.minStock;
-          return `<div class="item-card bg-white dark:bg-gray-800 rounded-xl p-3 border ${isLow?'border-red-300 dark:border-red-700':'border-gray-200 dark:border-gray-700'} flex items-center gap-3">
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2">
-                <span class="font-medium name-cn">${item.nameCn}</span>
-                <span class="text-xs text-gray-400 name-en">${item.nameEn||''}</span>
-                ${isLow?'<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">低库存</span>':''}
-              </div>
-              ${item.minStock > 0 ? `<div class="text-xs text-gray-400">最低库存: ${item.minStock}${item.unit}</div>` : ''}
-            </div>
-            <div class="flex items-center gap-1 shrink-0">
-              <button onclick="Household.adjustQty('${item.id}',-1)" class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 flex items-center justify-center font-bold">−</button>
-              <span class="text-sm font-medium min-w-12 text-center">${formatQty(item.quantity, item.unit)}</span>
-              <button onclick="Household.adjustQty('${item.id}',1)" class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 flex items-center justify-center font-bold">+</button>
-            </div>
-            <div class="flex items-center gap-1 shrink-0">
-              <button onclick="Household.addToCart('${item.id}')" class="text-xs text-green-500 hover:text-green-700 px-1" title="加入购物车">🛒</button>
-              <button onclick="Household.remove('${item.id}')" class="text-xs text-red-400 hover:text-red-600 px-1">🗑</button>
-            </div>
-          </div>`;
-        }).join('')}</div>
+      const items = grouped[cat];
+      const lowCount = items.filter(i => i.minStock > 0 && i.quantity <= i.minStock).length;
+      const collapsed = _collapsedCats.has('house', cat);
+      return `<div class="mb-3">
+        <div class="flex items-center gap-1.5 mb-2 text-sm font-semibold text-gray-500 dark:text-gray-400 select-none">
+          <button onclick="Household.toggleCat('${cat}')" class="flex items-center gap-1.5 flex-1 text-left hover:text-gray-700 dark:hover:text-gray-200">
+            <span class="text-xs w-3">${collapsed ? '▶' : '▼'}</span>
+            <span>${c.icon}</span><span>${catName(cat)}</span>
+            <span class="text-xs font-normal text-gray-400">(${items.length})</span>
+            ${lowCount > 0 ? `<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full">${lowCount} 低库存</span>` : ''}
+          </button>
+          <div class="flex gap-0.5 shrink-0">
+            ${idx > 0 ? `<button onclick="moveCat('${cat}',-1)" class="text-xs text-gray-300 hover:text-gray-600 dark:hover:text-gray-200 w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700" title="上移">↑</button>` : '<span class="w-6"></span>'}
+            ${idx < catKeys.length - 1 ? `<button onclick="moveCat('${cat}',1)" class="text-xs text-gray-300 hover:text-gray-600 dark:hover:text-gray-200 w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700" title="下移">↓</button>` : '<span class="w-6"></span>'}
+          </div>
+        </div>
+        ${collapsed ? '' : `<div class="space-y-2">${items.map(item => this.renderItem(item)).join('')}</div>`}
       </div>`;
     }).join('');
+  },
+
+  renderItem(item) {
+    const isLow = item.minStock > 0 && item.quantity <= item.minStock;
+    return `<div class="item-card bg-white dark:bg-gray-800 rounded-xl p-3 border ${isLow ? 'border-red-300 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'} flex items-center gap-3">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="font-medium name-cn">${item.nameCn}</span>
+          ${item.nameEn ? `<span class="text-xs text-gray-400 name-en">${item.nameEn}</span>` : ''}
+          ${isLow ? '<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">低库存</span>' : ''}
+        </div>
+        <div class="flex items-center gap-1 flex-wrap mt-0.5">
+          <select onchange="Household.changeCategory('${item.id}',this.value)" class="text-xs bg-gray-100 dark:bg-gray-700 border-0 rounded px-1 py-0.5 text-gray-500 dark:text-gray-400 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-400">
+            ${catOptions(item.category)}
+          </select>
+          ${item.notes ? `<span class="text-xs text-gray-400">${item.notes}</span>` : ''}
+        </div>
+      </div>
+      <div class="flex items-center gap-1 shrink-0">
+        <button onclick="Household.adjustQty('${item.id}',-1)" class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center font-bold">−</button>
+        <span class="text-sm font-medium min-w-12 text-center">${formatQty(item.quantity, item.unit)}</span>
+        <button onclick="Household.adjustQty('${item.id}',1)" class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center font-bold">+</button>
+      </div>
+      <div class="flex items-center gap-1 shrink-0">
+        <button onclick="Modal.showEditHousehold('${item.id}')" class="text-xs text-blue-500 hover:text-blue-700 px-1">✏️</button>
+        <button onclick="Household.addToCart('${item.id}')" class="text-xs text-green-500 hover:text-green-700 px-1" title="加入购物车">🛒</button>
+        <button onclick="Household.remove('${item.id}')" class="text-xs text-red-400 hover:text-red-600 px-1">🗑</button>
+      </div>
+    </div>`;
   },
 };
 
@@ -2699,6 +2857,10 @@ const Modal = {
     if (item) this._openItem('cart', item);
   },
   showAddHousehold() { this._openItem('household', null); },
+  showEditHousehold(id) {
+    const item = State.household.find(i => i.id === id);
+    if (item) this._openItem('household', item);
+  },
 
   _openItem(type, item) {
     document.getElementById('item-type').value = type;
@@ -2744,7 +2906,7 @@ const Modal = {
     } else if (type === 'cart') {
       if (id) Cart.update(id, data); else Cart.addItem(data);
     } else if (type === 'household') {
-      data.id = uid(); State.household.push(data); State.save(['household']); Household.render();
+      if (id) Household.update(id, data); else Household.add(data);
     }
     this.closeItem();
     showToast('已保存', 'success');
@@ -2935,6 +3097,49 @@ const Modal = {
       showToast(`${valid.length} 件物品已加入库存`, 'success');
       this.closeAIConfirm();
       App.switchTab('inventory');
+    };
+    document.getElementById('modal-ai-confirm').classList.add('open');
+  },
+
+  // ── 可编辑家居用品确认 ──
+  showEditableHouseholdConfirm(items) {
+    window._editHouseItems = items.map(i => ({ ...i }));
+    const renderRows = () => window._editHouseItems.map((item, idx) => `
+      <div class="editable-row mb-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
+        <div class="flex gap-2 mb-1.5">
+          <input type="text" value="${(item.nameCn||'').replace(/"/g,'&quot;')}" placeholder="中文名 *" oninput="window._editHouseItems[${idx}].nameCn=this.value"
+            class="flex-1 min-w-0 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-400" />
+          <input type="text" value="${(item.nameEn||'').replace(/"/g,'&quot;')}" placeholder="English" oninput="window._editHouseItems[${idx}].nameEn=this.value"
+            class="flex-1 min-w-0 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-400" />
+          <button type="button" onclick="window._editHouseItems.splice(${idx},1);Modal.showEditableHouseholdConfirm(window._editHouseItems)"
+            class="text-red-400 hover:text-red-600 shrink-0 px-1 text-lg">✕</button>
+        </div>
+        <div class="flex gap-2">
+          <input type="number" value="${item.quantity||1}" min="0" step="0.1" oninput="window._editHouseItems[${idx}].quantity=parseFloat(this.value)||1"
+            class="w-20 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-2 py-1.5 focus:outline-none" placeholder="数量" />
+          <select onchange="window._editHouseItems[${idx}].unit=this.value"
+            class="w-20 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-1 py-1.5 focus:outline-none">
+            ${unitOptions(item.unit)}
+          </select>
+          <select onchange="window._editHouseItems[${idx}].category=this.value"
+            class="flex-1 min-w-0 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-1 py-1.5 focus:outline-none">
+            ${catOptions(item.category||'household')}
+          </select>
+        </div>
+      </div>`).join('');
+    document.getElementById('ai-confirm-title').textContent = '确认家居用品';
+    document.getElementById('ai-confirm-content').innerHTML = `
+      <div id="editable-house-rows">${renderRows()}</div>
+      <button onclick="window._editHouseItems.push({nameCn:'',nameEn:'',quantity:1,unit:'个',category:'household'});Modal.showEditableHouseholdConfirm(window._editHouseItems)"
+        class="mt-2 text-sm text-blue-500 hover:underline">+ 添加一行</button>`;
+    document.getElementById('ai-confirm-btn').textContent = '加入家居库存';
+    document.getElementById('ai-confirm-btn').onclick = () => {
+      const valid = window._editHouseItems.filter(i => i.nameCn && i.nameCn.trim());
+      if (!valid.length) { showToast('没有有效物品', 'warn'); return; }
+      valid.forEach(item => Household.add({ ...item, quantity: parseFloat(item.quantity)||1 }));
+      showToast(`${valid.length} 件物品已加入家居库存`, 'success');
+      this.closeAIConfirm();
+      App.switchTab('household');
     };
     document.getElementById('modal-ai-confirm').classList.add('open');
   },
