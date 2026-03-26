@@ -124,6 +124,7 @@
       </div>
       <div class="flex gap-2">
         <textarea id="cart-ai-input" rows="1" placeholder="告诉AI你想买什么，或让它根据库存推荐... (需要API Key)" class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400 resize-none"></textarea>
+        <button id="mic-cart" onclick="Voice.toggle('cart-ai-input','mic-cart')" title="语音输入" class="text-lg px-2 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">🎤</button>
         <button onclick="AI.cartSuggest()" class="bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 text-sm whitespace-nowrap">发送</button>
       </div>
     </div>
@@ -149,6 +150,7 @@
       </div>
       <div class="flex gap-2 mb-2">
         <textarea id="inv-ai-input" rows="1" placeholder='例如："我买了2个番茄、一瓶生抽、500克猪肉"' class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-green-400 resize-none"></textarea>
+        <button id="mic-inv" onclick="Voice.toggle('inv-ai-input','mic-inv')" title="语音输入" class="text-lg px-2 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">🎤</button>
         <button onclick="AI.inventoryInput()" class="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 text-sm whitespace-nowrap">识别</button>
       </div>
       <div class="flex gap-2">
@@ -191,6 +193,7 @@
       </div>
       <div class="flex gap-2">
         <textarea id="recipe-ai-input" rows="1" placeholder='例如："教我做番茄炒蛋" 或 "add pasta carbonara recipe"' class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-400 resize-none"></textarea>
+        <button id="mic-recipe" onclick="Voice.toggle('recipe-ai-input','mic-recipe')" title="语音输入" class="text-lg px-2 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">🎤</button>
         <button onclick="AI.recipeInput()" class="bg-orange-600 text-white px-3 py-2 rounded-lg hover:bg-orange-700 text-sm whitespace-nowrap">生成</button>
       </div>
     </div>
@@ -224,6 +227,7 @@
     <div id="ai-chat-messages" class="space-y-3 mb-4 min-h-32" style="max-height: 50vh; overflow-y: auto;"></div>
     <div class="flex gap-2 sticky bottom-4">
       <textarea id="ai-chat-input" rows="2" placeholder="问AI任何关于购物、食谱、库存的问题..." class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-400 resize-none"></textarea>
+      <button id="mic-chat" onclick="Voice.toggle('ai-chat-input','mic-chat')" title="语音输入" class="text-lg px-2 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">🎤</button>
       <button onclick="AIChat.send()" class="bg-blue-600 text-white px-4 rounded-xl hover:bg-blue-700 text-sm font-medium">发送</button>
     </div>
   </div>
@@ -1029,6 +1033,59 @@ const Cloud = {
     const [icon, cls, label] = map[status] || map.error;
     el.className = `text-xs ${cls} flex items-center gap-1`;
     el.innerHTML = `<span>${icon}</span><span class="hidden sm:inline">${label}</span>`;
+  },
+};
+
+// ==================== VOICE INPUT ====================
+const Voice = {
+  _rec: null,
+  _btnId: null,
+
+  supported() {
+    return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+  },
+
+  toggle(inputId, btnId) {
+    if (this._rec) { this.stop(); return; }
+    if (!this.supported()) {
+      showToast('浏览器不支持语音，请用 Chrome 或手机浏览器', 'warn');
+      return;
+    }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    this._rec = new SR();
+    this._btnId = btnId;
+
+    const langMap = { zh: 'zh-CN', en: 'en-US', fr: 'fr-FR', bilingual: 'zh-CN' };
+    this._rec.lang = langMap[State.settings.language || 'bilingual'] || 'zh-CN';
+    this._rec.continuous = true;
+    this._rec.interimResults = true;
+
+    this._rec.onstart = () => {
+      const btn = document.getElementById(btnId);
+      if (btn) { btn.textContent = '🔴'; btn.classList.add('animate-pulse'); btn.title = '点击停止'; }
+      showToast('🎤 开始说话...', 'info');
+    };
+
+    this._rec.onresult = (e) => {
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+      const input = document.getElementById(inputId);
+      if (input) input.value = transcript;
+    };
+
+    this._rec.onerror = (e) => {
+      if (e.error !== 'no-speech') showToast('语音识别错误: ' + e.error, 'warn');
+      this.stop();
+    };
+
+    this._rec.onend = () => this.stop();
+    this._rec.start();
+  },
+
+  stop() {
+    if (this._rec) { try { this._rec.stop(); } catch(e) {} this._rec = null; }
+    const btn = document.getElementById(this._btnId);
+    if (btn) { btn.textContent = '🎤'; btn.classList.remove('animate-pulse'); btn.title = '语音输入'; }
+    this._btnId = null;
   },
 };
 
