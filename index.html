@@ -1861,7 +1861,8 @@ const Inventory = {
       return;
     }
 
-    const catKeys = Object.keys(grouped);
+    // Sort catKeys by catOrder (this is what actually makes sorting work)
+    const catKeys = Object.keys(getCategories()).filter(k => grouped[k]);
     window._invCatKeys = catKeys;
     const btn = 'text-xs text-gray-300 hover:text-gray-600 dark:hover:text-gray-200 w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700';
     el.innerHTML = catKeys.map((cat, idx) => {
@@ -2426,7 +2427,8 @@ const Household = {
       grouped[cat].push(item);
     });
 
-    const catKeys = Object.keys(grouped);
+    // Sort catKeys by catOrder
+    const catKeys = Object.keys(getCategories()).filter(k => grouped[k]);
     window._houseCatKeys = catKeys;
     const btn = 'text-xs text-gray-300 hover:text-gray-600 dark:hover:text-gray-200 w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700';
     el.innerHTML = catKeys.map((cat, idx) => {
