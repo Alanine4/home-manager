@@ -3606,6 +3606,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
+  // iOS PWA fix: keyboard doesn't appear even when input is focused.
+  // Calling focus() synchronously inside touchend (not setTimeout) keeps it
+  // within the user-gesture context, which iOS requires to show the keyboard.
+  document.addEventListener('touchend', function(e) {
+    const el = e.target;
+    if ((el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') && !el.readOnly && !el.disabled) {
+      el.focus();
+    }
+  }, false);
 });
 </script>
 </body>
