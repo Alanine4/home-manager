@@ -1,6 +1,6 @@
 // 家庭购物管家 Service Worker
 // 版本号改变时旧缓存自动清除
-const CACHE = 'hsl-v1';
+const CACHE = 'hsl-v3';
 const SHELL = ['/home-manager/', '/home-manager/index.html'];
 
 // 安装：预缓存主页面
