@@ -323,6 +323,8 @@
               <option value="zh">中文</option>
               <option value="en">English</option>
               <option value="fr">Français</option>
+              <option value="es">Español</option>
+              <option value="th">ภาษาไทย Thai</option>
             </select>
           </div>
           <div>
@@ -342,9 +344,12 @@
         <p class="text-xs text-gray-400 mb-3">所有分类均可删除，删除时可选择迁移物品</p>
         <div id="cat-builtin" class="flex flex-wrap gap-1 mb-3"></div>
         <div id="cat-custom" class="space-y-2 mb-3"></div>
+        <div class="flex gap-2 mb-2">
+          <input type="text" id="new-cat-cn" placeholder="中文名（必填）" class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
+          <button onclick="Settings.aiCatFill()" class="text-sm bg-indigo-500 text-white px-3 py-2 rounded-lg hover:bg-indigo-600 whitespace-nowrap">🤖 AI填写</button>
+        </div>
         <div class="flex gap-2">
           <input type="text" id="new-cat-icon" placeholder="🍱" class="w-12 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-2 focus:outline-none text-center" />
-          <input type="text" id="new-cat-cn" placeholder="中文名" class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
           <input type="text" id="new-cat-en" placeholder="English" class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
           <input type="text" id="new-cat-fr" placeholder="Français" class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
           <button onclick="Settings.addCategory()" class="text-sm bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700">添加</button>
@@ -641,19 +646,19 @@
 
 // ==================== CONSTANTS ====================
 const CATEGORIES = {
-  vegetables: { cn: '蔬菜', en: 'Vegetables',      fr: 'Légumes',       icon: '🥦' },
-  meat:        { cn: '肉类', en: 'Meat & Fish',     fr: 'Viandes',       icon: '🥩' },
-  dairy:       { cn: '乳制品', en: 'Dairy & Eggs',  fr: 'Laitiers',      icon: '🥚' },
-  grains:      { cn: '主食', en: 'Grains',          fr: 'Céréales',      icon: '🍚' },
-  condiments:  { cn: '调料', en: 'Condiments',      fr: 'Condiments',    icon: '🧂' },
-  snacks:      { cn: '零食', en: 'Snacks',          fr: 'Snacks',        icon: '🍪' },
-  drinks:      { cn: '饮料', en: 'Beverages',       fr: 'Boissons',      icon: '🧃' },
-  frozen:      { cn: '冷冻', en: 'Frozen',          fr: 'Surgelés',      icon: '🧊' },
-  toiletries:  { cn: '洗护', en: 'Toiletries',      fr: 'Soins',         icon: '🧴' },
-  cleaning:    { cn: '清洁', en: 'Cleaning',        fr: 'Nettoyage',     icon: '🧹' },
-  household:   { cn: '家居', en: 'Household',       fr: 'Maison',        icon: '🏠' },
-  other:       { cn: '其他', en: 'Other',           fr: 'Autres',        icon: '📦' },
-  staples:     { cn: '常备基础', en: 'Pantry Staples', fr: 'Provisions', icon: '♾️', unlimited: true },
+  vegetables: { cn: '蔬菜', en: 'Vegetables',      fr: 'Légumes',       icon: '🥦', section: 'food' },
+  meat:        { cn: '肉类', en: 'Meat & Fish',     fr: 'Viandes',       icon: '🥩', section: 'food' },
+  dairy:       { cn: '乳制品', en: 'Dairy & Eggs',  fr: 'Laitiers',      icon: '🥚', section: 'food' },
+  grains:      { cn: '主食', en: 'Grains',          fr: 'Céréales',      icon: '🍚', section: 'food' },
+  condiments:  { cn: '调料', en: 'Condiments',      fr: 'Condiments',    icon: '🧂', section: 'food' },
+  snacks:      { cn: '零食', en: 'Snacks',          fr: 'Snacks',        icon: '🍪', section: 'food' },
+  drinks:      { cn: '饮料', en: 'Beverages',       fr: 'Boissons',      icon: '🧃', section: 'food' },
+  frozen:      { cn: '冷冻', en: 'Frozen',          fr: 'Surgelés',      icon: '🧊', section: 'food' },
+  other:       { cn: '其他', en: 'Other',           fr: 'Autres',        icon: '📦', section: 'food' },
+  staples:     { cn: '常备基础', en: 'Pantry Staples', fr: 'Provisions', icon: '♾️', unlimited: true, section: 'food' },
+  toiletries:  { cn: '洗护', en: 'Toiletries',      fr: 'Soins',         icon: '🧴', section: 'household' },
+  cleaning:    { cn: '清洁', en: 'Cleaning',        fr: 'Nettoyage',     icon: '🧹', section: 'household' },
+  household:   { cn: '家居', en: 'Household',       fr: 'Maison',        icon: '🏠', section: 'household' },
 };
 
 const STORES = {
@@ -712,6 +717,38 @@ const TRANSLATIONS = {
     invConfirmTitle:'📦 Détection IA (modifiable)', invConfirmBtn:'✅ Tout ajouter', addRow:'+ Ajouter ligne',
     nameCnLabel:'Chinois', nameEnLabel:'Anglais', qtyLabel:'Qté', unitLabel:'Unité', catLabel:'Catégorie',
     canCook:'✅ Faisable', missingN:'🛒 Manque ',
+  },
+  es: {
+    cart:'Carrito', inventory:'Inventario', recipes:'Recetas', household:'Hogar', ai:'Asistente IA', settings:'Ajustes',
+    add:'+ Añadir', save:'Guardar', cancel:'Cancelar', confirm:'Confirmar',
+    search:'Buscar...', allCats:'Todas las categorías',
+    cartTitle:'🛒 Carrito', invTitle:'📦 Inventario', recTitle:'🍳 Recetas', houseTitle:'🏠 Hogar', aiTitle:'🤖 Asistente IA', settingsTitle:'⚙️ Ajustes',
+    boughtToInv:'✅ Comprado→stock', groupByStore:'Por tienda', groupByCat:'Por categoría',
+    aiSuggest:'Sugerencias IA', aiInvInput:'IA añadir stock', aiRecipeInput:'IA añadir receta',
+    aiSend:'Enviar', aiRecognize:'Analizar', aiGenerate:'Generar', aiRecommend:'🤖 IA sugiere',
+    lowStock:'Stock bajo', inCart:'Añadir al carrito', details:'Detalles',
+    catManage:'🗂 Categorías', catDesc:'Todas las categorías se pueden eliminar', addCat:'Añadir',
+    catIconPh:'Icono', catCnPh:'Chino', catEnPh:'Inglés', catFrPh:'Francés',
+    dataManage:'📋 Datos',
+    invConfirmTitle:'📦 Detección IA (editable)', invConfirmBtn:'✅ Añadir todo', addRow:'+ Añadir fila',
+    nameCnLabel:'Chino', nameEnLabel:'Inglés', qtyLabel:'Cant.', unitLabel:'Unidad', catLabel:'Categoría',
+    canCook:'✅ Se puede cocinar', missingN:'🛒 Faltan ',
+  },
+  th: {
+    cart:'ตะกร้า', inventory:'คลัง', recipes:'สูตรอาหาร', household:'ของใช้บ้าน', ai:'ผู้ช่วย AI', settings:'ตั้งค่า',
+    add:'+ เพิ่ม', save:'บันทึก', cancel:'ยกเลิก', confirm:'ยืนยัน',
+    search:'ค้นหา...', allCats:'ทุกหมวด',
+    cartTitle:'🛒 ตะกร้าซื้อของ', invTitle:'📦 คลังสินค้า', recTitle:'🍳 สูตรอาหาร', houseTitle:'🏠 ของใช้บ้าน', aiTitle:'🤖 ผู้ช่วย AI', settingsTitle:'⚙️ ตั้งค่า',
+    boughtToInv:'✅ ซื้อแล้ว→คลัง', groupByStore:'แยกร้านค้า', groupByCat:'แยกหมวด',
+    aiSuggest:'AI แนะนำสินค้า', aiInvInput:'AI เพิ่มคลัง', aiRecipeInput:'AI เพิ่มสูตร',
+    aiSend:'ส่ง', aiRecognize:'วิเคราะห์', aiGenerate:'สร้าง', aiRecommend:'🤖 AI แนะนำ',
+    lowStock:'สินค้าใกล้หมด', inCart:'เพิ่มตะกร้า', details:'รายละเอียด',
+    catManage:'🗂 จัดการหมวดหมู่', catDesc:'ลบหมวดหมู่ได้ทั้งหมด', addCat:'เพิ่ม',
+    catIconPh:'ไอคอน', catCnPh:'ภาษาจีน', catEnPh:'ภาษาอังกฤษ', catFrPh:'ภาษาฝรั่งเศส',
+    dataManage:'📋 ข้อมูล',
+    invConfirmTitle:'📦 AI ตรวจสอบ (แก้ไขได้)', invConfirmBtn:'✅ เพิ่มทั้งหมด', addRow:'+ เพิ่มแถว',
+    nameCnLabel:'ชื่อจีน', nameEnLabel:'ชื่ออังกฤษ', qtyLabel:'จำนวน', unitLabel:'หน่วย', catLabel:'หมวด',
+    canCook:'✅ ทำได้เลย', missingN:'🛒 ขาด ',
   },
 };
 
@@ -1081,7 +1118,7 @@ const Voice = {
     this._rec = new SR();
     this._btnId = btnId;
 
-    const langMap = { zh: 'zh-CN', en: 'en-US', fr: 'fr-FR', bilingual: 'zh-CN' };
+    const langMap = { zh: 'zh-CN', en: 'en-US', fr: 'fr-FR', es: 'es-ES', th: 'th-TH', bilingual: 'zh-CN' };
     this._rec.lang = langMap[State.settings.language || 'bilingual'] || 'zh-CN';
     this._rec.continuous = true;
     this._rec.interimResults = true;
@@ -1703,15 +1740,38 @@ const _collapsedCats = {
   has(page, cat) { return this[page].has(cat); },
 };
 
-function moveCat(cat, dir) {
+// 初始化 catOrder，确保包含所有分类
+function _ensureCatOrder() {
   const allKeys = Object.keys(getCategories());
   if (!State.catOrder.length) State.catOrder = allKeys.slice();
   allKeys.forEach(k => { if (!State.catOrder.includes(k)) State.catOrder.push(k); });
-  const idx = State.catOrder.indexOf(cat);
-  if (idx === -1) return;
-  const newIdx = idx + dir;
-  if (newIdx < 0 || newIdx >= State.catOrder.length) return;
-  [State.catOrder[idx], State.catOrder[newIdx]] = [State.catOrder[newIdx], State.catOrder[idx]];
+}
+
+// 交换两个可见相邻分类（修复原来跳过隐藏分类的 bug）
+function moveCatInList(cat, neighbor) {
+  _ensureCatOrder();
+  const aIdx = State.catOrder.indexOf(cat);
+  const bIdx = State.catOrder.indexOf(neighbor);
+  if (aIdx === -1 || bIdx === -1) return;
+  [State.catOrder[aIdx], State.catOrder[bIdx]] = [State.catOrder[bIdx], State.catOrder[aIdx]];
+  State.save(['catorder']);
+  Inventory.render(); Household.render();
+}
+
+// 置顶/置底（在可见分类范围内）
+function moveCatToEdge(cat, edge, visKeys) {
+  _ensureCatOrder();
+  const aIdx = State.catOrder.indexOf(cat);
+  if (aIdx === -1) return;
+  State.catOrder.splice(aIdx, 1);
+  if (edge === 'top') {
+    const refIdx = State.catOrder.indexOf(visKeys[0]);
+    State.catOrder.splice(refIdx >= 0 ? refIdx : 0, 0, cat);
+  } else {
+    const last = visKeys[visKeys.length - 1];
+    const refIdx = State.catOrder.indexOf(last);
+    State.catOrder.splice(refIdx >= 0 ? refIdx + 1 : State.catOrder.length, 0, cat);
+  }
   State.save(['catorder']);
   Inventory.render(); Household.render();
 }
@@ -1802,12 +1862,15 @@ const Inventory = {
     }
 
     const catKeys = Object.keys(grouped);
+    window._invCatKeys = catKeys;
+    const btn = 'text-xs text-gray-300 hover:text-gray-600 dark:hover:text-gray-200 w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700';
     el.innerHTML = catKeys.map((cat, idx) => {
       const cats = getCategories();
       const c = cats[cat] || { cn: cat, en: cat, fr: cat, icon: '📦' };
       const items = grouped[cat];
       const lowCount = items.filter(i => i.minStock > 0 && i.quantity <= i.minStock).length;
       const collapsed = _collapsedCats.has('inv', cat);
+      const nb = JSON.stringify(catKeys).replace(/"/g,'&quot;');
       return `
       <div class="mb-3">
         <div class="flex items-center gap-1.5 mb-2 text-sm font-semibold text-gray-500 dark:text-gray-400 select-none">
@@ -1818,8 +1881,10 @@ const Inventory = {
             ${lowCount > 0 ? `<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full">${lowCount} ${t('lowStock')}</span>` : ''}
           </button>
           <div class="flex gap-0.5 shrink-0">
-            ${idx > 0 ? `<button onclick="moveCat('${cat}',-1)" class="text-xs text-gray-300 hover:text-gray-600 dark:hover:text-gray-200 w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700" title="上移">↑</button>` : '<span class="w-6"></span>'}
-            ${idx < catKeys.length - 1 ? `<button onclick="moveCat('${cat}',1)" class="text-xs text-gray-300 hover:text-gray-600 dark:hover:text-gray-200 w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700" title="下移">↓</button>` : '<span class="w-6"></span>'}
+            ${idx > 0 ? `<button onclick="moveCatToEdge('${cat}','top',window._invCatKeys)" class="${btn}" title="置顶">⤒</button>` : '<span class="w-6"></span>'}
+            ${idx > 0 ? `<button onclick="moveCatInList('${cat}','${catKeys[idx-1]}')" class="${btn}" title="上移">↑</button>` : '<span class="w-6"></span>'}
+            ${idx < catKeys.length-1 ? `<button onclick="moveCatInList('${cat}','${catKeys[idx+1]}')" class="${btn}" title="下移">↓</button>` : '<span class="w-6"></span>'}
+            ${idx < catKeys.length-1 ? `<button onclick="moveCatToEdge('${cat}','bottom',window._invCatKeys)" class="${btn}" title="置底">⤓</button>` : '<span class="w-6"></span>'}
           </div>
         </div>
         ${collapsed ? '' : `<div class="space-y-2">${items.map(item => this.renderItem(item)).join('')}</div>`}
@@ -2362,6 +2427,8 @@ const Household = {
     });
 
     const catKeys = Object.keys(grouped);
+    window._houseCatKeys = catKeys;
+    const btn = 'text-xs text-gray-300 hover:text-gray-600 dark:hover:text-gray-200 w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700';
     el.innerHTML = catKeys.map((cat, idx) => {
       const c = getCategories()[cat] || { cn: cat, icon: '📦' };
       const items = grouped[cat];
@@ -2376,8 +2443,10 @@ const Household = {
             ${lowCount > 0 ? `<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full">${lowCount} 低库存</span>` : ''}
           </button>
           <div class="flex gap-0.5 shrink-0">
-            ${idx > 0 ? `<button onclick="moveCat('${cat}',-1)" class="text-xs text-gray-300 hover:text-gray-600 dark:hover:text-gray-200 w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700" title="上移">↑</button>` : '<span class="w-6"></span>'}
-            ${idx < catKeys.length - 1 ? `<button onclick="moveCat('${cat}',1)" class="text-xs text-gray-300 hover:text-gray-600 dark:hover:text-gray-200 w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700" title="下移">↓</button>` : '<span class="w-6"></span>'}
+            ${idx > 0 ? `<button onclick="moveCatToEdge('${cat}','top',window._houseCatKeys)" class="${btn}" title="置顶">⤒</button>` : '<span class="w-6"></span>'}
+            ${idx > 0 ? `<button onclick="moveCatInList('${cat}','${catKeys[idx-1]}')" class="${btn}" title="上移">↑</button>` : '<span class="w-6"></span>'}
+            ${idx < catKeys.length-1 ? `<button onclick="moveCatInList('${cat}','${catKeys[idx+1]}')" class="${btn}" title="下移">↓</button>` : '<span class="w-6"></span>'}
+            ${idx < catKeys.length-1 ? `<button onclick="moveCatToEdge('${cat}','bottom',window._houseCatKeys)" class="${btn}" title="置底">⤓</button>` : '<span class="w-6"></span>'}
           </div>
         </div>
         ${collapsed ? '' : `<div class="space-y-2">${items.map(item => this.renderItem(item)).join('')}</div>`}
@@ -2604,16 +2673,32 @@ const Settings = {
     if (!el) return;
     const allCats = getCategories();
     const allKeys = Object.keys(allCats);
-    const rows = allKeys.map(k => this._catRow(k, allCats[k], allKeys)).join('');
-    // Deleted built-ins shown at bottom
+
+    const foodKeys = allKeys.filter(k => (allCats[k].section || 'food') === 'food');
+    const houseKeys = allKeys.filter(k => allCats[k].section === 'household');
+    const customKeys = allKeys.filter(k => k.startsWith('custom_'));
+
+    const sectionHdr = (icon, label) =>
+      `<div class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 mt-3 first:mt-0 flex items-center gap-1.5">${icon} ${label}</div>`;
+
+    const hint = `<div class="text-xs text-gray-400 mb-2">▲▼排序 / 图标 / 中文名 / ♾️常备 / 🗑删除</div>`;
+
+    const foodRows  = foodKeys.map(k => this._catRow(k, allCats[k], allKeys)).join('');
+    const houseRows = houseKeys.map(k => this._catRow(k, allCats[k], allKeys)).join('');
+    const custRows  = customKeys.map(k => this._catRow(k, allCats[k], allKeys)).join('');
+
     const deletedRows = Object.entries(CATEGORIES)
       .filter(([k]) => State.customCategories[k]?.deleted)
       .map(([k,v]) => `<div class="text-xs text-gray-400 flex items-center gap-2 mb-1 px-2">
         <span class="line-through">${v.icon} ${v.cn}</span>
         <button onclick="Settings._restoreCat('${k}')" class="text-blue-400 hover:underline">恢复</button>
       </div>`).join('');
-    el.innerHTML = `<div class="text-xs text-gray-400 mb-2">▲▼排序 / 图标 / 中文名 / ♾️常备 / 🗑删除</div>`
-      + rows + (deletedRows ? `<div class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">${deletedRows}</div>` : '');
+
+    el.innerHTML = hint
+      + sectionHdr('🍽️','食物库存 Food') + foodRows
+      + sectionHdr('🏠','家居用品 Household') + houseRows
+      + (custRows ? sectionHdr('📌','自定义') + custRows : '')
+      + (deletedRows ? `<div class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">${deletedRows}</div>` : '');
     const customEl = document.getElementById('cat-custom');
     if (customEl) customEl.innerHTML = '';
   },
@@ -2698,6 +2783,24 @@ const Settings = {
     delBtn.onclick = () => doDelete(false);
     moveBtn.onclick = () => doDelete(true);
     delModal.classList.add('open');
+  },
+
+  async aiCatFill() {
+    const cn = document.getElementById('new-cat-cn')?.value.trim();
+    if (!cn) { showToast('请先输入中文名', 'warn'); return; }
+    showLoading('AI 识别分类中...');
+    const text = await AI.call(
+      '你是分类助手。根据中文分类名返回JSON，包含：icon(一个最合适的emoji)、en(英文名)、fr(法文名)。只返回JSON，不加任何解释。',
+      cn
+    );
+    hideLoading();
+    if (!text) return;
+    const res = extractJSON(text);
+    if (!res) { showToast('AI识别失败', 'warn'); return; }
+    if (res.icon) document.getElementById('new-cat-icon').value = res.icon;
+    if (res.en)   document.getElementById('new-cat-en').value   = res.en;
+    if (res.fr)   document.getElementById('new-cat-fr').value   = res.fr;
+    showToast('AI已填写，确认后点添加', 'success');
   },
 
   addCategory() {
