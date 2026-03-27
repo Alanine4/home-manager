@@ -401,7 +401,7 @@
 <!-- ===== MODALS ===== -->
 
 <!-- Item Edit Modal (Inventory & Cart shared) -->
-<div id="modal-item" class="modal-overlay" onclick="if(event.target===this)Modal.closeItem()">
+<div id="modal-item" class="modal-overlay" onclick="if(event.target===this&&this._bdPressed){this._bdPressed=false;Modal.closeItem()}">
   <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-md mx-4 max-h-screen overflow-y-auto">
     <div class="flex items-center justify-between mb-4">
       <h3 id="modal-item-title" class="text-lg font-bold">添加物品</h3>
@@ -478,7 +478,7 @@
 </div>
 
 <!-- Recipe Add/Edit Modal -->
-<div id="modal-recipe" class="modal-overlay" onclick="if(event.target===this)Modal.closeRecipe()">
+<div id="modal-recipe" class="modal-overlay" onclick="if(event.target===this&&this._bdPressed){this._bdPressed=false;Modal.closeRecipe()}">
   <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-lg mx-4 max-h-screen overflow-y-auto">
     <div class="flex items-center justify-between mb-4">
       <h3 id="modal-recipe-title" class="text-lg font-bold">添加食谱</h3>
@@ -579,7 +579,7 @@
   </div>
 </div>
 
-<div id="modal-ai-confirm" class="modal-overlay" onclick="if(event.target===this)Modal.closeAIConfirm()">
+<div id="modal-ai-confirm" class="modal-overlay" onclick="if(event.target===this&&this._bdPressed){this._bdPressed=false;Modal.closeAIConfirm()}">
   <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-lg mx-4 max-h-screen overflow-y-auto">
     <div class="flex items-center justify-between mb-4">
       <h3 id="ai-confirm-title" class="text-lg font-bold">🤖 AI 建议确认</h3>
@@ -3606,6 +3606,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
+  // Fix: modal closes when dragging to select text inside inputs.
+  // Only close backdrop when BOTH mousedown AND click happen on the backdrop itself.
+  document.addEventListener('mousedown', e => {
+    if (e.target.classList.contains('modal-overlay')) e.target._bdPressed = true;
+    else document.querySelectorAll('.modal-overlay').forEach(m => { m._bdPressed = false; });
+  });
+
   // iOS PWA fix: keyboard doesn't appear even when input is focused.
   // Calling focus() synchronously inside touchend (not setTimeout) keeps it
   // within the user-gesture context, which iOS requires to show the keyboard.
