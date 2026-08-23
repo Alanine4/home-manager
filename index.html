@@ -1367,17 +1367,34 @@ const ReceiptScanner = {
     input.click();
   },
 
+  // 手机原图动辄 5–10 MB，base64 后更大，光上传就要好几秒；视觉模型内部也会
+  // 先缩图再看，多出来的像素只是拖慢。小票是文字，长边 1600 已绰绰有余。
+  async _shrink(file, maxSide = 1600, quality = 0.82) {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((res, rej) => {
+        const i = new Image();
+        i.onload = () => res(i);
+        i.onerror = () => rej(new Error('无法解码这张图片，请换一张 JPG/PNG'));
+        i.src = url;
+      });
+      const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+      const w = Math.round(img.naturalWidth * scale), h = Math.round(img.naturalHeight * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      return { base64: canvas.toDataURL('image/jpeg', quality).split(',')[1], mime: 'image/jpeg' };
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  },
+
   async handleFile(file) {
     if (!file) return;
     showLoading('AI 识别小票中...');
     try {
-      const base64 = await new Promise((res, rej) => {
-        const reader = new FileReader();
-        reader.onload = e => res(e.target.result.split(',')[1]);
-        reader.onerror = rej;
-        reader.readAsDataURL(file);
-      });
-      await AI.scanReceipt(base64, file.type || 'image/jpeg');
+      const { base64, mime } = await this._shrink(file);
+      await AI.scanReceipt(base64, mime);
     } catch(e) {
       hideLoading();
       showToast('图片读取失败: ' + e.message, 'error');
