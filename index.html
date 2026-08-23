@@ -1038,10 +1038,11 @@ const Cloud = {
   setCode(code) {
     code = code.trim().toUpperCase();
     if (!code) return false;
-    if (!this._db) { localStorage.setItem('hsl_room_code', code); return true; }
+    const prev = this.getCode();
     localStorage.setItem('hsl_room_code', code);
+    if (!this._db) return true;
     this._lastPushed = null;
-    this._attachListener(); // 会先断开旧监听再挂新的
+    this._attachListener(prev); // 会先断开旧监听再挂新的
     return true;
   },
 
@@ -1071,7 +1072,8 @@ const Cloud = {
     }
   },
 
-  _attachListener() {
+  // prevCode：从哪个房间切过来的。只有「加入别人的房间」会传；启动时首次连接不传。
+  _attachListener(prevCode = null) {
     // 断开旧监听，防止多个监听器同时活跃
     if (this._activeRef) { this._activeRef.off('value'); this._activeRef = null; }
     this._ready = false;
@@ -1085,8 +1087,24 @@ const Cloud = {
           // 云端有数据 → 覆盖本地
           this._applyRemote(data);
           App.renderAll();
+        } else if (prevCode) {
+          // 加入的房间是空的：要么码输错了，要么对方还没添加任何东西。
+          // 不能默默把本地数据推进去——输错一位就等于把全家数据发到了一个谁也不知道的房间。
+          const code = this.getCode();
+          const init = confirm(`房间 ${code} 目前是空的。\n\n可能是房间码输错了，也可能对方还没添加任何东西。\n\n「确定」→ 用你现在的数据初始化这个房间\n「取消」→ 退回原房间 ${prevCode}`);
+          if (!init) {
+            localStorage.setItem('hsl_room_code', prevCode);
+            Settings.render();
+            showToast(`已退回房间 ${prevCode}`, 'info');
+            this._attachListener();
+            return;
+          }
+          this._ready = true;   // 先解锁才能推
+          this.push();
+          this._setStatus('synced');
+          return;
         } else {
-          // 云端为空（新房间）且本地有数据 → 把本地数据推上去初始化
+          // 云端为空（自己的新房间）且本地有数据 → 把本地数据推上去初始化
           const hasLocal = State.inventory.length || State.recipes.length || State.cart.length;
           if (hasLocal) {
             this._ready = true;   // 先解锁才能推
@@ -4084,6 +4102,8 @@ const App = {
     reader.onload = (ev) => {
       try {
         const data = JSON.parse(ev.target.result);
+        const scope = Cloud.configured() ? '，并同步到同一房间里的所有设备' : '';
+        if (!confirm(`导入会用文件内容覆盖现有的库存 / 食谱 / 购物车 / 家居数据${scope}。继续？`)) return;
         if (data.inventory) State.inventory = data.inventory;
         if (data.recipes) State.recipes = data.recipes;
         if (data.cart) State.cart = data.cart;
@@ -4098,7 +4118,8 @@ const App = {
   },
 
   clearAllData() {
-    if (!confirm('确定清空所有数据？此操作不可恢复！')) return;
+    const scope = Cloud.configured() ? '云同步已开启：同一房间里其他设备上的数据也会一起被清空。' : '';
+    if (!confirm(`确定清空所有数据？${scope}此操作不可恢复！`)) return;
     State.inventory = []; State.recipes = []; State.cart = []; State.household = [];
     State.save();
     Household.init();
