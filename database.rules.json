@@ -1,0 +1,41 @@
+// Realtime Database 安全规则
+// 用法：Firebase 控制台 → Realtime Database → 规则 → 粘贴 → 发布
+// （或用 CLI：firebase deploy --only database）
+//
+// 安全模型：房间码本身就是凭证。知道码的人能读写该房间；不知道的人既读不到，
+// 也无法列举 h/ 下有哪些房间。这与本应用"无需注册、打开即用"的设计一致。
+//
+// 它保护不了什么，说清楚：任何拿到房间码的人（转发的截图、聊天记录）都拥有
+// 完整读写权限，没有踢人、没有撤销。要做强隔离，下一步是 Firebase 匿名登录 +
+// 房间成员名单，把 .read/.write 改成校验 auth.uid 是否在成员列表里。
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "h": {
+      // 禁止在 h/ 这一层读写，因此无法枚举所有房间
+      ".read": false,
+      ".write": false,
+
+      "$room": {
+        ".read":  "$room.length >= 6 && $room.length <= 32",
+        ".write": "$room.length >= 6 && $room.length <= 32",
+
+        ".validate": "!newData.exists() || newData.hasChildren()",
+
+        "inventory":        { ".validate": "!newData.exists() || newData.hasChildren()" },
+        "cart":             { ".validate": "!newData.exists() || newData.hasChildren()" },
+        "recipes":          { ".validate": "!newData.exists() || newData.hasChildren()" },
+        "household":        { ".validate": "!newData.exists() || newData.hasChildren()" },
+        "customCategories": { ".validate": "!newData.exists() || newData.hasChildren()" },
+        "customStores":     { ".validate": "!newData.exists() || newData.hasChildren()" },
+        "catOrder":         { ".validate": "!newData.exists() || newData.hasChildren()" },
+        "history":          { ".validate": "!newData.exists() || newData.hasChildren()" },
+
+        // 未在上面声明的字段一律拒绝写入，防止把这个库当免费存储用
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+.claude/
+*.log
+.DS_Store
+Thumbs.db
+
+# local scratch copies — never commit
+*-backup.html
+* backup*.html
+*-original.html
+*.bak
+
+# 本机的 Firebase 配置备份，绝不提交
+firebase-config.local.json
+*.local.json
