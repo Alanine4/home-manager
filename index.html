@@ -52,6 +52,11 @@
     @keyframes tabIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(22,16,8,0.55); backdrop-filter: blur(3px); z-index: 50; align-items: center; justify-content: center; }
     .modal-overlay.open { display: flex; }
+    /* 弹窗打开时把 body 钉住（ScrollLock 加的类）。iOS 上光 overflow:hidden 挡不住
+       触摸滚动，必须 position:fixed；top 由 JS 设成负的滚动位置，画面才不会跳。 */
+    body.scroll-locked { position: fixed; left: 0; right: 0; overflow: hidden; }
+    /* 装成 App 之后，在页面顶端下拉不要触发整页刷新 */
+    body { overscroll-behavior-y: contain; }
     .spin { animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .toast { animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s forwards; }
@@ -109,14 +114,23 @@
 
     /* modal panels -> bento sheets */
     .modal-overlay > div { background: var(--tile) !important; border: 1px solid var(--border); border-radius: 24px !important; box-shadow: 0 32px 70px -22px rgba(0,0,0,.55); }
+    /* 弹窗最高只能到「实际可见」的视口高度。100vh 在 iOS Safari 里是工具栏收起后的
+       大视口，弹窗按它撑高会比屏幕还高，自己不进滚动状态，手指一滑滚的就是后面的页面。
+       100dvh 才是当前真正可见的高度；老浏览器不认 dvh 就退回上一行的 vh。
+       overscroll-behavior: contain 让弹窗滚到头时不把滚动"链"给后面的页面。 */
+    .modal-overlay > div { max-height: calc(100vh - 1.5rem); max-height: calc(100dvh - 1.5rem); overflow-y: auto; overscroll-behavior: contain; }
     #modal-barcode > div { background: #000 !important; }
 
     /* recolor primary blue buttons to the Bento accent */
     .bg-blue-600 { background-color: var(--accent) !important; }
     .hover\:bg-blue-700:hover { background-color: var(--accent) !important; filter: brightness(.92); }
 
+    .main-content { padding-bottom: 1rem; }
+    /* 按钮和导航上长按不要选中文字 */
+    button, .mobile-nav, .desktop-nav { -webkit-user-select: none; user-select: none; }
     @media (max-width: 640px) {
       .desktop-nav { display: none; }
+      /* 给固定在底部的导航让位，否则最后一张卡的按钮被它压住点不到 */
       .main-content { padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
     }
     @media (min-width: 641px) {
@@ -166,7 +180,9 @@
 </style>
 
 <!-- MAIN CONTENT -->
-<main class="main-content max-w-5xl mx-auto px-4 py-4">
+<!-- 底部内边距故意不用 Tailwind 类（py-4）：Tailwind 的样式表是运行时注入到 head 末尾的，
+     会盖掉 CSS 里给手机留的 100px + safe-area，最后一张卡就被底部导航压住 -->
+<main class="main-content max-w-5xl mx-auto px-4 pt-4">
 
   <!-- ===== CART TAB ===== -->
   <div id="tab-cart" class="tab-content">
@@ -489,7 +505,7 @@
 
 <!-- Item Edit Modal (Inventory & Cart shared) -->
 <div id="modal-item" class="modal-overlay" onclick="if(event.target===this&&this._bdPressed){this._bdPressed=false;Modal.closeItem()}">
-  <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-md mx-4 max-h-screen overflow-y-auto">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-md mx-4 overflow-y-auto">
     <div class="flex items-center justify-between mb-4">
       <h3 id="modal-item-title" class="text-lg font-bold">添加物品</h3>
       <button onclick="Modal.closeItem()" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
@@ -562,7 +578,7 @@
 
 <!-- Recipe Add/Edit Modal -->
 <div id="modal-recipe" class="modal-overlay" onclick="if(event.target===this&&this._bdPressed){this._bdPressed=false;Modal.closeRecipe()}">
-  <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-lg mx-4 max-h-screen overflow-y-auto">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-lg mx-4 overflow-y-auto">
     <div class="flex items-center justify-between mb-4">
       <h3 id="modal-recipe-title" class="text-lg font-bold">添加食谱</h3>
       <button onclick="Modal.closeRecipe()" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
@@ -614,7 +630,7 @@
 
 <!-- Recipe Detail Modal -->
 <div id="modal-recipe-detail" class="modal-overlay" onclick="if(event.target===this)Modal.closeRecipeDetail()">
-  <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-lg mx-4 max-h-screen overflow-y-auto">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-lg mx-4 overflow-y-auto">
     <div class="flex items-center justify-between mb-4">
       <h3 id="recipe-detail-title" class="text-lg font-bold"></h3>
       <button onclick="Modal.closeRecipeDetail()" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
@@ -663,7 +679,7 @@
 </div>
 
 <div id="modal-ai-confirm" class="modal-overlay" onclick="if(event.target===this&&this._bdPressed){this._bdPressed=false;Modal.closeAIConfirm()}">
-  <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-lg mx-4 max-h-screen overflow-y-auto">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-lg mx-4 overflow-y-auto">
     <div class="flex items-center justify-between mb-4">
       <h3 id="ai-confirm-title" class="text-lg font-bold">🤖 AI 建议确认</h3>
       <button onclick="Modal.closeAIConfirm()" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
@@ -4083,6 +4099,33 @@ const EmojiPicker = {
     ).join('');
   },
 };
+
+// ==================== 弹窗打开时锁住背景 ====================
+// 任何 .modal-overlay 带上 .open 就把 body 钉住，全部关掉再放开。用 MutationObserver
+// 盯 class 变化，这样 37 处 classList.add/remove('open') 一处都不用改。
+const ScrollLock = {
+  _y: 0,
+  _locked: false,
+  lock() {
+    if (this._locked) return;
+    this._y = window.scrollY;
+    document.body.style.top = `-${this._y}px`;
+    document.body.classList.add('scroll-locked');
+    this._locked = true;
+  },
+  unlock() {
+    if (!this._locked) return;
+    document.body.classList.remove('scroll-locked');
+    document.body.style.top = '';
+    window.scrollTo(0, this._y);
+    this._locked = false;
+  },
+  sync() {
+    document.querySelector('.modal-overlay.open') ? this.lock() : this.unlock();
+  },
+};
+new MutationObserver(() => ScrollLock.sync())
+  .observe(document.body, { attributes: true, attributeFilter: ['class'], subtree: true });
 
 // ==================== APP ====================
 const App = {
