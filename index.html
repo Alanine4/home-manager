@@ -225,8 +225,8 @@
     </div>
     <!-- Search + Filter -->
     <div class="flex gap-2 mb-3">
-      <input id="inv-search" type="text" placeholder="搜索..." oninput="Inventory.render()" class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
-      <select id="inv-cat-filter" onchange="Inventory.render()" class="text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none">
+      <input id="inv-search" type="text" placeholder="搜索..." oninput="Inventory.render()" class="flex-1 min-w-0 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
+      <select id="inv-cat-filter" onchange="Inventory.render()" class="max-w-[55%] text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none">
         <option value="">全部分类</option>
       </select>
     </div>
@@ -279,8 +279,8 @@
     </div>
     <!-- Search + Filter -->
     <div class="flex gap-2 mb-3">
-      <input id="house-search" type="text" placeholder="搜索..." oninput="Household.render()" class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
-      <select id="house-cat-filter" onchange="Household.render()" class="text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none">
+      <input id="house-search" type="text" placeholder="搜索..." oninput="Household.render()" class="flex-1 min-w-0 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
+      <select id="house-cat-filter" onchange="Household.render()" class="max-w-[55%] text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none">
         <option value="">全部分类</option>
       </select>
     </div>
@@ -414,16 +414,20 @@
       <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
         <h3 class="font-semibold mb-3 text-purple-600">🗂 分类管理</h3>
         <p class="text-xs text-gray-400 mb-3">所有分类均可删除，删除时可选择迁移物品</p>
-        <div id="cat-builtin" class="flex flex-wrap gap-1 mb-3"></div>
+        <!-- 块级容器，不能是 flex：里面是整行编辑卡片，做成 flex item 会按输入框的
+             固有宽度撑开，手机上直接横向溢出 -->
+        <div id="cat-builtin" class="mb-3"></div>
         <div id="cat-custom" class="space-y-2 mb-3"></div>
         <div class="flex gap-2 mb-2">
-          <input type="text" id="new-cat-cn" placeholder="中文名（必填）" class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
+          <input type="text" id="new-cat-cn" placeholder="中文名（必填）" class="flex-1 min-w-0 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
           <button onclick="Settings.aiCatFill()" class="text-sm bg-indigo-500 text-white px-3 py-2 rounded-lg hover:bg-indigo-600 whitespace-nowrap">🤖 AI填写</button>
         </div>
         <div class="flex gap-2">
           <input type="text" id="new-cat-icon" placeholder="🍱" class="w-12 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-2 focus:outline-none text-center" />
-          <input type="text" id="new-cat-en" placeholder="English" class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
-          <input type="text" id="new-cat-fr" placeholder="Français" class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
+          <!-- flex-1 的输入框必须配 min-w-0：flex item 默认 min-width:auto，等于输入框
+               自己的固有宽度（约 20 字符），两个并排在手机上就撑出屏幕 -->
+          <input type="text" id="new-cat-en" placeholder="English" class="flex-1 min-w-0 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
+          <input type="text" id="new-cat-fr" placeholder="Français" class="flex-1 min-w-0 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
           <button onclick="Settings.addCategory()" class="text-sm bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700">添加</button>
         </div>
       </div>

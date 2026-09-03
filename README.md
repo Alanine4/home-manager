@@ -1,251 +1,170 @@
-# Home Manager 🏠
+# 家庭购物管家 · Home Manager 🏠
 
-> What's in the house, what still needs buying, what you can cook tonight.
-> One HTML file, no account, and by default your data never leaves your device.
+> 家里有什么、还要买什么、今天能做哪道菜。打开网址就能用，不用注册，
+> 数据默认只留在你自己的手机上。
 
-**Live demo:** https://alanine4.github.io/home-manager/ ｜ **中文:** [README.zh-CN.md](README.zh-CN.md)
+**打开就用：** https://alanine4.github.io/home-manager/ ｜ **English:** [README.en.md](README.en.md)
 
----
-
-## What it is
-
-People sharing a kitchen buy the same thing twice, forget what is already in the
-cupboard, and start cooking before noticing an ingredient is missing. This tracks
-what you have, what you need to buy, and which recipes you can make right now
-from what is in stock.
-
-It is a single HTML file. Open it and it works, storing everything in your
-browser. Add an AI key for receipt scanning and natural-language input. Add a
-Firebase project to sync across devices. Both are optional and neither is
-required to use the app.
+<p align="center">
+  <img src="docs/screenshots/cart.png" width="190" alt="购物车：按商店分组，勾选已买一键入库">
+  <img src="docs/screenshots/inventory.png" width="190" alt="库存：按分类折叠，扫条码、拍小票录入">
+  <img src="docs/screenshots/recipes.png" width="190" alt="食谱：显示食材备齐度，缺的一键加购物车">
+  <img src="docs/screenshots/household.png" width="190" alt="家居必备：洗护清洁用品，低库存提醒">
+</p>
+<p align="center"><sub>购物车 · 库存 · 食谱 · 家居必备（也有深色模式）</sub></p>
 
 ---
 
-## How to use it
+## 这是什么
 
-### Just open the URL
+合住的人常常重复买同一样东西，忘记柜子里已经有了，做到一半才发现缺料。
+这个应用管三件事：**家里有什么、还要买什么、用现有的东西今天能做哪几道菜。**
 
-https://alanine4.github.io/home-manager/
-
-Add it to your home screen and it looks and behaves like an app — and **once
-installed it keeps working with no network**.
-
-- **Android:** open in Chrome → menu → Add to Home Screen
-- **iOS:** open in Safari → Share → Add to Home Screen
-- **Windows / Mac:** open in Chrome/Edge → install icon in the address bar
-
-Everything is stored on your device. Nothing leaves the browser until you set up
-sync yourself.
-
-### Or clone the repo and open index.html directly
-
-That works too, and the interface renders correctly. But browsers refuse to
-register a Service Worker over `file://`, so you get no app install and no
-offline cache, and camera and microphone permissions are restricted as well.
-For the full thing, use the URL above.
+它就是一个网页。打开就能用，东西记在你的手机里。想拍小票自动录入、想说一句话
+就加购物车，填一个 AI Key 就行；想和家人共用一份清单，再配一下云同步。
+这两样都是可选的，不弄也不影响使用。
 
 ---
 
-## Capability matrix
+## 怎么用
 
-| Capability | Online | Installed, offline | `index.html` via `file://` |
-|---|:---:|:---:|:---:|
-| Cart / inventory / recipes / supplies | ✅ | ✅ | ✅ |
-| Local storage, JSON export / import | ✅ | ✅ | ✅ |
-| Styling | ✅ | ✅ | ✅ |
-| Install as app, offline cache | ✅ | ✅ | — |
-| Barcode scanning | Chrome / Edge / Android | scans, but no product lookup | permission-restricted |
-| Voice input | ✅ | — needs network | permission-restricted |
-| Receipt photo / image AI | ✅ | — needs network | needs network |
-| AI assistant | ✅ | — needs network | needs network |
-| Cloud sync | once configured | — needs network | once configured |
-| No third-party requests when sync is off | ✅ | ✅ | ✅ |
+打开 https://alanine4.github.io/home-manager/ ，然后**加到主屏幕**，看起来用起来就跟
+一个 App 一样，而且**装完之后没网也能用**。
 
----
+- **iPhone：** Safari 打开 → 底部「分享」→「添加到主屏幕」
+- **Android：** Chrome 打开 → 右上角菜单 →「添加到主屏幕」
+- **电脑：** Chrome / Edge 打开 → 地址栏右侧的安装图标
 
-## Features
+| | 在线打开 | 装到主屏幕后、没网 |
+|---|:---:|:---:|
+| 购物车、库存、食谱、家居用品 | ✅ | ✅ |
+| 扫条形码 | ✅ | 能扫，但查不到商品名 |
+| 拍小票 / 说话录入 / AI 推荐 | ✅ | 需要网 |
+| 和家人同步 | 配置后 ✅ | 需要网 |
 
-### 🛒 Shopping Cart
-- Group by store (Colruyt / Carrefour / Lidl) or category
-- Mark as bought → batch move to inventory
-- AI natural language input ("I need tomatoes and pork")
-
-### 📦 Food Inventory
-- Collapsible, sortable, pinnable categories
-- Barcode scanning with auto-fill (Open Food Facts)
-- Receipt photo scanning — AI reads any language (Dutch / French / English...)
-- Voice input
-
-### 🍳 Recipes
-- Shows how many ingredients you already have in stock
-- One tap to add missing ingredients to cart
-- AI recommends recipes based on your current inventory
-
-### 🏠 Household Supplies
-- Separate tracking for toiletries / cleaning / household items
-- Low-stock alerts, fully independent from food inventory
-
-### 🤖 AI Assistant (optional)
-- 14 providers: Gemini, Claude, OpenAI, DeepSeek, Grok, Qwen (global and mainland),
-  Kimi, GLM, MiniMax, Mistral, Groq, OpenRouter, SiliconFlow
-- Model lists are pulled from your own account, so they never go stale
-- Free chat with direct data actions (add to cart, save recipe, etc.)
-
-### 🔄 Multi-device Sync (optional, off by default)
-- Powered by Firebase Realtime Database
-- Room code system — share one code with your partner
-- Operation history with one-tap undo
+数据都在你自己的设备上。不主动开同步，就什么都不会离开你的手机。
 
 ---
 
-## Where your data lives
+## 功能
 
-By default everything sits in the browser's localStorage, including your AI key
-and Firebase config. Nothing is uploaded, nothing is committed, and none of it
-goes into the synced data.
+### 🛒 购物车
+- 按商店（Colruyt / Carrefour / Lidl，可自己加）或按分类分组
+- 买完打勾 → 一键批量入库存
+- 说一句「我要买番茄和猪肉」，AI 直接帮你加进去
 
-**Which also means: clearing browser data clears your inventory.** Right now the
-only reliable backup is **Settings → Data → Export**, saving a JSON file
-somewhere yourself.
+### 📦 食物库存
+- 分类管理，可以折叠、排序、置顶
+- 扫条形码自动填名字（用的是 Open Food Facts 公开数据库）
+- 拍小票 / 选图片 → AI 自动识别，荷兰文、法文、英文都认
+- 说话录入
 
-Known ways to lose it:
-- Clearing browser cache / site data by hand
-- Switching browsers or devices
-- On iOS, not opening Safari for a long stretch — the system may evict site data
+### 🍳 食谱
+- 每道菜显示「食材备齐度」，一眼知道能不能做
+- 缺的食材一键加进购物车
+- AI 根据现有库存推荐今天做什么
 
-Automatic backup is not built yet; it is item 2 in [ROADMAP.md](ROADMAP.md).
+### 🏠 家居必备
+- 洗护、清洁、日用品单独管，不和食物混在一起
+- 快用完了会提醒
 
----
+### 🤖 AI 助手（可选）
+- 支持 Gemini、Claude、DeepSeek、通义千问、Kimi、智谱、MiniMax 等 14 家，
+  用你自己的 Key
+- 想用 GPT 请选 OpenRouter
+- 可以直接聊天，让它帮你加购物车、存食谱
 
-## Cloud sync (optional, off by default)
-
-Without it the app works fully, it just does not cross devices. Only turning it
-on needs Firebase.
-
-1. Create a project at console.firebase.google.com and add a Realtime Database
-2. In Project settings, copy the web app config snippet
-3. In the app, go to **Settings → Cloud sync** and paste it — the whole snippet
-   works, whether it is JSON or the `const firebaseConfig = {...}` form
-4. Paste `database.rules.json` from this repo into Firebase console → Realtime
-   Database → Rules, then publish
-5. Repeat step 3 on your other devices, then share your **room code**
-
-**The Firebase SDK is only loaded once you have pasted a config.** Without one,
-the page makes no third-party request at all, from open to close.
-
-Configured sync but want one session to stay local anyway (on someone else's
-computer, say)? Add `?mode=local` to the URL. The config stays put.
-
-The config lives in your browser's localStorage, never in the repo and never in
-the synced data. You edit no code, so pulling updates from upstream will not
-conflict.
+### 🔄 和家人同步（可选，默认关闭）
+- 两个人填同一个房间码，就共用一份清单，改动实时同步
+- 有操作记录，误删了可以一键撤销
 
 ---
 
-## Run your own copy
+## 数据存在哪
 
-This repo contains no Firebase credentials, mine or anyone else's, so a fork
-cannot accidentally write to someone else's database. Each deployment supplies
-its own.
+默认全部存在你手机浏览器的本地存储里，包括 AI Key 和同步配置。
+不会上传，也不会出现在这个代码仓库里。
 
-1. Fork this repo and turn on GitHub Pages for it
-2. Open your site — it works right away
+**这也意味着：清掉浏览器数据 = 清掉你的库存。** 目前唯一可靠的备份是
+**设置 → 数据管理 → 导出数据**，定期存一份文件。
 
-There is no third step. All paths are relative, so renaming the repo needs no
-code changes.
+几种已知会丢数据的情况：
+- 手动清了浏览器缓存 / 网站数据
+- 换了浏览器或换了手机
+- iPhone 上很久不打开 Safari，系统可能会自动清掉网站数据
 
----
-
-## Stack and limits
-
-**Stack:** vanilla HTML / CSS / JavaScript, Tailwind CSS, Firebase Realtime
-Database, Open Food Facts, the BarcodeDetector API, the Web Speech API, GitHub
-Pages. One HTML file plus a vendored Tailwind in `vendor/`. No build tooling.
-
-**Limits, stated plainly:**
-
-- **The room code is the only thing protecting your data.** Anyone who knows a
-  code can read and write that room, and there is no way to revoke access or
-  remove someone. Nobody can list what rooms exist, so a code you keep private
-  stays private. Treat it like a password: not in a screenshot, not in a public
-  post.
-- Your AI API key and Firebase config are stored in `localStorage` on each
-  device and are never synced or committed. Every device needs its own copy.
-- Everything runs in the browser, so a provider only works if its API sends CORS
-  headers. All of the listed ones do, with one exception: OpenAI's
-  `/chat/completions` does not, so browser calls to it fail. Use OpenRouter if
-  you want GPT models.
-- **Sync pushes the whole dataset, it does not merge field by field.** If two
-  people edit the same thing at once, the later save wins. Fine for groceries,
-  not for heavy concurrent editing.
-- localStorage is not a backup. Export regularly.
-- Barcode scanning needs the browser's `BarcodeDetector` — Chrome / Edge /
-  Android today, not Safari.
-- Voice input needs the Web Speech API, which requires a network: the browser
-  ships the audio to its vendor's servers for recognition.
+自动备份还没做，在计划里（[ROADMAP.md](ROADMAP.md) 第 2 项）。
 
 ---
 
-## FAQ
+## 和家人同步（可选）
 
-**Do I need to be online?**
-No. Once you have opened it from the home screen at least once, it works with
-no network. Only the AI features and cloud sync need one.
+不开这个，应用一切正常，只是每台设备各管各的。想两个人共用一份清单，
+或者自己的手机和电脑保持一致，才需要做下面这些。
 
-**Do I need an AI key?**
-No. Everything works with manual entry; the AI just makes entry faster.
+1. 去 https://console.firebase.google.com 建一个项目，加一个 **Realtime Database**
+2. 在项目设置里找到网页应用的配置，整段复制
+3. 回到应用，**设置 → 云同步**，粘进去，点保存
+4. 把仓库里的 `database.rules.json` 文件内容粘到 Firebase 控制台 →
+   Realtime Database → 规则，点发布
+5. 在家人的手机上重复第 3 步，然后把你的**房间码**告诉 ta，让 ta 在设置里输入
 
-**If I fork this, will it connect to your database?**
-No. There is no Firebase config in the repo. Your deployment only talks to the
-one you paste in yourself.
-
-**How do I move to a new phone or computer?**
-Export JSON from Settings and import it on the new device. Or turn on cloud
-sync and use the same room code on both.
-
-**What if my room code leaks?**
-Switch to a new room code in Settings and push your data there. The old room's
-data stays in the cloud, but you stop using it.
-
-**Why is there no account system?**
-Because that needs a server I would have to run, and the whole point of this app
-is that it does not. The room code is the compromise between "no account" and
-"two people can share a list". That decision gets revisited once there are
-actual users — the reasoning is in [ROADMAP.md](ROADMAP.md).
+没做这一步之前，应用不会连任何服务器。做完之后想临时不同步（比如在别人的电脑上
+临时看一眼）：在网址后面加 `?mode=local`。
 
 ---
 
-## What's next
+## 自己部署一份
 
-See [ROADMAP.md](ROADMAP.md). It also records what was decided **against**, and
-why.
+这个仓库里没有任何人的同步配置，我的也没有。所以你 fork 之后不可能误连到别人的
+数据，每份部署各自填自己的。
 
----
+1. Fork 这个仓库，在仓库设置里打开 GitHub Pages
+2. 打开你自己的网址，直接就能用
 
-## License
-
-MIT. See [LICENSE](LICENSE).
-
----
-
-## Design goals
-
-Lightweight, practical, mobile-first. Open it and use it: no account, no
-dependencies, no build tooling. Your data stays on your device unless you
-choose otherwise.
+没有第 3 步。仓库改成别的名字也不用改代码。
 
 ---
 
-## Contributing
+## 要知道的几件事
 
-Issues and pull requests are welcome. Three things worth knowing before you
-change anything:
+- **房间码就是钥匙。** 知道码的人就能看到并修改那份清单，没有踢人的办法。
+  别截图发到公开的地方，把它当密码看。
+- 两个人**同时**改同一样东西，后保存的算。日常买菜够用，不适合多人频繁并发编辑。
+- 本地存储不是备份，请定期导出。
+- 扫条形码目前 iPhone 的 Safari 不支持，Android / Chrome / Edge 可以。
+- 说话录入需要联网。
 
-- Tailwind ships in `vendor/`, not from a CDN, so class names work directly with
-  no build and the app still renders offline. Anything added to `vendor/` must
-  also go into the `SHELL` list in `sw.js`, or it will be missing offline
-- User data must go through `esc()` before it is put into HTML, and through
-  `jsArg()` for inline event handler arguments (both are near the top of
-  `index.html`). Missing one is an XSS hole
-- Adding an AI provider means adding one entry to the `PROVIDERS` registry;
-  the call logic does not need to change
+---
+
+## 常见问题
+
+**一定要联网吗？**
+不用。加到主屏幕之后，没网也照常用。只有拍小票、说话录入、AI 推荐和同步需要网。
+
+**一定要填 AI Key 吗？**
+不用。手动录入的功能全都在，AI 只是让录入快一点。
+
+**换手机怎么办？**
+设置里导出数据，在新手机上导入。或者开同步，两边填同一个房间码。
+
+**房间码泄露了怎么办？**
+在设置里换一个新房间码，把数据推过去。旧的那份还在云端，但你不再用它了。
+
+**为什么不做账号登录？**
+因为那需要一台由我来维护的服务器，而这个应用的意义就是不需要。房间码是在
+「不要账号」和「能两个人一起用」之间的折中。等真的有人用了会重新考虑。
+
+---
+
+## 接下来做什么
+
+见 [ROADMAP.md](ROADMAP.md)，里面也写了决定**不做**的事和原因。
+
+## 参与开发
+
+欢迎提 issue 和 PR。改代码之前请先看 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+## 许可
+
+MIT，见 [LICENSE](LICENSE)。
