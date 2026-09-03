@@ -2,10 +2,12 @@
 <html lang="zh" class="light">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- viewport-fit=cover：让页面铺到 iPhone 的刘海和底部横条下面，然后用
+       env(safe-area-inset-*) 把底部导航从横条下面顶出来（见 .mobile-nav） -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Home Manager</title>
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#f97316" />
+  <meta name="theme-color" content="#e89520" /><!-- 和 manifest.json 保持一致 -->
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -115,7 +117,7 @@
 
     @media (max-width: 640px) {
       .desktop-nav { display: none; }
-      .main-content { padding-bottom: 100px; }
+      .main-content { padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
     }
     @media (min-width: 641px) {
       .mobile-nav { display: none; }
@@ -292,7 +294,7 @@
   <div id="tab-ai" class="tab-content">
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-xl font-bold">🤖 AI助手 Assistant</h2>
-      <button onclick="AIChat.clear()" class="text-xs text-gray-400 hover:text-gray-600">清空对话</button>
+      <button onclick="AIChat.clear()" class="text-xs text-gray-400 hover:text-gray-600 px-2 py-2">清空对话</button>
     </div>
     <!-- Suggestion chips -->
     <div class="flex flex-wrap gap-2 mb-3" id="ai-chips">
@@ -457,7 +459,8 @@
 </main>
 
 <!-- MOBILE BOTTOM NAV -->
-<nav class="mobile-nav fixed bottom-0 left-0 right-0 z-40 px-3 pb-3 pt-1">
+<!-- 底部内边距在 CSS 里算：12px 加上 iPhone 底部横条的 safe-area，不然导航会被横条压住 -->
+<nav class="mobile-nav fixed bottom-0 left-0 right-0 z-40 px-3 pt-1">
   <div class="bento-tile flex p-1 gap-0.5">
     <button class="mobile-nav-tab flex-1 py-1.5 flex flex-col items-center gap-0.5" data-tab="cart">
       <span class="text-xl">🛒</span><span class="text-[11px]" data-i18n="cart">购物车</span>
@@ -477,6 +480,7 @@
   </div>
 </nav>
 <style>
+.mobile-nav { padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px)); }
 .mobile-nav-tab { color: var(--muted); transition: all 0.15s; border-radius: 12px; }
 .mobile-nav-tab.active { color: #fff; background: var(--accent); }
 </style>
@@ -506,7 +510,7 @@
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="text-sm font-medium mb-1 block">数量 Qty</label>
-          <input type="number" id="item-qty" value="1" min="0" step="0.1" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
+          <input type="number" inputmode="decimal"id="item-qty" value="1" min="0" step="0.1" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
         </div>
         <div>
           <label class="text-sm font-medium mb-1 block">单位 Unit</label>
@@ -542,7 +546,7 @@
       </div>
       <div id="item-minstock-row">
         <label class="text-sm font-medium mb-1 block">最低库存提醒 Min Stock</label>
-        <input type="number" id="item-minstock" value="0" min="0" step="0.1" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
+        <input type="number" inputmode="decimal"id="item-minstock" value="0" min="0" step="0.1" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
       </div>
       <div>
         <label class="text-sm font-medium mb-1 block">备注 Notes</label>
@@ -582,7 +586,7 @@
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="text-sm font-medium mb-1 block">份数 Servings</label>
-          <input type="number" id="recipe-servings" value="2" min="1" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
+          <input type="number" inputmode="decimal"id="recipe-servings" value="2" min="1" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
         </div>
         <div>
           <label class="text-sm font-medium mb-1 block">标签 Tags</label>
@@ -2264,11 +2268,11 @@ const Inventory = {
     const isLow = !unlimited && item.minStock > 0 && item.quantity <= item.minStock;
     const qtyDisplay = unlimited
       ? `<span class="text-lg font-bold text-purple-500 min-w-12 text-center">♾️</span>`
-      : `<button onclick="Inventory.adjustQty(${jsArg(item.id)},-1)" class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 font-bold">−</button>
-        <span class="text-sm font-medium min-w-12 text-center">${esc(formatQty(item.quantity, item.unit))}</span>
-        <button onclick="Inventory.adjustQty(${jsArg(item.id)},1)" class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 font-bold">+</button>`;
+      : `<button onclick="Inventory.adjustQty(${jsArg(item.id)},-1)" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 font-bold">−</button>
+        <span class="text-sm font-medium min-w-10 text-center">${esc(formatQty(item.quantity, item.unit))}</span>
+        <button onclick="Inventory.adjustQty(${jsArg(item.id)},1)" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 font-bold">+</button>`;
     return `
-    <div class="item-card bg-white dark:bg-gray-800 rounded-xl p-3 border ${isLow ? 'border-red-300 dark:border-red-700' : unlimited ? 'border-purple-200 dark:border-purple-700' : 'border-gray-200 dark:border-gray-700'} flex items-center gap-3">
+    <div class="item-card bg-white dark:bg-gray-800 rounded-xl p-3 border ${isLow ? 'border-red-300 dark:border-red-700' : unlimited ? 'border-purple-200 dark:border-purple-700' : 'border-gray-200 dark:border-gray-700'} flex items-center gap-2">
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
           <span class="font-medium name-cn">${esc(item.nameCn)}</span>
@@ -2277,7 +2281,7 @@ const Inventory = {
           ${unlimited ? '<span class="text-xs bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded">常备</span>' : ''}
         </div>
         <div class="flex items-center gap-1 flex-wrap mt-0.5">
-          <select onchange="Inventory.changeCategory(${jsArg(item.id)},this.value)" class="text-xs bg-gray-100 dark:bg-gray-700 border-0 rounded px-1 py-0.5 text-gray-500 dark:text-gray-400 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-400">
+          <select onchange="Inventory.changeCategory(${jsArg(item.id)},this.value)" class="text-xs max-w-full min-w-0 bg-gray-100 dark:bg-gray-700 border-0 rounded px-1 py-0.5 text-gray-500 dark:text-gray-400 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-400">
             ${catOptions(item.category)}
           </select>
           ${item.notes ? `<span class="text-xs text-gray-400">${esc(item.notes)}</span>` : ''}
@@ -2285,9 +2289,9 @@ const Inventory = {
       </div>
       <div class="flex items-center gap-1 shrink-0">${qtyDisplay}</div>
       <div class="flex items-center gap-1 shrink-0">
-        <button onclick="Modal.showEditInventory(${jsArg(item.id)})" class="text-xs text-blue-500 hover:text-blue-700 px-1">✏️</button>
-        ${!unlimited ? `<button onclick="Inventory.addToCart(${jsArg(item.id)})" class="text-xs text-green-500 hover:text-green-700 px-1" title="加入购物车">🛒</button>` : ''}
-        <button onclick="Inventory.remove(${jsArg(item.id)})" class="text-xs text-red-400 hover:text-red-600 px-1">🗑</button>
+        <button onclick="Modal.showEditInventory(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-blue-500 hover:bg-blue-50 dark:hover:bg-gray-700">✏️</button>
+        ${!unlimited ? `<button onclick="Inventory.addToCart(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-green-500 hover:bg-green-50 dark:hover:bg-gray-700" title="加入购物车">🛒</button>` : ''}
+        <button onclick="Inventory.remove(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-red-400 hover:bg-red-50 dark:hover:bg-gray-700">🗑</button>
       </div>
     </div>`;
   },
@@ -2379,7 +2383,7 @@ const Cart = {
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="text-sm text-gray-500 mb-1 block">入库数量</label>
-            <input type="number" id="single-inv-qty" value="${esc(item.quantity)}" min="0" step="0.1" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
+            <input type="number" inputmode="decimal"id="single-inv-qty" value="${esc(item.quantity)}" min="0" step="0.1" class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
           </div>
           <div>
             <label class="text-sm text-gray-500 mb-1 block">单位</label>
@@ -2422,7 +2426,7 @@ const Cart = {
           <div class="grid grid-cols-3 gap-2">
             <div>
               <label class="text-xs text-gray-500 mb-1 block">数量</label>
-              <input type="number" id="bulk-qty-${idx}" value="${esc(item.quantity)}" min="0" step="0.1"
+              <input type="number" inputmode="decimal"id="bulk-qty-${idx}" value="${esc(item.quantity)}" min="0" step="0.1"
                 class="w-full text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 focus:outline-none" />
             </div>
             <div>
@@ -2510,8 +2514,8 @@ const Cart = {
       </div>
       <div class="flex items-center gap-1 shrink-0">
         <button onclick="Cart.confirmMoveToInventory(${jsArg(item.id)})" class="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded-lg hover:bg-green-200 dark:hover:bg-green-800" title="入库">📥入库</button>
-        <button onclick="Modal.showEditCart(${jsArg(item.id)})" class="text-xs text-blue-500 hover:text-blue-700 px-1">✏️</button>
-        <button onclick="Cart.remove(${jsArg(item.id)})" class="text-xs text-red-400 hover:text-red-600 px-1">🗑</button>
+        <button onclick="Modal.showEditCart(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-blue-500 hover:bg-blue-50 dark:hover:bg-gray-700">✏️</button>
+        <button onclick="Cart.remove(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-red-400 hover:bg-red-50 dark:hover:bg-gray-700">🗑</button>
       </div>
     </div>`;
   },
@@ -2644,8 +2648,8 @@ const Recipes = {
             ${recipe.nameEn ? `<div class="text-xs text-gray-400 name-en">${esc(recipe.nameEn)}</div>` : ''}
           </div>
           <div class="flex gap-1 shrink-0">
-            <button onclick="Modal.showEditRecipe(${jsArg(recipe.id)})" class="text-xs text-blue-500 hover:text-blue-700">✏️</button>
-            <button onclick="Recipes.remove(${jsArg(recipe.id)})" class="text-xs text-red-400 hover:text-red-600">🗑</button>
+            <button onclick="Modal.showEditRecipe(${jsArg(recipe.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-blue-500 hover:bg-blue-50 dark:hover:bg-gray-700">✏️</button>
+            <button onclick="Recipes.remove(${jsArg(recipe.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-red-400 hover:bg-red-50 dark:hover:bg-gray-700">🗑</button>
           </div>
         </div>
         ${recipe.description ? `<p class="text-sm text-gray-500 dark:text-gray-400 mb-2">${esc(recipe.description)}</p>` : ''}
@@ -2823,7 +2827,7 @@ const Household = {
 
   renderItem(item) {
     const isLow = item.minStock > 0 && item.quantity <= item.minStock;
-    return `<div class="item-card bg-white dark:bg-gray-800 rounded-xl p-3 border ${isLow ? 'border-red-300 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'} flex items-center gap-3">
+    return `<div class="item-card bg-white dark:bg-gray-800 rounded-xl p-3 border ${isLow ? 'border-red-300 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'} flex items-center gap-2">
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
           <span class="font-medium name-cn">${esc(item.nameCn)}</span>
@@ -2831,21 +2835,21 @@ const Household = {
           ${isLow ? '<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">低库存</span>' : ''}
         </div>
         <div class="flex items-center gap-1 flex-wrap mt-0.5">
-          <select onchange="Household.changeCategory(${jsArg(item.id)},this.value)" class="text-xs bg-gray-100 dark:bg-gray-700 border-0 rounded px-1 py-0.5 text-gray-500 dark:text-gray-400 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-400">
+          <select onchange="Household.changeCategory(${jsArg(item.id)},this.value)" class="text-xs max-w-full min-w-0 bg-gray-100 dark:bg-gray-700 border-0 rounded px-1 py-0.5 text-gray-500 dark:text-gray-400 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-400">
             ${catOptions(item.category)}
           </select>
           ${item.notes ? `<span class="text-xs text-gray-400">${esc(item.notes)}</span>` : ''}
         </div>
       </div>
       <div class="flex items-center gap-1 shrink-0">
-        <button onclick="Household.adjustQty(${jsArg(item.id)},-1)" class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center font-bold">−</button>
-        <span class="text-sm font-medium min-w-12 text-center">${esc(formatQty(item.quantity, item.unit))}</span>
-        <button onclick="Household.adjustQty(${jsArg(item.id)},1)" class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center font-bold">+</button>
+        <button onclick="Household.adjustQty(${jsArg(item.id)},-1)" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center font-bold">−</button>
+        <span class="text-sm font-medium min-w-10 text-center">${esc(formatQty(item.quantity, item.unit))}</span>
+        <button onclick="Household.adjustQty(${jsArg(item.id)},1)" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center font-bold">+</button>
       </div>
       <div class="flex items-center gap-1 shrink-0">
-        <button onclick="Modal.showEditHousehold(${jsArg(item.id)})" class="text-xs text-blue-500 hover:text-blue-700 px-1">✏️</button>
-        <button onclick="Household.addToCart(${jsArg(item.id)})" class="text-xs text-green-500 hover:text-green-700 px-1" title="加入购物车">🛒</button>
-        <button onclick="Household.remove(${jsArg(item.id)})" class="text-xs text-red-400 hover:text-red-600 px-1">🗑</button>
+        <button onclick="Modal.showEditHousehold(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-blue-500 hover:bg-blue-50 dark:hover:bg-gray-700">✏️</button>
+        <button onclick="Household.addToCart(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-green-500 hover:bg-green-50 dark:hover:bg-gray-700" title="加入购物车">🛒</button>
+        <button onclick="Household.remove(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-red-400 hover:bg-red-50 dark:hover:bg-gray-700">🗑</button>
       </div>
     </div>`;
   },
@@ -3662,7 +3666,7 @@ const Modal = {
       <div class="flex gap-2 items-center">
         <input type="text" value="${esc(ing.nameCn||'')}" placeholder="中文名" oninput="Modal._ingredientRows[${idx}].nameCn=this.value" class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 focus:outline-none" />
         <input type="text" value="${esc(ing.nameEn||'')}" placeholder="EN" oninput="Modal._ingredientRows[${idx}].nameEn=this.value" class="w-20 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 focus:outline-none" />
-        <input type="number" value="${esc(ing.quantity||1)}" min="0" step="0.1" oninput="Modal._ingredientRows[${idx}].quantity=parseFloat(this.value)||0" class="w-16 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 focus:outline-none" />
+        <input type="number" inputmode="decimal"value="${esc(ing.quantity||1)}" min="0" step="0.1" oninput="Modal._ingredientRows[${idx}].quantity=parseFloat(this.value)||0" class="w-16 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 focus:outline-none" />
         <select oninput="Modal._ingredientRows[${idx}].unit=this.value" class="text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-1 py-1.5 focus:outline-none">
           ${['个','克','千克','毫升','升','袋','瓶','盒','包','束','片','头','瓣'].map(u=>`<option ${ing.unit===u?'selected':''}>${esc(u)}</option>`).join('')}
         </select>
@@ -3795,7 +3799,7 @@ const Modal = {
             class="text-red-400 hover:text-red-600 shrink-0 px-1 text-lg">✕</button>
         </div>
         <div class="flex gap-2">
-          <input type="number" value="${esc(item.quantity||1)}" min="0" step="0.1" oninput="window._editInvItems[${idx}].quantity=parseFloat(this.value)||1"
+          <input type="number" inputmode="decimal"value="${esc(item.quantity||1)}" min="0" step="0.1" oninput="window._editInvItems[${idx}].quantity=parseFloat(this.value)||1"
             class="w-20 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-2 py-1.5 focus:outline-none" placeholder="${t('qtyLabel')}" />
           <select onchange="window._editInvItems[${idx}].unit=this.value"
             class="w-20 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-1 py-1.5 focus:outline-none">
@@ -3838,7 +3842,7 @@ const Modal = {
             class="text-red-400 hover:text-red-600 shrink-0 px-1 text-lg">✕</button>
         </div>
         <div class="flex gap-2">
-          <input type="number" value="${esc(item.quantity||1)}" min="0" step="0.1" oninput="window._editHouseItems[${idx}].quantity=parseFloat(this.value)||1"
+          <input type="number" inputmode="decimal"value="${esc(item.quantity||1)}" min="0" step="0.1" oninput="window._editHouseItems[${idx}].quantity=parseFloat(this.value)||1"
             class="w-20 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-2 py-1.5 focus:outline-none" placeholder="数量" />
           <select onchange="window._editHouseItems[${idx}].unit=this.value"
             class="w-20 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-1 py-1.5 focus:outline-none">
@@ -3876,7 +3880,7 @@ const Modal = {
           class="text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 focus:outline-none" />
         <input type="text" value="${esc(item.nameEn||'')}" placeholder="English"  oninput="window._editCartItems[${idx}].nameEn=this.value"
           class="text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 focus:outline-none" />
-        <input type="number" value="${esc(item.quantity||1)}" min="0" step="0.1" oninput="window._editCartItems[${idx}].quantity=parseFloat(this.value)||1"
+        <input type="number" inputmode="decimal"value="${esc(item.quantity||1)}" min="0" step="0.1" oninput="window._editCartItems[${idx}].quantity=parseFloat(this.value)||1"
           class="text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 focus:outline-none" />
         <select onchange="window._editCartItems[${idx}].unit=this.value"
           class="text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-1 py-1.5 focus:outline-none">
