@@ -942,7 +942,7 @@ const State = {
   },
 
   saveLocal(keys) {
-    const ks = keys || ['inventory','recipes','cart','household','settings','customcats','catorder','history'];
+    const ks = keys || ['inventory','recipes','cart','household','settings','customcats','customstores','catorder','history'];
     ks.forEach(k => {
       const val = k === 'customcats' ? this.customCategories
                 : k === 'customstores' ? this.customStores
@@ -1070,7 +1070,9 @@ const Cloud = {
 
   // 房间码会直接拼进 Firebase 的路径 `h/<code>`，而 . $ # [ ] / 在那里是非法字符。
   // 所以任何来自外部的码（手输的、扫码来的、链接里的）都要先过这一关。
-  validCode(code) { return /^[A-Z0-9]{4,16}$/.test(String(code || '').trim().toUpperCase()); },
+  // 长度 6-32 和 database.rules.json 里的规则一致：客户端放过去而规则拒绝，
+  // 用户看到的只会是一个莫名其妙的权限错误。
+  validCode(code) { return /^[A-Z0-9]{6,32}$/.test(String(code || '').trim().toUpperCase()); },
 
   // 切换房间：断开旧监听，保存新码，重新挂载
   setCode(code) {
@@ -1101,9 +1103,10 @@ const Cloud = {
       if (!firebase.apps.length) firebase.initializeApp(cfg);
       this._db = firebase.database();
       this._attachListener();
-      // 检测在线/离线
+      // 检测在线/离线。重新连上时也要把状态灯拨回来，否则会一直停在「离线」
       this._db.ref('.info/connected').on('value', snap => {
-        if (!snap.val() && this._ready) this._setStatus('offline');
+        if (!this._ready) return;
+        this._setStatus(snap.val() ? 'synced' : 'offline');
       });
     } catch(e) {
       console.error('Cloud init error', e);
@@ -1158,9 +1161,11 @@ const Cloud = {
         return;
       }
 
-      // 后续 snapshot：忽略自己的回弹
-      const incoming = JSON.stringify(data);
-      if (incoming === this._lastPushed) { this._setStatus('synced'); return; }
+      // 后续 snapshot：忽略自己的回弹。必须比较规范化之后的形态，因为 Firebase
+      // 回传时会按字母序重排键、丢掉空数组，直接比 JSON 字符串永远不相等——
+      // 那样每次自己推送完都会被当成别人的改动重新应用一遍，而且如果用户在
+      // 推送和回弹之间又改了一下，回弹里的旧数据会把新改动盖掉。
+      if (this._canon(data) === this._lastPushed) { this._setStatus('synced'); return; }
       if (data) { this._applyRemote(data); App.renderAll(); }
       this._setStatus('synced');
     }, err => {
@@ -1175,8 +1180,7 @@ const Cloud = {
     clearTimeout(this._pushTimer);
     this._pushTimer = setTimeout(() => {
       const payload = this._buildPayload();
-      const json = JSON.stringify(payload);
-      this._lastPushed = json;
+      this._lastPushed = this._canon(payload);
       this._setStatus('syncing');
       this._activeRef.set(payload)
         .then(() => this._setStatus('synced'))
@@ -1185,7 +1189,7 @@ const Cloud = {
   },
 
   _buildPayload() {
-    return {
+    const payload = {
       inventory:        State.inventory,
       recipes:          State.recipes,
       cart:             State.cart,
@@ -1196,16 +1200,46 @@ const Cloud = {
       history:          State.history.slice(0, 100), // 只同步最近100条
       // 注意：settings (API key 等) 不同步，每台设备各自保存
     };
+    // 过一遍 JSON：去掉 undefined（Firebase 见到 undefined 会拒绝整次写入，
+    // 同步就静默坏掉），NaN 变 null，顺便和 State 里的对象断开引用。
+    return JSON.parse(JSON.stringify(payload));
   },
 
-  // Firebase 有时会把数组转成带数字键的对象，这里统一转回数组
+  // 把数据整理成和 Firebase 回传一致的形态再序列化：键按字母序、数字键对象转数组、
+  // 丢掉 null / undefined / 空数组 / 空对象。只用于判断「这份是不是我刚推的」。
+  _canon(v) {
+    const norm = x => {
+      if (x === null || x === undefined) return undefined;
+      if (Array.isArray(x)) {
+        const a = x.map(norm).filter(y => y !== undefined);
+        return a.length ? a : undefined;
+      }
+      if (typeof x === 'object') {
+        const keys = Object.keys(x);
+        if (keys.length && keys.every(k => /^\d+$/.test(k))) {
+          return norm(keys.sort((a, b) => +a - +b).map(k => x[k]));
+        }
+        const o = {};
+        for (const k of keys.sort()) {
+          const y = norm(x[k]);
+          if (y !== undefined) o[k] = y;
+        }
+        return Object.keys(o).length ? o : undefined;
+      }
+      return x;
+    };
+    return JSON.stringify(norm(v) ?? null);
+  },
+
+  // Firebase 有时会把数组转成带数字键的对象，这里统一转回数组；
+  // 稀疏数组里的 null 空位也顺手去掉，免得渲染时 item.nameCn 炸在 null 上
   _toArr(val) {
     if (!val) return [];
-    if (Array.isArray(val)) return val;
+    if (Array.isArray(val)) return val.filter(x => x != null);
     if (typeof val === 'object') {
       const keys = Object.keys(val);
       if (keys.every(k => /^\d+$/.test(k))) {
-        return keys.sort((a, b) => +a - +b).map(k => val[k]);
+        return keys.sort((a, b) => +a - +b).map(k => val[k]).filter(x => x != null);
       }
     }
     return [];
@@ -3476,6 +3510,7 @@ const Settings = {
     const input = document.getElementById('input-room-code')?.value.trim().toUpperCase();
     if (!Cloud.validCode(input)) { showToast('请输入有效的房间码（4-16 位字母或数字）', 'warn'); return; }
     if (input === Cloud.getCode()) { showToast('已经在这个房间了', 'info'); return; }
+    if (!Cloud._db) { showToast(LOCAL_ONLY ? '当前是 ?mode=local，去掉它再加入' : '还没连上云端，先在上面配置云同步', 'warn'); return; }
     if (!confirm(`确认加入房间 ${input}？\n\n当前数据会切换为该房间的云端数据。`)) return;
     Cloud.setCode(input);
     document.getElementById('display-room-code').textContent = input;

@@ -1,9 +1,20 @@
 # Home Manager 🏠
 
-> What's in the house, what still needs buying, what you can cook tonight.
-> Open the URL and it works — no account, and your data stays on your phone.
+> A shopping list, food inventory and recipe book that lives on your phone.
+> Nothing to download, no account: open the URL, add it to your home screen,
+> and it's an app. Works offline, and your data stays on your phone.
 
-**Open it:** https://alanine4.github.io/home-manager/ ｜ **中文:** [README.md](README.md)
+**URL:** https://alanine4.github.io/home-manager/ ｜ **中文:** [README.md](README.md)
+
+## 📱 Put it on your phone first (30 seconds)
+
+1. Open https://alanine4.github.io/home-manager/ in your phone's browser
+2. **iPhone:** Safari → Share (bottom bar) → Add to Home Screen
+   **Android:** Chrome → menu (top right) → Add to Home Screen
+3. From now on, open it from the home-screen icon — **it works without a network**
+
+No App Store, no sign-up. On a computer, Chrome / Edge show an install icon in
+the address bar too.
 
 <p align="center">
   <img src="docs/screenshots/cart.png" width="190" alt="Cart: grouped by store, tick what you bought and move it to inventory">
@@ -31,12 +42,9 @@ are optional; the app is complete without them.
 
 ## How to use it
 
-Open https://alanine4.github.io/home-manager/ and **add it to your home screen**.
-It then looks and behaves like an app, and **keeps working with no network**.
-
-- **iPhone:** open in Safari → Share → Add to Home Screen
-- **Android:** open in Chrome → menu → Add to Home Screen
-- **Computer:** open in Chrome / Edge → install icon in the address bar
+Once installed, just open it. The cart holds what to buy; tick things off and
+move them to inventory in one tap. Inventory takes barcode scans and receipt
+photos. The recipes page tells you what you can cook tonight.
 
 | | Online | On the home screen, offline |
 |---|:---:|:---:|

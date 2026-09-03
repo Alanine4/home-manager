@@ -1,9 +1,18 @@
 # 家庭购物管家 · Home Manager 🏠
 
-> 家里有什么、还要买什么、今天能做哪道菜。打开网址就能用，不用注册，
-> 数据默认只留在你自己的手机上。
+> 装在手机上的家庭购物清单 + 食物库存 + 食谱。不用下载、不用注册：
+> 打开网址，加到主屏幕，就是一个 App。没网也能用，数据只留在你自己的手机上。
 
-**打开就用：** https://alanine4.github.io/home-manager/ ｜ **English:** [README.en.md](README.en.md)
+**网址：** https://alanine4.github.io/home-manager/ ｜ **English:** [README.en.md](README.en.md)
+
+## 📱 先装到手机上（30 秒）
+
+1. 用手机浏览器打开 https://alanine4.github.io/home-manager/
+2. **iPhone：** Safari 底部「分享」→「添加到主屏幕」
+   **Android：** Chrome 右上角菜单 →「添加到主屏幕」
+3. 以后从主屏幕的图标打开——**没网也能用**
+
+不用去 App Store，不用注册账号。电脑上想用的话，Chrome / Edge 地址栏右侧也有一个安装图标。
 
 <p align="center">
   <img src="docs/screenshots/cart.png" width="190" alt="购物车：按商店分组，勾选已买一键入库">
@@ -28,12 +37,8 @@
 
 ## 怎么用
 
-打开 https://alanine4.github.io/home-manager/ ，然后**加到主屏幕**，看起来用起来就跟
-一个 App 一样，而且**装完之后没网也能用**。
-
-- **iPhone：** Safari 打开 → 底部「分享」→「添加到主屏幕」
-- **Android：** Chrome 打开 → 右上角菜单 →「添加到主屏幕」
-- **电脑：** Chrome / Edge 打开 → 地址栏右侧的安装图标
+装好之后打开就是。购物车记要买的，买完打勾一键入库存；库存里扫条码、拍小票录入；
+食谱页看今天能做什么。
 
 | | 在线打开 | 装到主屏幕后、没网 |
 |---|:---:|:---:|
