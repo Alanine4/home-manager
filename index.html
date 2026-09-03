@@ -11,9 +11,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Home Manager" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <!-- Tailwind 放在仓库里而不是 CDN。两个原因：断网时界面才不会裂，
+       以及 Service Worker 缓存不了跨域请求，装成 PWA 后离线打开会没样式。 -->
+  <script src="vendor/tailwind.js"></script>
+  <!-- Firebase SDK 故意不在这里加载。只有配置了云同步的人才用得到它，
+       所以改成运行时按需注入（见下方 loadFirebaseSdk）。没配置的话，
+       这个页面从打开到关闭不会向外发出任何一个请求。 -->
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -222,8 +225,8 @@
     </div>
     <!-- Search + Filter -->
     <div class="flex gap-2 mb-3">
-      <input id="inv-search" type="text" placeholder="搜索..." oninput="Inventory.render()" class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
-      <select id="inv-cat-filter" onchange="Inventory.render()" class="text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none">
+      <input id="inv-search" type="text" placeholder="搜索..." oninput="Inventory.render()" class="flex-1 min-w-0 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
+      <select id="inv-cat-filter" onchange="Inventory.render()" class="max-w-[55%] text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none">
         <option value="">全部分类</option>
       </select>
     </div>
@@ -276,8 +279,8 @@
     </div>
     <!-- Search + Filter -->
     <div class="flex gap-2 mb-3">
-      <input id="house-search" type="text" placeholder="搜索..." oninput="Household.render()" class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
-      <select id="house-cat-filter" onchange="Household.render()" class="text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none">
+      <input id="house-search" type="text" placeholder="搜索..." oninput="Household.render()" class="flex-1 min-w-0 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
+      <select id="house-cat-filter" onchange="Household.render()" class="max-w-[55%] text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none">
         <option value="">全部分类</option>
       </select>
     </div>
@@ -411,16 +414,20 @@
       <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
         <h3 class="font-semibold mb-3 text-purple-600">🗂 分类管理</h3>
         <p class="text-xs text-gray-400 mb-3">所有分类均可删除，删除时可选择迁移物品</p>
-        <div id="cat-builtin" class="flex flex-wrap gap-1 mb-3"></div>
+        <!-- 块级容器，不能是 flex：里面是整行编辑卡片，做成 flex item 会按输入框的
+             固有宽度撑开，手机上直接横向溢出 -->
+        <div id="cat-builtin" class="mb-3"></div>
         <div id="cat-custom" class="space-y-2 mb-3"></div>
         <div class="flex gap-2 mb-2">
-          <input type="text" id="new-cat-cn" placeholder="中文名（必填）" class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
+          <input type="text" id="new-cat-cn" placeholder="中文名（必填）" class="flex-1 min-w-0 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
           <button onclick="Settings.aiCatFill()" class="text-sm bg-indigo-500 text-white px-3 py-2 rounded-lg hover:bg-indigo-600 whitespace-nowrap">🤖 AI填写</button>
         </div>
         <div class="flex gap-2">
           <input type="text" id="new-cat-icon" placeholder="🍱" class="w-12 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-2 focus:outline-none text-center" />
-          <input type="text" id="new-cat-en" placeholder="English" class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
-          <input type="text" id="new-cat-fr" placeholder="Français" class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
+          <!-- flex-1 的输入框必须配 min-w-0：flex item 默认 min-width:auto，等于输入框
+               自己的固有宽度（约 20 字符），两个并排在手机上就撑出屏幕 -->
+          <input type="text" id="new-cat-en" placeholder="English" class="flex-1 min-w-0 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
+          <input type="text" id="new-cat-fr" placeholder="Français" class="flex-1 min-w-0 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
           <button onclick="Settings.addCategory()" class="text-sm bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700">添加</button>
         </div>
       </div>
@@ -935,7 +942,7 @@ const State = {
   },
 
   saveLocal(keys) {
-    const ks = keys || ['inventory','recipes','cart','household','settings','customcats','catorder','history'];
+    const ks = keys || ['inventory','recipes','cart','household','settings','customcats','customstores','catorder','history'];
     ks.forEach(k => {
       const val = k === 'customcats' ? this.customCategories
                 : k === 'customstores' ? this.customStores
@@ -955,6 +962,33 @@ const State = {
 // localStorage。这样 fork 这个仓库的人不会连到别人的数据库，也不用改代码，
 // 拉上游更新时更不会在这里冲突。没配置就是纯本地模式，功能照常，只是不同步。
 const FB_CONFIG_KEY = 'hsl_fb_config';
+
+// 地址后面加 ?mode=local 就这一次不连云，配置照样留着。
+// 用途：临时借别人的设备、或者想确认一下自己到底有没有在联网。
+const LOCAL_ONLY = new URLSearchParams(location.search).get('mode') === 'local';
+
+// 按需加载脚本。同一个 src 只会真的加载一次，之后拿到的是同一个 Promise。
+const _scriptCache = {};
+function injectScript(src) {
+  if (_scriptCache[src]) return _scriptCache[src];
+  _scriptCache[src] = new Promise((resolve, reject) => {
+    const el = document.createElement('script');
+    el.src = src;
+    el.onload = resolve;
+    el.onerror = () => { delete _scriptCache[src]; reject(new Error('加载不到 ' + src)); };
+    document.head.appendChild(el);
+  });
+  return _scriptCache[src];
+}
+
+// Firebase SDK 是运行时注入的，不写在 <head> 里。没配云同步的人因此一个外部
+// 请求都不会发，装成 PWA 离线打开时也不会卡在这两个脚本上。
+function loadFirebaseSdk() {
+  const BASE = 'https://www.gstatic.com/firebasejs/9.22.2/';
+  // database 依赖 app，必须等前一个加载完再加载后一个
+  return injectScript(BASE + 'firebase-app-compat.js')
+    .then(() => injectScript(BASE + 'firebase-database-compat.js'));
+}
 
 function loadFirebaseConfig() {
   try {
@@ -1034,10 +1068,16 @@ const Cloud = {
     return code;
   },
 
+  // 房间码会直接拼进 Firebase 的路径 `h/<code>`，而 . $ # [ ] / 在那里是非法字符。
+  // 所以任何来自外部的码（手输的、扫码来的、链接里的）都要先过这一关。
+  // 长度 6-32 和 database.rules.json 里的规则一致：客户端放过去而规则拒绝，
+  // 用户看到的只会是一个莫名其妙的权限错误。
+  validCode(code) { return /^[A-Z0-9]{6,32}$/.test(String(code || '').trim().toUpperCase()); },
+
   // 切换房间：断开旧监听，保存新码，重新挂载
   setCode(code) {
     code = code.trim().toUpperCase();
-    if (!code) return false;
+    if (!this.validCode(code)) return false;
     const prev = this.getCode();
     localStorage.setItem('hsl_room_code', code);
     if (!this._db) return true;
@@ -1048,22 +1088,25 @@ const Cloud = {
 
   configured() { return !!loadFirebaseConfig(); },
 
-  init() {
+  async init() {
     const cfg = loadFirebaseConfig();
-    if (!cfg) {
-      // 没配置就走纯本地：所有功能照常，只是不跨设备同步
+    if (!cfg || LOCAL_ONLY) {
+      // 纯本地：所有功能照常，只是不跨设备同步。这是一个完整可用的状态，
+      // 不是「还没配好」的半成品，状态栏的文案也是这么写的。
       this._ready = true;
-      this._setStatus('local');
+      this._setStatus(cfg && LOCAL_ONLY ? 'localForced' : 'local');
       return;
     }
+    this._setStatus('connecting');
     try {
+      await loadFirebaseSdk();
       if (!firebase.apps.length) firebase.initializeApp(cfg);
       this._db = firebase.database();
-      this._setStatus('connecting');
       this._attachListener();
-      // 检测在线/离线
+      // 检测在线/离线。重新连上时也要把状态灯拨回来，否则会一直停在「离线」
       this._db.ref('.info/connected').on('value', snap => {
-        if (!snap.val() && this._ready) this._setStatus('offline');
+        if (!this._ready) return;
+        this._setStatus(snap.val() ? 'synced' : 'offline');
       });
     } catch(e) {
       console.error('Cloud init error', e);
@@ -1118,9 +1161,11 @@ const Cloud = {
         return;
       }
 
-      // 后续 snapshot：忽略自己的回弹
-      const incoming = JSON.stringify(data);
-      if (incoming === this._lastPushed) { this._setStatus('synced'); return; }
+      // 后续 snapshot：忽略自己的回弹。必须比较规范化之后的形态，因为 Firebase
+      // 回传时会按字母序重排键、丢掉空数组，直接比 JSON 字符串永远不相等——
+      // 那样每次自己推送完都会被当成别人的改动重新应用一遍，而且如果用户在
+      // 推送和回弹之间又改了一下，回弹里的旧数据会把新改动盖掉。
+      if (this._canon(data) === this._lastPushed) { this._setStatus('synced'); return; }
       if (data) { this._applyRemote(data); App.renderAll(); }
       this._setStatus('synced');
     }, err => {
@@ -1135,8 +1180,7 @@ const Cloud = {
     clearTimeout(this._pushTimer);
     this._pushTimer = setTimeout(() => {
       const payload = this._buildPayload();
-      const json = JSON.stringify(payload);
-      this._lastPushed = json;
+      this._lastPushed = this._canon(payload);
       this._setStatus('syncing');
       this._activeRef.set(payload)
         .then(() => this._setStatus('synced'))
@@ -1145,7 +1189,7 @@ const Cloud = {
   },
 
   _buildPayload() {
-    return {
+    const payload = {
       inventory:        State.inventory,
       recipes:          State.recipes,
       cart:             State.cart,
@@ -1156,16 +1200,46 @@ const Cloud = {
       history:          State.history.slice(0, 100), // 只同步最近100条
       // 注意：settings (API key 等) 不同步，每台设备各自保存
     };
+    // 过一遍 JSON：去掉 undefined（Firebase 见到 undefined 会拒绝整次写入，
+    // 同步就静默坏掉），NaN 变 null，顺便和 State 里的对象断开引用。
+    return JSON.parse(JSON.stringify(payload));
   },
 
-  // Firebase 有时会把数组转成带数字键的对象，这里统一转回数组
+  // 把数据整理成和 Firebase 回传一致的形态再序列化：键按字母序、数字键对象转数组、
+  // 丢掉 null / undefined / 空数组 / 空对象。只用于判断「这份是不是我刚推的」。
+  _canon(v) {
+    const norm = x => {
+      if (x === null || x === undefined) return undefined;
+      if (Array.isArray(x)) {
+        const a = x.map(norm).filter(y => y !== undefined);
+        return a.length ? a : undefined;
+      }
+      if (typeof x === 'object') {
+        const keys = Object.keys(x);
+        if (keys.length && keys.every(k => /^\d+$/.test(k))) {
+          return norm(keys.sort((a, b) => +a - +b).map(k => x[k]));
+        }
+        const o = {};
+        for (const k of keys.sort()) {
+          const y = norm(x[k]);
+          if (y !== undefined) o[k] = y;
+        }
+        return Object.keys(o).length ? o : undefined;
+      }
+      return x;
+    };
+    return JSON.stringify(norm(v) ?? null);
+  },
+
+  // Firebase 有时会把数组转成带数字键的对象，这里统一转回数组；
+  // 稀疏数组里的 null 空位也顺手去掉，免得渲染时 item.nameCn 炸在 null 上
   _toArr(val) {
     if (!val) return [];
-    if (Array.isArray(val)) return val;
+    if (Array.isArray(val)) return val.filter(x => x != null);
     if (typeof val === 'object') {
       const keys = Object.keys(val);
       if (keys.every(k => /^\d+$/.test(k))) {
-        return keys.sort((a, b) => +a - +b).map(k => val[k]);
+        return keys.sort((a, b) => +a - +b).map(k => val[k]).filter(x => x != null);
       }
     }
     return [];
@@ -1186,16 +1260,21 @@ const Cloud = {
   _setStatus(status) {
     const el = document.getElementById('sync-status');
     if (!el) return;
+    // 第四项是鼠标悬停/长按时的解释。「仅本地」是一个正常且完整的状态，
+    // 文案要说清楚它不是「你还差一步没配好」。
     const map = {
-      connecting: ['🔄', 'text-gray-400',   '连接中'],
-      syncing:    ['☁️',  'text-blue-500',   '同步中'],
-      synced:     ['✅',  'text-green-500',  '已同步'],
-      offline:    ['📴', 'text-orange-400', '离线'],
-      local:      ['💾', 'text-gray-400',   '仅本地'],
-      error:      ['❌',  'text-red-500',    '同步失败'],
+      connecting:  ['🔄', 'text-gray-400',   '连接中',  '正在连接云端…'],
+      syncing:     ['🔄', 'text-blue-500',   '同步中',  '正在把改动推送到云端'],
+      synced:      ['☁️',  'text-green-500',  '已同步',  () => `已连接云端 · 房间码 ${Cloud.getCode()}\n点击查看`],
+      offline:     ['⚠️',  'text-orange-400', '离线',    '连不上云端，改动已存在本机，联网后会自动补上'],
+      local:       ['🔒', 'text-gray-400',   '仅本地',  '数据只存在这台设备上，没有连接任何服务器。\n这是完整可用的状态；想多设备同步就点这里'],
+      localForced: ['🔒', 'text-gray-400',   '仅本地',  '本次以 ?mode=local 打开，暂不连接云端。\n去掉网址里的 ?mode=local 就会恢复同步'],
+      error:       ['❌', 'text-red-500',    '同步失败', '云端连接出错了，点击检查配置。数据仍然安全地存在本机'],
     };
-    const [icon, cls, label] = map[status] || map.error;
-    el.className = `text-xs ${cls} flex items-center gap-1`;
+    const [icon, cls, label, hint] = map[status] || map.error;
+    el.className = `text-xs ${cls} flex items-center gap-1 px-1 cursor-pointer`;
+    el.title = typeof hint === 'function' ? hint() : hint;
+    el.onclick = () => App.switchTab('settings');
     el.innerHTML = `<span>${icon}</span><span class="hidden sm:inline">${label}</span>`;
   },
 };
@@ -3381,16 +3460,19 @@ const Settings = {
     const el = document.getElementById('fb-status');
     if (!el) return;
     const cfg = loadFirebaseConfig();
-    if (cfg) {
+    if (cfg && LOCAL_ONLY) {
+      el.className = 'text-xs mb-2 text-orange-500';
+      el.textContent = '🔒 本次以 ?mode=local 打开，配置还在但暂不连接云端';
+    } else if (cfg) {
       el.className = 'text-xs mb-2 text-green-600 dark:text-green-400';
-      el.textContent = `✅ 已连接：${cfg.projectId || cfg.databaseURL}`;
+      el.textContent = `☁️ 已连接：${cfg.projectId || cfg.databaseURL}`;
     } else {
       el.className = 'text-xs mb-2 text-gray-400';
-      el.textContent = '💾 当前是仅本地模式，数据不会离开这台设备';
+      el.textContent = '🔒 仅本地模式：数据只在这台设备上，页面不向外发任何请求';
     }
-    // 没配置的话，房间码那块是没意义的
+    // 没连云端的时候，房间码那块是没意义的
     const roomBlock = document.getElementById('display-room-code')?.closest('.rounded-xl');
-    if (roomBlock) roomBlock.classList.toggle('opacity-40', !cfg);
+    if (roomBlock) roomBlock.classList.toggle('opacity-40', !cfg || LOCAL_ONLY);
   },
 
   saveFirebaseConfig() {
@@ -3426,8 +3508,9 @@ const Settings = {
 
   joinRoom() {
     const input = document.getElementById('input-room-code')?.value.trim().toUpperCase();
-    if (!input || input.length < 4) { showToast('请输入有效的房间码', 'warn'); return; }
+    if (!Cloud.validCode(input)) { showToast('请输入有效的房间码（4-16 位字母或数字）', 'warn'); return; }
     if (input === Cloud.getCode()) { showToast('已经在这个房间了', 'info'); return; }
+    if (!Cloud._db) { showToast(LOCAL_ONLY ? '当前是 ?mode=local，去掉它再加入' : '还没连上云端，先在上面配置云同步', 'warn'); return; }
     if (!confirm(`确认加入房间 ${input}？\n\n当前数据会切换为该房间的云端数据。`)) return;
     Cloud.setCode(input);
     document.getElementById('display-room-code').textContent = input;

@@ -1,310 +1,175 @@
-# Home Manager 🏠
+# 家庭购物管家 · Home Manager 🏠
 
-> Shopping list, food inventory and recipes for a shared household. One HTML
-> file, no build step, no account.
+> 装在手机上的家庭购物清单 + 食物库存 + 食谱。不用下载、不用注册：
+> 打开网址，加到主屏幕，就是一个 App。没网也能用，数据只留在你自己的手机上。
 
-**🔗 Live Demo:** https://alanine4.github.io/home-manager/
+**网址：** https://alanine4.github.io/home-manager/ ｜ **English:** [README.en.md](README.en.md)
 
----
+## 📱 先装到手机上（30 秒）
 
-## What it is
+1. 用手机浏览器打开 https://alanine4.github.io/home-manager/
+2. **iPhone：** Safari 底部「分享」→「添加到主屏幕」
+   **Android：** Chrome 右上角菜单 →「添加到主屏幕」
+3. 以后从主屏幕的图标打开——**没网也能用**
 
-People sharing a kitchen buy the same thing twice, forget what is already in the
-cupboard, and start cooking before noticing an ingredient is missing. This tracks
-what you have, what you need to buy, and which recipes you can make right now
-from what is in stock.
+不用去 App Store，不用注册账号。电脑上想用的话，Chrome / Edge 地址栏右侧也有一个安装图标。
 
-It is a single HTML file. Open it and it works, storing everything in your
-browser. Add an AI key for receipt scanning and natural-language input. Add a
-Firebase project to sync across devices. Both are optional and neither is
-required to use the app.
-
----
-
-## Features
-
-### 🛒 Shopping Cart
-- Group by store (Colruyt / Carrefour / Lidl) or category
-- Mark as bought → batch move to inventory
-- AI natural language input ("I need tomatoes and pork")
-
-### 📦 Food Inventory
-- Collapsible, sortable, pinnable categories
-- Barcode scanning with auto-fill (Open Food Facts)
-- Receipt photo scanning — AI reads any language (Dutch / French / English...)
-- Voice input
-
-### 🍳 Recipes
-- Shows how many ingredients you already have in stock
-- One tap to add missing ingredients to cart
-- AI recommends recipes based on your current inventory
-
-### 🏠 Household Supplies
-- Separate tracking for toiletries / cleaning / household items
-- Low-stock alerts
-- Fully independent from food inventory
-
-### 🤖 AI Assistant
-- 14 providers: Gemini, Claude, OpenAI, DeepSeek, Grok, Qwen (global and mainland),
-  Kimi, GLM, MiniMax, Mistral, Groq, OpenRouter, SiliconFlow
-- Model lists are pulled from your own account, so they never go stale
-- Free chat with direct data actions (add to cart, save recipe, etc.)
-
-Everything runs in the browser, so a provider only works if its API sends CORS
-headers. All of the above do, with one exception: OpenAI's `/chat/completions`
-does not, so browser calls to it fail. Use OpenRouter if you want GPT models.
-
-### 🔄 Real-time Multi-device Sync
-- Powered by Firebase Realtime Database
-- Room code system — share one code with your partner
-- Operation history with one-tap undo
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| Frontend | Vanilla JS + Tailwind CSS |
-| Sync | Firebase Realtime Database |
-| AI | 14 providers, OpenAI-compatible / Anthropic / Gemini protocols |
-| Hosting | GitHub Pages (PWA) |
-| Build | Single HTML file, zero build tools |
-
----
-
-## Install as App (PWA)
-
-**Android:** Open in Chrome → Menu → Add to Home Screen
-
-**iOS:** Open in Safari → Share → Add to Home Screen
-
-**Windows / Mac:** Open in Chrome/Edge → Install icon in address bar
-
----
-
-## Getting Started
-
-1. Open https://alanine4.github.io/home-manager/
-2. Go to **Settings** → paste your AI API Key
-3. Start using it
-
-Everything is stored on your device. Nothing leaves the browser until you set up
-sync yourself, which is the next section.
-
----
-
-## Run your own copy
-
-This repo contains no Firebase credentials, mine or anyone else's, so a fork
-cannot accidentally write to someone else's database. Each deployment supplies
-its own.
-
-1. Fork this repo and turn on GitHub Pages for it.
-2. If your repo is not named `home-manager`, update the paths in `sw.js` and the
-   `start_url` / `scope` in `manifest.json` to match.
-3. Open your site. It works right away, storing everything locally.
-
-That is enough for one device. To sync between phone and laptop, or with someone
-you live with:
-
-4. Create a project at console.firebase.google.com and add a Realtime Database.
-5. In Project settings, copy the web app config snippet.
-6. In the app, go to **Settings → Cloud sync** and paste it. The whole snippet
-   works, whether it is JSON or the `const firebaseConfig = {...}` form.
-7. Paste `database.rules.json` from this repo into Firebase console → Realtime
-   Database → Rules, then publish.
-8. Repeat step 6 on your other devices, then share your **Room Code**.
-
-The config lives in your browser's localStorage, never in the repo and never in
-the synced data. You edit no code, so pulling updates from upstream will not
-conflict.
-
-There is no build step. The whole app is one HTML file.
-
-## Security notes
-
-The room code is the only thing protecting your data. Firebase rules let anyone
-who knows a code read and write that room, and there is no way to revoke access
-or remove someone once they have it. Nobody can list what rooms exist, so a code
-you keep private stays private. Treat it like a password: don't put it in a
-screenshot or a public post.
-
-Your AI API key and your Firebase config are both stored in `localStorage` on
-each device and are never synced or committed. Every device needs its own copy
-of each.
-
-If you want real per-user isolation, the next step is Firebase anonymous auth plus
-a member list per room, and rules that check `auth.uid` against it. This app
-doesn't do that yet.
-
-## License
-
-MIT. See [LICENSE](LICENSE).
-
-## Design goals
-
-Lightweight, practical, mobile-first. Open it and use it: no account, no
-dependencies, no build tooling. Your data stays on your device unless you
-choose otherwise.
-
-## Contributing
-
-Issues and pull requests are welcome. Two things worth knowing before you
-change anything:
-
-- The UI uses Tailwind from a CDN, so class names work directly with no build
-- User data must go through `esc()` before it is put into HTML, and through
-  `jsArg()` for inline event handler arguments (both are near the top of
-  index.html). Missing one is an XSS hole
-- Adding an AI provider means adding one entry to the `PROVIDERS` registry;
-  the call logic does not need to change
-
----
-
----
-
-# Home Manager 🏠
-
-> 合住家庭的购物清单、食物库存和食谱管理。单个 HTML 文件，无构建步骤，不用注册。
-
-**🔗 在线体验：** https://alanine4.github.io/home-manager/
+<p align="center">
+  <img src="docs/screenshots/cart.png" width="190" alt="购物车：按商店分组，勾选已买一键入库">
+  <img src="docs/screenshots/inventory.png" width="190" alt="库存：按分类折叠，扫条码、拍小票录入">
+  <img src="docs/screenshots/recipes.png" width="190" alt="食谱：显示食材备齐度，缺的一键加购物车">
+  <img src="docs/screenshots/household.png" width="190" alt="家居必备：洗护清洁用品，低库存提醒">
+</p>
+<p align="center"><sub>购物车 · 库存 · 食谱 · 家居必备（也有深色模式）</sub></p>
 
 ---
 
 ## 这是什么
 
-合住的人常常重复买同一样东西，忘记柜子里已经有了，做到一半才发现缺料。这个应用
-管三件事：家里有什么、还要买什么、用现有库存今天能做哪几道菜。
+合住的人常常重复买同一样东西，忘记柜子里已经有了，做到一半才发现缺料。
+这个应用管三件事：**家里有什么、还要买什么、用现有的东西今天能做哪几道菜。**
 
-它就是一个 HTML 文件。打开就能用，数据存在浏览器里。填个 AI Key 可以拍小票录入和
-自然语言输入，配上 Firebase 可以多设备同步——两样都是可选的，不填也不影响使用。
+它就是一个网页。打开就能用，东西记在你的手机里。想拍小票自动录入、想说一句话
+就加购物车，填一个 AI Key 就行；想和家人共用一份清单，再配一下云同步。
+这两样都是可选的，不弄也不影响使用。
+
+---
+
+## 怎么用
+
+装好之后打开就是。购物车记要买的，买完打勾一键入库存；库存里扫条码、拍小票录入；
+食谱页看今天能做什么。
+
+| | 在线打开 | 装到主屏幕后、没网 |
+|---|:---:|:---:|
+| 购物车、库存、食谱、家居用品 | ✅ | ✅ |
+| 扫条形码 | ✅ | 能扫，但查不到商品名 |
+| 拍小票 / 说话录入 / AI 推荐 | ✅ | 需要网 |
+| 和家人同步 | 配置后 ✅ | 需要网 |
+
+数据都在你自己的设备上。不主动开同步，就什么都不会离开你的手机。
 
 ---
 
 ## 功能
 
 ### 🛒 购物车
-- 按商店（Colruyt / Carrefour / Lidl）或分类分组
-- 勾选已买 → 一键批量入库存
-- AI 自然语言输入（"我要买番茄和猪肉"）
+- 按商店（Colruyt / Carrefour / Lidl，可自己加）或按分类分组
+- 买完打勾 → 一键批量入库存
+- 说一句「我要买番茄和猪肉」，AI 直接帮你加进去
 
 ### 📦 食物库存
-- 分类管理，支持折叠 / 排序 / 置顶
-- 条形码扫描自动录入（Open Food Facts 数据库）
-- 拍小票 / 上传图片 → AI 自动识别（支持荷文 / 法文 / 英文等所有语言）
-- 语音输入
+- 分类管理，可以折叠、排序、置顶
+- 扫条形码自动填名字（用的是 Open Food Facts 公开数据库）
+- 拍小票 / 选图片 → AI 自动识别，荷兰文、法文、英文都认
+- 说话录入
 
 ### 🍳 食谱
-- 食谱库，自动显示当前库存能满足几种食材
-- 一键把缺货食材加入购物车
-- AI 根据当前库存推荐今天能做什么菜
+- 每道菜显示「食材备齐度」，一眼知道能不能做
+- 缺的食材一键加进购物车
+- AI 根据现有库存推荐今天做什么
 
 ### 🏠 家居必备
-- 独立管理洗护 / 清洁 / 家居用品
-- 低库存自动提醒
-- 与食物库存完全分开
+- 洗护、清洁、日用品单独管，不和食物混在一起
+- 快用完了会提醒
 
-### 🤖 AI 助手
-- 14 家服务商：Gemini、Claude、OpenAI、DeepSeek、Grok、通义千问（国际站 / 大陆）、
-  Kimi、智谱 GLM、MiniMax、Mistral、Groq、OpenRouter、硅基流动
-- 模型清单从你自己的账号拉取，不会过期
-- 自由对话，可直接操作数据（加购物车、保存食谱等）
+### 🤖 AI 助手（可选）
+- 支持 Gemini、Claude、DeepSeek、通义千问、Kimi、智谱、MiniMax 等 14 家，
+  用你自己的 Key
+- 想用 GPT 请选 OpenRouter
+- 可以直接聊天，让它帮你加购物车、存食谱
 
-整个应用跑在浏览器里，所以服务商的接口必须返回 CORS 头才能用。上面这些都可以，
-只有一个例外：OpenAI 的 `/chat/completions` 不返回，浏览器直连会失败。
-想用 GPT 就走 OpenRouter 转发。
-
-### 🔄 多设备实时同步
-- Firebase Realtime Database 驱动
-- 房间码机制：两人共享同一个数据空间
-- 操作历史记录 + 一键撤销
+### 🔄 和家人同步（可选，默认关闭）
+- 两个人填同一个房间码，就共用一份清单，改动实时同步
+- 有操作记录，误删了可以一键撤销
 
 ---
 
-## 技术栈
+## 数据存在哪
 
-| 层级 | 技术 |
-|------|------|
-| 前端 | Vanilla JS + Tailwind CSS |
-| 数据同步 | Firebase Realtime Database |
-| AI | 14 家服务商（OpenAI 兼容 / Anthropic / Gemini 三种协议）|
-| 部署 | GitHub Pages (PWA) |
-| 包装 | 单文件 HTML，无构建工具 |
+默认全部存在你手机浏览器的本地存储里，包括 AI Key 和同步配置。
+不会上传，也不会出现在这个代码仓库里。
 
----
+**这也意味着：清掉浏览器数据 = 清掉你的库存。** 目前唯一可靠的备份是
+**设置 → 数据管理 → 导出数据**，定期存一份文件。
 
-## 安装为 App（PWA）
+几种已知会丢数据的情况：
+- 手动清了浏览器缓存 / 网站数据
+- 换了浏览器或换了手机
+- iPhone 上很久不打开 Safari，系统可能会自动清掉网站数据
 
-**Android：** Chrome 打开链接 → 菜单 → 添加到主屏幕
-
-**iOS：** Safari 打开链接 → 分享 → 添加到主屏幕
-
-**Windows / Mac：** Chrome/Edge 打开链接 → 地址栏右侧安装图标
+自动备份还没做，在计划里（[ROADMAP.md](ROADMAP.md) 第 2 项）。
 
 ---
 
-## 使用
+## 和家人同步（可选）
 
-1. 打开 https://alanine4.github.io/home-manager/
-2. 进入**设置** → 填入 AI API Key
-3. 开始用
+不开这个，应用一切正常，只是每台设备各管各的。想两个人共用一份清单，
+或者自己的手机和电脑保持一致，才需要做下面这些。
 
-数据都存在你自己设备上。不主动配置同步，就什么都不会离开浏览器。
+1. 去 https://console.firebase.google.com 建一个项目，加一个 **Realtime Database**
+2. 在项目设置里找到网页应用的配置，整段复制
+3. 回到应用，**设置 → 云同步**，粘进去，点保存
+4. 把仓库里的 `database.rules.json` 文件内容粘到 Firebase 控制台 →
+   Realtime Database → 规则，点发布
+5. 在家人的手机上重复第 3 步，然后把你的**房间码**告诉 ta，让 ta 在设置里输入
+
+没做这一步之前，应用不会连任何服务器。做完之后想临时不同步（比如在别人的电脑上
+临时看一眼）：在网址后面加 `?mode=local`。
 
 ---
 
 ## 自己部署一份
 
-这个仓库里没有任何人的 Firebase 配置，我的也没有，所以 fork 之后不可能误写到
-别人的数据库。每个部署各自填自己的。
+这个仓库里没有任何人的同步配置，我的也没有。所以你 fork 之后不可能误连到别人的
+数据，每份部署各自填自己的。
 
-1. Fork 这个仓库，给它打开 GitHub Pages。
-2. 如果你的仓库不叫 `home-manager`，改一下 `sw.js` 里的路径和 `manifest.json`
-   里的 `start_url` / `scope`。
-3. 打开你的站点，直接就能用，数据存在本地。
+1. Fork 这个仓库，在仓库设置里打开 GitHub Pages
+2. 打开你自己的网址，直接就能用
 
-一台设备用到这里就够了。想在手机和电脑之间同步，或者和同住的人共享：
+没有第 3 步。仓库改成别的名字也不用改代码。
 
-4. 去 console.firebase.google.com 建项目，加一个 Realtime Database。
-5. 在项目设置里复制网页应用的配置。
-6. 回到应用，**设置 → 云同步**，整段粘进去。JSON 或者控制台给的
-   `const firebaseConfig = {...}` 都认。
-7. 把仓库里的 `database.rules.json` 粘到 Firebase 控制台 → Realtime Database →
-   规则，发布。
-8. 在你的其他设备上重复第 6 步，然后把**房间码**发过去。
+---
 
-配置存在浏览器的 localStorage 里，不进仓库，也不进同步的数据。因为你一行代码都
-没改，以后拉上游更新不会冲突。
+## 要知道的几件事
 
-没有构建步骤，整个应用就是一个 HTML 文件。
+- **房间码就是钥匙。** 知道码的人就能看到并修改那份清单，没有踢人的办法。
+  别截图发到公开的地方，把它当密码看。
+- 两个人**同时**改同一样东西，后保存的算。日常买菜够用，不适合多人频繁并发编辑。
+- 本地存储不是备份，请定期导出。
+- 扫条形码目前 iPhone 的 Safari 不支持，Android / Chrome / Edge 可以。
+- 说话录入需要联网。
 
-## 安全说明
+---
 
-房间码是保护你数据的唯一一道门。Firebase 规则允许任何知道房间码的人读写那个房间，
-而且没有踢人、也没有撤销的办法。好消息是别人列举不出有哪些房间，所以只要码不外泄
-就是安全的。把它当密码看：别截图发出去，别贴在公开的地方。
+## 常见问题
 
-AI 的 API Key 和 Firebase 配置都存在每台设备各自的 `localStorage` 里，既不会
-同步到云端，也不在仓库里。所以每台设备都要各填一次。
+**一定要联网吗？**
+不用。加到主屏幕之后，没网也照常用。只有拍小票、说话录入、AI 推荐和同步需要网。
 
-要做真正的按人隔离，下一步是 Firebase 匿名登录加房间成员名单，规则里校验
-`auth.uid` 是否在名单内。目前这个应用还没做。
+**一定要填 AI Key 吗？**
+不用。手动录入的功能全都在，AI 只是让录入快一点。
+
+**换手机怎么办？**
+设置里导出数据，在新手机上导入。或者开同步，两边填同一个房间码。
+
+**房间码泄露了怎么办？**
+在设置里换一个新房间码，把数据推过去。旧的那份还在云端，但你不再用它了。
+
+**为什么不做账号登录？**
+因为那需要一台由我来维护的服务器，而这个应用的意义就是不需要。房间码是在
+「不要账号」和「能两个人一起用」之间的折中。等真的有人用了会重新考虑。
+
+---
+
+## 接下来做什么
+
+见 [ROADMAP.md](ROADMAP.md)，里面也写了决定**不做**的事和原因。
+
+## 参与开发
+
+欢迎提 issue 和 PR。改代码之前请先看 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 许可
 
 MIT，见 [LICENSE](LICENSE)。
-
-## 设计取向
-
-轻量、实用、手机优先。打开即用，不需要注册账号，不需要安装任何依赖，也不需要
-构建工具。所有数据默认留在你自己的设备上。
-
-## 参与
-
-欢迎 issue 和 PR。改动前有两件事值得知道：
-
-- 界面用 CDN 版 Tailwind，直接写类名，没有编译步骤
-- 拼 HTML 时用户数据必须过 `esc()`，事件处理器参数用 `jsArg()`（见 index.html
-  顶部的工具函数）——漏一处就是一个 XSS
-- 新增 AI 服务商只要往 `PROVIDERS` 注册表加一条，不用碰调用逻辑
