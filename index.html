@@ -2272,27 +2272,29 @@ const Inventory = {
         <span class="text-sm font-medium min-w-10 text-center">${esc(formatQty(item.quantity, item.unit))}</span>
         <button onclick="Inventory.adjustQty(${jsArg(item.id)},1)" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 font-bold">+</button>`;
     return `
-    <div class="item-card bg-white dark:bg-gray-800 rounded-xl p-3 border ${isLow ? 'border-red-300 dark:border-red-700' : unlimited ? 'border-purple-200 dark:border-purple-700' : 'border-gray-200 dark:border-gray-700'} flex items-center gap-2">
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="font-medium name-cn">${esc(item.nameCn)}</span>
-          ${item.nameEn ? `<span class="text-xs text-gray-400 name-en">${esc(item.nameEn)}</span>` : ''}
-          ${isLow ? '<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">低库存</span>' : ''}
-          ${unlimited ? '<span class="text-xs bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded">常备</span>' : ''}
-        </div>
-        <div class="flex items-center gap-1 flex-wrap mt-0.5">
-          <select onchange="Inventory.changeCategory(${jsArg(item.id)},this.value)" class="text-xs max-w-full min-w-0 bg-gray-100 dark:bg-gray-700 border-0 rounded px-1 py-0.5 text-gray-500 dark:text-gray-400 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-400">
-            ${catOptions(item.category)}
-          </select>
-          ${item.notes ? `<span class="text-xs text-gray-400">${esc(item.notes)}</span>` : ''}
-        </div>
+    <!-- 两行：「名称 | ✏️🛒🗑」「分类 | − 数量 +」。手机和桌面都这样——桌面是三列网格，
+         一张卡也就 320px 宽，按钮放大到 32px 之后一行排不下；而名称 + 分类本来就叠成
+         两行，所以改成两行高度不变。中间那个 basis-full 的空元素负责强制换行。 -->
+    <div class="item-card bg-white dark:bg-gray-800 rounded-xl p-3 border ${isLow ? 'border-red-300 dark:border-red-700' : unlimited ? 'border-purple-200 dark:border-purple-700' : 'border-gray-200 dark:border-gray-700'} flex flex-wrap items-center gap-x-2 gap-y-0">
+      <div class="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+        <span class="font-medium name-cn">${esc(item.nameCn)}</span>
+        ${item.nameEn ? `<span class="text-xs text-gray-400 name-en">${esc(item.nameEn)}</span>` : ''}
+        ${isLow ? '<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">低库存</span>' : ''}
+        ${unlimited ? '<span class="text-xs bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded">常备</span>' : ''}
       </div>
-      <div class="flex items-center gap-1 shrink-0">${qtyDisplay}</div>
       <div class="flex items-center gap-1 shrink-0">
         <button onclick="Modal.showEditInventory(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-blue-500 hover:bg-blue-50 dark:hover:bg-gray-700">✏️</button>
         ${!unlimited ? `<button onclick="Inventory.addToCart(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-green-500 hover:bg-green-50 dark:hover:bg-gray-700" title="加入购物车">🛒</button>` : ''}
         <button onclick="Inventory.remove(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-red-400 hover:bg-red-50 dark:hover:bg-gray-700">🗑</button>
       </div>
+      <div class="basis-full h-0"></div>
+      <div class="flex-1 min-w-0 flex items-center gap-1 flex-wrap mt-1.5">
+        <select onchange="Inventory.changeCategory(${jsArg(item.id)},this.value)" class="text-xs max-w-full min-w-0 bg-gray-100 dark:bg-gray-700 border-0 rounded px-1 py-0.5 text-gray-500 dark:text-gray-400 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-400">
+          ${catOptions(item.category)}
+        </select>
+        ${item.notes ? `<span class="text-xs text-gray-400">${esc(item.notes)}</span>` : ''}
+      </div>
+      <div class="flex items-center gap-1 shrink-0 mt-1.5">${qtyDisplay}</div>
     </div>`;
   },
 
@@ -2827,29 +2829,29 @@ const Household = {
 
   renderItem(item) {
     const isLow = item.minStock > 0 && item.quantity <= item.minStock;
-    return `<div class="item-card bg-white dark:bg-gray-800 rounded-xl p-3 border ${isLow ? 'border-red-300 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'} flex items-center gap-2">
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="font-medium name-cn">${esc(item.nameCn)}</span>
-          ${item.nameEn ? `<span class="text-xs text-gray-400 name-en">${esc(item.nameEn)}</span>` : ''}
-          ${isLow ? '<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">低库存</span>' : ''}
-        </div>
-        <div class="flex items-center gap-1 flex-wrap mt-0.5">
-          <select onchange="Household.changeCategory(${jsArg(item.id)},this.value)" class="text-xs max-w-full min-w-0 bg-gray-100 dark:bg-gray-700 border-0 rounded px-1 py-0.5 text-gray-500 dark:text-gray-400 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-400">
-            ${catOptions(item.category)}
-          </select>
-          ${item.notes ? `<span class="text-xs text-gray-400">${esc(item.notes)}</span>` : ''}
-        </div>
-      </div>
-      <div class="flex items-center gap-1 shrink-0">
-        <button onclick="Household.adjustQty(${jsArg(item.id)},-1)" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center font-bold">−</button>
-        <span class="text-sm font-medium min-w-10 text-center">${esc(formatQty(item.quantity, item.unit))}</span>
-        <button onclick="Household.adjustQty(${jsArg(item.id)},1)" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center font-bold">+</button>
+    // 布局和 Inventory.renderItem 一样：两行，见那边的注释
+    return `<div class="item-card bg-white dark:bg-gray-800 rounded-xl p-3 border ${isLow ? 'border-red-300 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'} flex flex-wrap items-center gap-x-2 gap-y-0">
+      <div class="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+        <span class="font-medium name-cn">${esc(item.nameCn)}</span>
+        ${item.nameEn ? `<span class="text-xs text-gray-400 name-en">${esc(item.nameEn)}</span>` : ''}
+        ${isLow ? '<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">低库存</span>' : ''}
       </div>
       <div class="flex items-center gap-1 shrink-0">
         <button onclick="Modal.showEditHousehold(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-blue-500 hover:bg-blue-50 dark:hover:bg-gray-700">✏️</button>
         <button onclick="Household.addToCart(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-green-500 hover:bg-green-50 dark:hover:bg-gray-700" title="加入购物车">🛒</button>
         <button onclick="Household.remove(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-red-400 hover:bg-red-50 dark:hover:bg-gray-700">🗑</button>
+      </div>
+      <div class="basis-full h-0"></div>
+      <div class="flex-1 min-w-0 flex items-center gap-1 flex-wrap mt-1.5">
+        <select onchange="Household.changeCategory(${jsArg(item.id)},this.value)" class="text-xs max-w-full min-w-0 bg-gray-100 dark:bg-gray-700 border-0 rounded px-1 py-0.5 text-gray-500 dark:text-gray-400 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-400">
+          ${catOptions(item.category)}
+        </select>
+        ${item.notes ? `<span class="text-xs text-gray-400">${esc(item.notes)}</span>` : ''}
+      </div>
+      <div class="flex items-center gap-1 shrink-0 mt-1.5">
+        <button onclick="Household.adjustQty(${jsArg(item.id)},-1)" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center font-bold">−</button>
+        <span class="text-sm font-medium min-w-10 text-center">${esc(formatQty(item.quantity, item.unit))}</span>
+        <button onclick="Household.adjustQty(${jsArg(item.id)},1)" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center font-bold">+</button>
       </div>
     </div>`;
   },
