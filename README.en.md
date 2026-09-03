@@ -163,6 +163,12 @@ There is no step 3. Renaming the repo needs no code changes either.
 No. Once it's on your home screen it works without a network. Only receipt
 scanning, voice input, AI suggestions and sync need one.
 
+**I used it in Safari for a while, then added it to the home screen — where did my data go?**
+On iPhone, the home-screen app and Safari tabs are **two separate storage
+areas** that don't see each other. Add it to the home screen first, then start
+entering things. Already entered data in Safari? Export there, import in the
+home-screen app — a one-time step.
+
 **Do I need an AI key?**
 No. Everything works with manual entry; the AI just makes it faster.
 
