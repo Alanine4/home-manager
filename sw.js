@@ -9,7 +9,6 @@ const SHELL = [
   './index.html',
   './manifest.json',
   './vendor/tailwind.js',   // 样式必须一起缓存，否则断网时界面会裂
-  './vendor/qrcode.js',     // 房间码二维码是本机画的，断网也要能画
   './icon-192.png',
   './icon-512.png',
   './apple-touch-icon.png',
