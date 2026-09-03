@@ -54,10 +54,14 @@ Everything runs in the browser, so a provider only works if its API sends CORS
 headers. All of the above do, with one exception: OpenAI's `/chat/completions`
 does not, so browser calls to it fail. Use OpenRouter if you want GPT models.
 
-### 🔄 Real-time Multi-device Sync
+### 🔄 Real-time Multi-device Sync (optional, off by default)
 - Powered by Firebase Realtime Database
-- Room code system — share one code with your partner
+- Room code system — share an invite link or let them scan a QR code
 - Operation history with one-tap undo
+
+The QR code is drawn on your own device. The room code is the only credential
+guarding your data, so it is never sent to a third-party QR service. The invite
+link keeps the code after the `#`, which browsers never send to a server.
 
 ---
 
@@ -101,26 +105,35 @@ cannot accidentally write to someone else's database. Each deployment supplies
 its own.
 
 1. Fork this repo and turn on GitHub Pages for it.
-2. If your repo is not named `home-manager`, update the paths in `sw.js` and the
-   `start_url` / `scope` in `manifest.json` to match.
-3. Open your site. It works right away, storing everything locally.
+2. Open your site. It works right away, storing everything locally.
+
+There is no third step. All paths are relative, so renaming the repo needs no
+code changes.
 
 That is enough for one device. To sync between phone and laptop, or with someone
 you live with:
 
-4. Create a project at console.firebase.google.com and add a Realtime Database.
-5. In Project settings, copy the web app config snippet.
-6. In the app, go to **Settings → Cloud sync** and paste it. The whole snippet
+3. Create a project at console.firebase.google.com and add a Realtime Database.
+4. In Project settings, copy the web app config snippet.
+5. In the app, go to **Settings → Cloud sync** and paste it. The whole snippet
    works, whether it is JSON or the `const firebaseConfig = {...}` form.
-7. Paste `database.rules.json` from this repo into Firebase console → Realtime
+6. Paste `database.rules.json` from this repo into Firebase console → Realtime
    Database → Rules, then publish.
-8. Repeat step 6 on your other devices, then share your **Room Code**.
+7. On your other device, open the **invite link** (or scan the QR code) from
+   Settings → Room Code. It only needs step 5 done first.
+
+The Firebase SDK is only loaded once you have pasted a config. Without one, the
+page makes no outbound requests at all, from open to close.
 
 The config lives in your browser's localStorage, never in the repo and never in
 the synced data. You edit no code, so pulling updates from upstream will not
 conflict.
 
-There is no build step. The whole app is one HTML file.
+Want a single session to stay local even though sync is configured? Add
+`?mode=local` to the URL — useful on someone else's device.
+
+There is no build step. The whole app is one HTML file plus two vendored
+libraries in `vendor/`.
 
 ## Security notes
 
@@ -153,7 +166,9 @@ choose otherwise.
 Issues and pull requests are welcome. Two things worth knowing before you
 change anything:
 
-- The UI uses Tailwind from a CDN, so class names work directly with no build
+- Tailwind ships in `vendor/`, not from a CDN, so class names work directly with
+  no build and the app still renders when offline. Anything added to `vendor/`
+  must also go into the `SHELL` list in `sw.js`, or it will be missing offline
 - User data must go through `esc()` before it is put into HTML, and through
   `jsArg()` for inline event handler arguments (both are near the top of
   index.html). Missing one is an XSS hole
@@ -215,10 +230,13 @@ change anything:
 只有一个例外：OpenAI 的 `/chat/completions` 不返回，浏览器直连会失败。
 想用 GPT 就走 OpenRouter 转发。
 
-### 🔄 多设备实时同步
+### 🔄 多设备实时同步（可选，默认关闭）
 - Firebase Realtime Database 驱动
-- 房间码机制：两人共享同一个数据空间
+- 房间码机制：发条邀请链接，或者让对方扫个二维码
 - 操作历史记录 + 一键撤销
+
+二维码是在你自己设备上画的。房间码是保护你数据的唯一凭证，所以绝不会送去
+第三方的二维码服务。邀请链接把房间码放在 `#` 后面，浏览器不会把它发给服务器。
 
 ---
 
@@ -260,24 +278,31 @@ change anything:
 别人的数据库。每个部署各自填自己的。
 
 1. Fork 这个仓库，给它打开 GitHub Pages。
-2. 如果你的仓库不叫 `home-manager`，改一下 `sw.js` 里的路径和 `manifest.json`
-   里的 `start_url` / `scope`。
-3. 打开你的站点，直接就能用，数据存在本地。
+2. 打开你的站点，直接就能用，数据存在本地。
+
+没有第 3 步。路径全是相对的，仓库改名也不用动代码。
 
 一台设备用到这里就够了。想在手机和电脑之间同步，或者和同住的人共享：
 
-4. 去 console.firebase.google.com 建项目，加一个 Realtime Database。
-5. 在项目设置里复制网页应用的配置。
-6. 回到应用，**设置 → 云同步**，整段粘进去。JSON 或者控制台给的
+3. 去 console.firebase.google.com 建项目，加一个 Realtime Database。
+4. 在项目设置里复制网页应用的配置。
+5. 回到应用，**设置 → 云同步**，整段粘进去。JSON 或者控制台给的
    `const firebaseConfig = {...}` 都认。
-7. 把仓库里的 `database.rules.json` 粘到 Firebase 控制台 → Realtime Database →
+6. 把仓库里的 `database.rules.json` 粘到 Firebase 控制台 → Realtime Database →
    规则，发布。
-8. 在你的其他设备上重复第 6 步，然后把**房间码**发过去。
+7. 在另一台设备上打开**设置 → 房间码**里的邀请链接，或者直接扫二维码。
+   那台设备也要先做完第 5 步。
+
+**Firebase SDK 只在你粘了配置之后才加载。** 没配置的话，这个页面从打开到关闭
+不会向外发出任何一个请求。
 
 配置存在浏览器的 localStorage 里，不进仓库，也不进同步的数据。因为你一行代码都
 没改，以后拉上游更新不会冲突。
 
-没有构建步骤，整个应用就是一个 HTML 文件。
+配了同步但想临时用纯本地（比如在别人电脑上）？网址后面加 `?mode=local`，
+这一次就不连云。
+
+没有构建步骤，整个应用就是一个 HTML 文件，外加 `vendor/` 里两个第三方库。
 
 ## 安全说明
 
@@ -304,7 +329,8 @@ MIT，见 [LICENSE](LICENSE)。
 
 欢迎 issue 和 PR。改动前有两件事值得知道：
 
-- 界面用 CDN 版 Tailwind，直接写类名，没有编译步骤
+- Tailwind 放在 `vendor/` 里而不是 CDN，直接写类名，没有编译步骤，断网也不裂。
+  往 `vendor/` 加东西必须同时加进 `sw.js` 的 `SHELL` 清单，否则离线时会缺文件
 - 拼 HTML 时用户数据必须过 `esc()`，事件处理器参数用 `jsArg()`（见 index.html
   顶部的工具函数）——漏一处就是一个 XSS
 - 新增 AI 服务商只要往 `PROVIDERS` 注册表加一条，不用碰调用逻辑
