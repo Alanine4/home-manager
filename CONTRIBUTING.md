@@ -15,7 +15,6 @@
 | `sw.js` | Service Worker，预缓存外壳、网络优先、断网回退 |
 | `manifest.json` | PWA 清单，路径全是相对的 |
 | `database.rules.json` | 用户自己粘到 Firebase 控制台的规则 |
-| `ROADMAP.md` | 接下来做什么、决定不做什么 |
 
 没有构建步骤，没有 `package.json`，没有 `node_modules`。请保持这样。
 

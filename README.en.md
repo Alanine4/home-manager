@@ -23,6 +23,13 @@ the address bar too.
   <img src="docs/screenshots/household.png" width="190" alt="Household: toiletries and cleaning supplies with low-stock alerts">
 </p>
 <p align="center"><sub>Cart · Inventory · Recipes · Household (dark mode too)</sub></p>
+<p align="center">
+  <img src="docs/screenshots/add-item.png" width="190" alt="Add an item: names, quantity, category, store">
+  <img src="docs/screenshots/ai-confirm.png" width="190" alt="Review what the AI recognised before it is saved">
+  <img src="docs/screenshots/categories.png" width="190" alt="Category manager: rename, reorder, change icon and colour">
+  <img src="docs/screenshots/icon-picker.png" width="190" alt="Pick an icon and colour for a category">
+</p>
+<p align="center"><sub>Add item · Review recognised items · Category manager · Icon picker</sub></p>
 
 ---
 
@@ -106,7 +113,7 @@ Known ways to lose it:
 - Switching browsers or phones
 - On iPhone, not opening Safari for a long time — iOS may evict site data
 
-Automatic backup isn't built yet; it's item 2 in [ROADMAP.md](ROADMAP.md).
+Automatic backup isn't built yet. The safe habit is to hit **Export data** in Settings now and then and drop the file in your cloud drive.
 
 ---
 
@@ -189,7 +196,9 @@ people can share a list". That will be revisited once there are real users.
 
 ## What's next
 
-See [ROADMAP.md](ROADMAP.md) — it also records what was decided **against**, and why.
+Sharing a list with family currently means setting up sync yourself (the steps under
+"Sync with family" above); once done it's **free** too. If enough people use this,
+I'll consider hosting the database on my own server so you just open the app and log in.
 
 ## Contributing
 
