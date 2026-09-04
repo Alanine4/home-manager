@@ -51,10 +51,13 @@ icon('shopping-cart', 'w-4 h-4')   // JS 模板里用这个 helper
 `storeBadge()`。用户只能从 `IconPicker` 里选，所以永远不会混进 emoji。
 老数据里的 emoji 由 `normalizeIconData()` 在读档和云端拉取时自动迁移。
 
-**主题**：白底、`#e5e7eb` 描边、8px 圆角、无投影、灰阶三档、**只有一个强调色**
-（`--accent`）。design tokens 在 `<style>` 开头的 `:root` / `.dark`。主按钮用
+**主题**：灰底（`--bg`）白卡（`--tile`），靠明度差分层，**卡片不描边**、无投影、
+12px 圆角、灰阶三档、**只有一个强调色**（`--accent`）。design tokens 在 `<style>`
+开头的 `:root` / `.dark`。卡片用 `.bento-tile` 或 `.item-card`；输入框是填充式的
+（卡片里灰底、页面上白底），有一条全局规则管着，标记里不用再写 `border`。主按钮用
 `bg-blue-600`（映射到 `--accent`），次按钮用 `.btn-secondary`，分段控件用
-`.seg` / `.seg-on`，分组标题用 `.section-hdr`。语义色只在有含义的地方出现：
+`.seg` / `.seg-on`，分组标题用 `.section-hdr`（15px 粗体，数量放 `.count` 里），
+列表顶上的概览卡由 `Summary.render()` 生成。语义色只在有含义的地方出现：
 红 = 低库存 / 删除，琥珀 = 待确认，绿 = 一切正常。**不要再给某个板块单独配色。**
 
 ## 改之前必须知道的四条
@@ -119,5 +122,5 @@ Offline）刷新一次，确认样式还在。
 - No emoji in the UI. Icons come from the inline Lucide sprite
   (`<svg class="ico"><use href="#i-name"/></svg>` or `icon(name)`); categories
   store a Lucide name + colour and render via `catIcon()`, stores render a colour
-  dot. One accent colour; semantic colours only for low stock / delete, needs
-  confirming, all good.
+  dot. Grey page, white borderless cards, filled inputs, one accent colour;
+  semantic colours only for low stock / delete, needs confirming, all good.
