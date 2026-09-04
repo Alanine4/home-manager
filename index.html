@@ -134,6 +134,38 @@
     /* 分段控件（按商店 / 按分类） */
     .seg { background: var(--tile); border: 1px solid var(--border); color: var(--muted); }
     .seg-on { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+
+    /* ===== 分类 / 商店的颜色系统：每个色号给出线色 --tint 和淡底 --tint-bg ===== */
+    .tint-red { --tint: #dc2626; --tint-bg: #fee2e2; }  .dark .tint-red { --tint: #f87171; --tint-bg: rgba(127,29,29,.45); }
+    .tint-orange { --tint: #ea580c; --tint-bg: #ffedd5; }  .dark .tint-orange { --tint: #fb923c; --tint-bg: rgba(124,45,18,.45); }
+    .tint-amber { --tint: #d97706; --tint-bg: #fef3c7; }  .dark .tint-amber { --tint: #fbbf24; --tint-bg: rgba(120,53,15,.45); }
+    .tint-yellow { --tint: #ca8a04; --tint-bg: #fef9c3; }  .dark .tint-yellow { --tint: #facc15; --tint-bg: rgba(113,63,18,.45); }
+    .tint-lime { --tint: #65a30d; --tint-bg: #ecfccb; }  .dark .tint-lime { --tint: #a3e635; --tint-bg: rgba(54,83,20,.45); }
+    .tint-green { --tint: #16a34a; --tint-bg: #dcfce7; }  .dark .tint-green { --tint: #4ade80; --tint-bg: rgba(20,83,45,.45); }
+    .tint-teal { --tint: #0d9488; --tint-bg: #ccfbf1; }  .dark .tint-teal { --tint: #2dd4bf; --tint-bg: rgba(19,78,74,.45); }
+    .tint-cyan { --tint: #0891b2; --tint-bg: #cffafe; }  .dark .tint-cyan { --tint: #22d3ee; --tint-bg: rgba(22,78,99,.45); }
+    .tint-sky { --tint: #0284c7; --tint-bg: #e0f2fe; }  .dark .tint-sky { --tint: #38bdf8; --tint-bg: rgba(12,74,110,.45); }
+    .tint-blue { --tint: #2563eb; --tint-bg: #dbeafe; }  .dark .tint-blue { --tint: #60a5fa; --tint-bg: rgba(30,58,138,.45); }
+    .tint-indigo { --tint: #4f46e5; --tint-bg: #e0e7ff; }  .dark .tint-indigo { --tint: #818cf8; --tint-bg: rgba(49,46,129,.45); }
+    .tint-purple { --tint: #9333ea; --tint-bg: #f3e8ff; }  .dark .tint-purple { --tint: #c084fc; --tint-bg: rgba(88,28,135,.45); }
+    .tint-pink { --tint: #db2777; --tint-bg: #fce7f3; }  .dark .tint-pink { --tint: #f472b6; --tint-bg: rgba(131,24,67,.45); }
+    .tint-slate { --tint: #475569; --tint-bg: #f1f5f9; }  .dark .tint-slate { --tint: #94a3b8; --tint-bg: rgba(30,41,59,.6); }
+    /* 分类图标：线性图标坐在同色系淡色底托里（tinted container）。md 28px / sm 20px / lg 44px */
+    .cat-ico { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 7px;
+               flex-shrink: 0; color: var(--tint); background: var(--tint-bg); vertical-align: middle; }
+    .cat-ico .ico { width: 16px; height: 16px; }
+    .cat-ico-sm { width: 20px; height: 20px; border-radius: 5px; }
+    .cat-ico-sm .ico { width: 12px; height: 12px; }
+    .cat-ico-lg { width: 44px; height: 44px; border-radius: 10px; }
+    .cat-ico-lg .ico { width: 24px; height: 24px; }
+    /* 商店：色点 + 中性灰 chip */
+    .sdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--tint); flex-shrink: 0; }
+    .chip { display: inline-flex; align-items: center; gap: .35em; font-size: 11px; line-height: 1.4; padding: 1px 7px; border-radius: 4px;
+            background: var(--tile-2); color: var(--text); border: 1px solid var(--border); white-space: nowrap; }
+    /* 图标选择器里的格子 */
+    .icon-pick { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 8px;
+                 border: 1px solid var(--border); color: var(--muted); }
+    .icon-pick.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
     /* 弹窗最高只能到「实际可见」的视口高度。100vh 在 iOS Safari 里是工具栏收起后的
        大视口，弹窗按它撑高会比屏幕还高，自己不进滚动状态，手指一滑滚的就是后面的页面。
        100dvh 才是当前真正可见的高度；老浏览器不认 dvh 就退回上一行的 vh。
@@ -214,6 +246,51 @@
   <symbol id="i-infinity" viewBox="0 0 24 24"><path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4Z"/></symbol>
   <symbol id="i-circle-dot" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" fill="currentColor" stroke="none"/></symbol>
   <symbol id="i-lightbulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></symbol>
+  <!-- 下面这些给分类图标用（CATEGORY_ICONS），用户在设置里从中挑选 -->
+  <symbol id="i-carrot" viewBox="0 0 24 24"><path d="M2.27 21.7s9.87-3.5 12.73-6.36a4.5 4.5 0 0 0-6.36-6.37C5.77 11.84 2.27 21.7 2.27 21.7z"/><path d="m8.64 14-2.05-2.04"/><path d="m15.34 15-2.46-2.46"/><path d="M22 9s-1.33-2-3.5-2C16.86 7 15 9 15 9s1.33 2 3.5 2S22 9 22 9z"/><path d="M15 2s-2 1.33-2 3.5S15 9 15 9s2-1.84 2-3.5C17 3.33 15 2 15 2z"/></symbol>
+  <symbol id="i-apple" viewBox="0 0 24 24"><path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06Z"/><path d="M10 2c1 .5 2 2 2 5"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></symbol>
+  <symbol id="i-beef" viewBox="0 0 24 24"><circle cx="12.5" cy="8.5" r="2.5"/><path d="M12.5 2a6.5 6.5 0 0 0-6.22 4.6c-1.1 3.13-.78 3.9-3.18 6.08A3 3 0 0 0 5 18c4 0 8.4-1.8 11.4-4.3A6.5 6.5 0 0 0 12.5 2Z"/><path d="m18.5 6 2.19 4.5a6.48 6.48 0 0 1 .31 2 6.49 6.49 0 0 1-2.6 5.2C15.4 20.2 11 22 7 22a3 3 0 0 1-2.68-1.66L2.4 16.5"/></symbol>
+  <symbol id="i-drumstick" viewBox="0 0 24 24"><path d="M15.4 15.63a7.875 6 135 1 1 6.23-6.23 4.5 3.43 135 0 0-6.23 6.23"/><path d="m8.29 12.71-2.6 2.6a2.5 2.5 0 1 0-1.65 4.65A2.5 2.5 0 1 0 8.7 18.3l2.59-2.59"/></symbol>
+  <symbol id="i-fish" viewBox="0 0 24 24"><path d="M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.47-3.44 6-7 6s-7.56-2.53-8.5-6Z"/><path d="M18 12v.5"/><path d="M16 17.93a9.77 9.77 0 0 1 0-11.86"/><path d="M7 10.67C7 8 5.58 5.97 2.73 5.5c-1 1.5-1 5 .23 6.5-1.24 1.5-1.24 5-.23 6.5C5.58 18.03 7 16 7 13.33"/></symbol>
+  <symbol id="i-egg" viewBox="0 0 24 24"><path d="M12 22c6.23-.05 7.87-5.57 7.5-10-.36-4.34-3.95-9.96-7.5-10-3.55.04-7.14 5.66-7.5 10-.37 4.43 1.27 9.95 7.5 10z"/></symbol>
+  <symbol id="i-milk" viewBox="0 0 24 24"><path d="M8 2h8"/><path d="M9 2v2.789a4 4 0 0 1-.672 2.219l-.656.984A4 4 0 0 0 7 10.212V20a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-9.789a4 4 0 0 0-.672-2.219l-.656-.984A4 4 0 0 1 15 4.788V2"/><path d="M7 15a6.472 6.472 0 0 1 5 0 6.47 6.47 0 0 0 5 0"/></symbol>
+  <symbol id="i-wheat" viewBox="0 0 24 24"><path d="M2 22 16 8"/><path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/><path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 15l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/><path d="M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 11l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/><path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/><path d="M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/><path d="M15.47 13.47 17 15l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/><path d="M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/></symbol>
+  <symbol id="i-sandwich" viewBox="0 0 24 24"><path d="M3 11v3a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3"/><path d="M12 19H4a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-3.83"/><path d="m3 11 7.77-6.04a2 2 0 0 1 2.46 0L21 11H3Z"/><path d="M12.97 19.77 7 15h12.5l-3.75 4.5a2 2 0 0 1-2.78.27Z"/></symbol>
+  <symbol id="i-soup" viewBox="0 0 24 24"><path d="M12 21a9 9 0 0 0 9-9H3a9 9 0 0 0 9 9Z"/><path d="M7 21h10"/><path d="M19.5 12 22 6"/><path d="M16.25 3c.27.1.8.53.75 1.36-.06.83-.93 1.2-1 2.02-.05.78.34 1.24.73 1.62"/><path d="M11.25 3c.27.1.8.53.74 1.36-.05.83-.93 1.2-.98 2.02-.06.78.33 1.24.72 1.62"/><path d="M6.25 3c.27.1.8.53.75 1.36-.06.83-.93 1.2-1 2.02-.05.78.34 1.24.74 1.62"/></symbol>
+  <symbol id="i-salad" viewBox="0 0 24 24"><path d="M7 21h10"/><path d="M12 21a9 9 0 0 0 9-9H3a9 9 0 0 0 9 9Z"/><path d="M11.38 12a2.4 2.4 0 0 1-.4-4.77 2.4 2.4 0 0 1 3.2-2.77 2.4 2.4 0 0 1 3.47-.63 2.4 2.4 0 0 1 3.37 3.37 2.4 2.4 0 0 1-1.1 3.7 2.51 2.51 0 0 1 .03 1.1"/><path d="m13 12 4-4"/><path d="M10.9 7.25A3.99 3.99 0 0 0 4 10c0 .73.2 1.41.54 2"/></symbol>
+  <symbol id="i-pizza" viewBox="0 0 24 24"><path d="M15 11h.01"/><path d="M11 15h.01"/><path d="M16 16h.01"/><path d="m2 16 20 6-6-20A20 20 0 0 0 2 16"/><path d="M5.71 17.11a17.04 17.04 0 0 1 11.4-11.4"/></symbol>
+  <symbol id="i-droplet" viewBox="0 0 24 24"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+  <symbol id="i-citrus" viewBox="0 0 24 24"><path d="M21.66 17.67a1.08 1.08 0 0 1-.04 1.6A12 12 0 0 1 4.73 2.38a1.1 1.1 0 0 1 1.61-.04z"/><path d="M19.65 15.66A8 8 0 0 1 8.35 4.34"/><path d="m14 10-5.5 5.5"/><path d="M14 17.85V10H6.15"/></symbol>
+  <symbol id="i-cookie" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/><path d="M8.5 8.5v.01"/><path d="M16 15.5v.01"/><path d="M12 12v.01"/><path d="M11 17v.01"/><path d="M7 14v.01"/></symbol>
+  <symbol id="i-candy" viewBox="0 0 24 24"><path d="m9.5 7.5-2 2a4.95 4.95 0 1 0 7 7l2-2a4.95 4.95 0 1 0-7-7Z"/><path d="M14 6.5v10"/><path d="M10 7.5v10"/><path d="m16 7 1-5 1.37 1.37a3 3 0 0 0 1.74.4L22 3l-1.37 1.37a3 3 0 0 0-.4 1.74L20 9l-5-1"/><path d="m8 17-1 5-1.37-1.37a3 3 0 0 0-1.74-.4L2 21l1.37-1.37a3 3 0 0 0 .4-1.74L4 15l5 1"/></symbol>
+  <symbol id="i-ice-cream" viewBox="0 0 24 24"><path d="m7 11 4.08 10.35a1 1 0 0 0 1.84 0L17 11"/><path d="M17 7A5 5 0 0 0 7 7"/><path d="M17 7a2 2 0 0 1 0 4H7a2 2 0 0 1 0-4"/></symbol>
+  <symbol id="i-cherry" viewBox="0 0 24 24"><path d="M2 17a5 5 0 0 0 10 0c0-2.76-2.5-5-5-3-2.5-2-5 .24-5 3Z"/><path d="M12 17a5 5 0 0 0 10 0c0-2.76-2.5-5-5-3-2.5-2-5 .24-5 3Z"/><path d="M7 14c3.22-2.91 4.29-8.75 5-12 1.66 2.38 4.94 9 5 12"/><path d="M22 9c-4.29 0-7.14-2.33-10-7 5.71 0 10 4.67 10 7Z"/></symbol>
+  <symbol id="i-banana" viewBox="0 0 24 24"><path d="M4 13c3.5-2 8-2 10 2a5.5 5.5 0 0 1 8 5"/><path d="M5.15 17.89c5.52-1.52 8.65-6.89 7-12C11.55 4 11.5 2 13 2c3.22 0 5 5.5 5 8 0 6.5-4.2 12-10.49 12C5.11 22 2 22 2 20c0-1.5 1.14-1.55 3.15-2.11Z"/></symbol>
+  <symbol id="i-cup-soda" viewBox="0 0 24 24"><path d="m6 8 1.75 12.28a2 2 0 0 0 2 1.72h4.54a2 2 0 0 0 2-1.72L18 8"/><path d="M5 8h14"/><path d="M7 15a6.47 6.47 0 0 1 5 0 6.47 6.47 0 0 0 5 0"/><path d="m12 8 1-6h2"/></symbol>
+  <symbol id="i-coffee" viewBox="0 0 24 24"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><path d="M6 2v2"/><path d="M10 2v2"/><path d="M14 2v2"/></symbol>
+  <symbol id="i-wine" viewBox="0 0 24 24"><path d="M8 22h8"/><path d="M7 10h10"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z"/></symbol>
+  <symbol id="i-snowflake" viewBox="0 0 24 24"><path d="M2 12h20"/><path d="M12 2v20"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></symbol>
+  <symbol id="i-shower-head" viewBox="0 0 24 24"><path d="m4 4 2.5 2.5"/><path d="M13.5 6.5a4.95 4.95 0 0 0-7 7"/><path d="M15 5 5 15"/><path d="M14 17v.01"/><path d="M10 16v.01"/><path d="M13 13v.01"/><path d="M16 10v.01"/><path d="M11 20v.01"/><path d="M17 14v.01"/><path d="M20 11v.01"/></symbol>
+  <symbol id="i-spray-can" viewBox="0 0 24 24"><path d="M3 3h.01"/><path d="M7 5h.01"/><path d="M11 7h.01"/><path d="M3 7h.01"/><path d="M7 9h.01"/><path d="M3 11h.01"/><rect width="4" height="4" x="15" y="5"/><path d="m19 9 2 2v10c0 .6-.4 1-1 1h-6c-.6 0-1-.4-1-1V11l2-2"/><path d="m13 14 8-2"/><path d="m13 19 8-2"/></symbol>
+  <symbol id="i-bath" viewBox="0 0 24 24"><path d="M9 6 6.5 3.5a1.5 1.5 0 0 0-1-.5C4.683 3 4 3.683 4 4.5V17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><path d="M10 5 8 7"/><path d="M2 12h20"/><path d="M7 19v2"/><path d="M17 19v2"/></symbol>
+  <symbol id="i-pill" viewBox="0 0 24 24"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></symbol>
+  <symbol id="i-baby" viewBox="0 0 24 24"><path d="M9 12h.01"/><path d="M15 12h.01"/><path d="M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5"/><path d="M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 12 3c2 0 3.5 1.1 3.5 2.5s-.9 2.5-2 2.5c-.8 0-1.5-.4-1.5-1"/></symbol>
+  <symbol id="i-shirt" viewBox="0 0 24 24"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></symbol>
+  <symbol id="i-paw-print" viewBox="0 0 24 24"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/></symbol>
+  <symbol id="i-scroll" viewBox="0 0 24 24"><path d="M8 21h12a2 2 0 0 0 2-2v-2H10v2a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v3h4"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M15 8h-5"/><path d="M15 12h-5"/></symbol>
+  <symbol id="i-brush" viewBox="0 0 24 24"><path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z"/></symbol>
+  <symbol id="i-sofa" viewBox="0 0 24 24"><path d="M20 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3"/><path d="M2 16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v2H6v-2a2 2 0 0 0-4 0Z"/><path d="M4 18v2"/><path d="M20 18v2"/><path d="M12 4v9"/></symbol>
+  <symbol id="i-lamp" viewBox="0 0 24 24"><path d="M8 2h8l4 10H4L8 2Z"/><path d="M12 12v6"/><path d="M8 22v-2c0-1.1.9-2 2-2h4a2 2 0 0 1 2 2v2H8Z"/></symbol>
+  <symbol id="i-plug" viewBox="0 0 24 24"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
+  <symbol id="i-smartphone" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></symbol>
+  <symbol id="i-battery" viewBox="0 0 24 24"><rect width="16" height="10" x="2" y="7" rx="2" ry="2"/><path d="M22 11v2"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></symbol>
+  <symbol id="i-flower" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 16.5A4.5 4.5 0 1 1 7.5 12 4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 1 1 4.5 4.5 4.5 4.5 0 1 1-4.5 4.5"/><path d="M12 7.5V9"/><path d="M7.5 12H9"/><path d="M16.5 12H15"/><path d="M12 16.5V15"/><path d="m8 8 1.88 1.88"/><path d="M14.12 9.88 16 8"/><path d="m8 16 1.88-1.88"/><path d="M14.12 14.12 16 16"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol>
 </svg>
 
 <!-- HEADER -->
@@ -518,7 +595,9 @@
           <button onclick="Settings.aiCatFill()" class="btn-secondary text-sm px-3 py-2 rounded-lg whitespace-nowrap flex items-center gap-1.5"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg> AI填写</button>
         </div>
         <div class="flex gap-2">
-          <input type="text" id="new-cat-icon" placeholder="🍱" class="w-12 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-2 focus:outline-none text-center" />
+          <button type="button" id="new-cat-icon-btn" title="选择图标和颜色"
+            onclick="IconPicker.open(Settings._newCat,(i,c)=>{Settings._newCat={icon:i,color:c};Settings._renderNewCatIcon()})"
+            class="shrink-0 rounded-lg flex items-center justify-center hover:opacity-75 transition"></button>
           <!-- flex-1 的输入框必须配 min-w-0：flex item 默认 min-width:auto，等于输入框
                自己的固有宽度（约 20 字符），两个并排在手机上就撑出屏幕 -->
           <input type="text" id="new-cat-en" placeholder="English" class="flex-1 min-w-0 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
@@ -528,10 +607,9 @@
       </div>
       <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
         <h3 class="font-semibold mb-3 flex items-center gap-2"><svg class="ico text-gray-400" aria-hidden="true"><use href="#i-store"/></svg> 商店管理</h3>
-        <p class="text-xs text-gray-400 mb-3">改名 / 换图标 / 换颜色 / 删除。改动会同步到购物车分组、商品徽章和常用商店</p>
+        <p class="text-xs text-gray-400 mb-3">改名 / 换颜色 / 删除。颜色会出现在购物车分组和商品徽章上</p>
         <div id="store-list" class="space-y-2 mb-3"></div>
         <div class="flex gap-2">
-          <input type="text" id="new-store-icon" placeholder="🏪" class="w-12 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-2 focus:outline-none text-center" />
           <input type="text" id="new-store-name" placeholder="商店名称（必填）" class="flex-1 min-w-0 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
           <button onclick="Settings.addStore()" class="text-sm bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 shrink-0">添加</button>
         </div>
@@ -785,19 +863,19 @@
 <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
 
 <!-- Emoji Picker Modal -->
-<div id="modal-emoji" class="modal-overlay" onclick="if(event.target===this)EmojiPicker.close()">
-  <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 w-full max-w-sm mx-4 max-h-[80vh] flex flex-col">
+<!-- 图标 + 颜色选择器（分类用）。只能从 CATEGORY_ICONS / CAT_COLORS 里选 -->
+<div id="modal-icon" class="modal-overlay" onclick="if(event.target===this)IconPicker.close()">
+  <div class="rounded-2xl p-4 w-full max-w-sm mx-4 max-h-[85vh] flex flex-col">
     <div class="flex items-center justify-between mb-3">
-      <h3 class="font-bold text-base">选择图标</h3>
-      <button onclick="EmojiPicker.close()" class="text-gray-400 hover:text-gray-600 text-xl"><svg class="ico w-5 h-5" aria-hidden="true"><use href="#i-x"/></svg></button>
+      <h3 class="font-bold text-base">选择图标和颜色</h3>
+      <button onclick="IconPicker.close()" class="text-gray-400 hover:text-gray-600"><svg class="ico w-5 h-5" aria-hidden="true"><use href="#i-x"/></svg></button>
     </div>
-    <div class="flex gap-2 mb-3">
-      <input id="emoji-search" type="text" placeholder="输入关键词搜索，如：蔬菜、肉类..." oninput="EmojiPicker.search(this.value)"
-        class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
-      <button onclick="EmojiPicker.aiSuggest()" class="btn-secondary text-sm px-3 py-2 rounded-lg whitespace-nowrap flex items-center gap-1.5"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg>AI推荐</button>
+    <div class="flex items-center gap-3 mb-3">
+      <div id="icon-preview" class="shrink-0"></div>
+      <div id="icon-colors" class="flex flex-wrap gap-1.5"></div>
     </div>
-    <div id="emoji-ai-results" class="flex flex-wrap gap-1 mb-2 hidden"></div>
-    <div id="emoji-grid" class="overflow-y-auto flex-1"></div>
+    <div id="icon-grid" class="grid grid-cols-6 gap-1.5 overflow-y-auto flex-1 mb-3 p-0.5"></div>
+    <button onclick="IconPicker.confirm()" class="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 text-sm font-medium shrink-0">确定</button>
   </div>
 </div>
 
@@ -827,31 +905,55 @@
 
 // ==================== CONSTANTS ====================
 const CATEGORIES = {
-  vegetables: { cn: '蔬菜', en: 'Vegetables',      fr: 'Légumes',       icon: '🥦', section: 'food' },
-  meat:        { cn: '肉类', en: 'Meat & Fish',     fr: 'Viandes',       icon: '🥩', section: 'food' },
-  dairy:       { cn: '乳制品', en: 'Dairy & Eggs',  fr: 'Laitiers',      icon: '🥚', section: 'food' },
-  grains:      { cn: '主食', en: 'Grains',          fr: 'Céréales',      icon: '🍚', section: 'food' },
-  condiments:  { cn: '调料', en: 'Condiments',      fr: 'Condiments',    icon: '🧂', section: 'food' },
-  snacks:      { cn: '零食', en: 'Snacks',          fr: 'Snacks',        icon: '🍪', section: 'food' },
-  drinks:      { cn: '饮料', en: 'Beverages',       fr: 'Boissons',      icon: '🧃', section: 'food' },
-  frozen:      { cn: '冷冻', en: 'Frozen',          fr: 'Surgelés',      icon: '🧊', section: 'food' },
-  other:       { cn: '其他', en: 'Other',           fr: 'Autres',        icon: '📦', section: 'food' },
-  staples:     { cn: '常备基础', en: 'Pantry Staples', fr: 'Provisions', icon: '♾️', unlimited: true, section: 'food' },
-  toiletries:  { cn: '洗护', en: 'Toiletries',      fr: 'Soins',         icon: '🧴', section: 'household' },
-  cleaning:    { cn: '清洁', en: 'Cleaning',        fr: 'Nettoyage',     icon: '🧹', section: 'household' },
-  household:   { cn: '家居', en: 'Household',       fr: 'Maison',        icon: '🏠', section: 'household' },
+  vegetables: { cn: '蔬菜', en: 'Vegetables',      fr: 'Légumes',       icon: 'carrot',      color: 'green',  section: 'food' },
+  meat:        { cn: '肉类', en: 'Meat & Fish',     fr: 'Viandes',       icon: 'beef',        color: 'red',    section: 'food' },
+  dairy:       { cn: '乳制品', en: 'Dairy & Eggs',  fr: 'Laitiers',      icon: 'egg',         color: 'amber',  section: 'food' },
+  grains:      { cn: '主食', en: 'Grains',          fr: 'Céréales',      icon: 'wheat',       color: 'yellow', section: 'food' },
+  condiments:  { cn: '调料', en: 'Condiments',      fr: 'Condiments',    icon: 'droplet',     color: 'slate',  section: 'food' },
+  snacks:      { cn: '零食', en: 'Snacks',          fr: 'Snacks',        icon: 'cookie',      color: 'orange', section: 'food' },
+  drinks:      { cn: '饮料', en: 'Beverages',       fr: 'Boissons',      icon: 'cup-soda',    color: 'sky',    section: 'food' },
+  frozen:      { cn: '冷冻', en: 'Frozen',          fr: 'Surgelés',      icon: 'snowflake',   color: 'cyan',   section: 'food' },
+  other:       { cn: '其他', en: 'Other',           fr: 'Autres',        icon: 'tag',         color: 'slate',  section: 'food' },
+  staples:     { cn: '常备基础', en: 'Pantry Staples', fr: 'Provisions', icon: 'infinity',  color: 'purple', unlimited: true, section: 'food' },
+  toiletries:  { cn: '洗护', en: 'Toiletries',      fr: 'Soins',         icon: 'shower-head', color: 'teal',   section: 'household' },
+  cleaning:    { cn: '清洁', en: 'Cleaning',        fr: 'Nettoyage',     icon: 'spray-can',   color: 'indigo', section: 'household' },
+  household:   { cn: '家居', en: 'Household',       fr: 'Maison',        icon: 'home',        color: 'pink',   section: 'household' },
 };
 
 // 可选色号，必须和上面 .store-c-* 的 CSS 一一对应
 const STORE_COLORS = ['red', 'blue', 'yellow', 'green', 'orange', 'purple', 'pink', 'slate'];
 
-// 内置商店。用户可以改名、换 emoji、换颜色、删除，也可以自己加，
+// ==================== 分类图标系统 ====================
+// 分类的 icon 存的是 Lucide 图标名（页面顶部 sprite 里的 symbol id 去掉 "i-"），
+// color 存色号（对应 CSS 里的 .tint-*）。整个 App 只用这一套线性图标，不混 emoji。
+const CATEGORY_ICONS = ['carrot','apple','leaf','beef','drumstick','fish','egg','milk','wheat','sandwich','soup','salad','pizza','droplet','flame','citrus','cookie','candy','ice-cream','cherry','banana','cup-soda','coffee','wine','snowflake','shower-head','spray-can','bath','pill','baby','shirt','paw-print','scroll','brush','sofa','lamp','lightbulb','plug','wrench','smartphone','battery','gift','flower','star','heart','home','package','tag','utensils','infinity','sparkles','shopping-cart'];
+const CAT_COLORS = ['red','orange','amber','yellow','lime','green','teal','cyan','sky','blue','indigo','purple','pink','slate'];
+
+// 老数据里分类图标是 emoji。读档和云端拉取时按这张表迁移；映射不到的给 tag。
+const EMOJI_TO_ICON = {'🥦':'carrot','🥕':'carrot','🥬':'carrot','🥒':'carrot','🍅':'carrot','🧅':'carrot','🧄':'carrot','🌽':'carrot','🫑':'carrot','🍆':'carrot','🥔':'carrot','🫛':'carrot','🥗':'carrot','🍄':'carrot','🧆':'carrot','🥑':'carrot','🌿':'leaf','🌱':'leaf','🪴':'leaf','🍀':'leaf','🌾':'leaf','🥩':'beef','🍖':'beef','🐄':'beef','🐖':'beef','🐑':'beef','🍗':'drumstick','🐓':'drumstick','🦆':'drumstick','🐟':'fish','🍤':'fish','🦐':'fish','🦑':'fish','🦀':'fish','🐙':'fish','🐠':'fish','🐡':'fish','🦞':'fish','🥚':'egg','🍳':'egg','🥛':'milk','🧀':'milk','🍼':'milk','🧈':'milk','🥮':'milk','🍚':'wheat','🍞':'wheat','🫓':'wheat','🥐':'wheat','🍘':'wheat','🍙':'wheat','🥯':'wheat','🌯':'sandwich','🥙':'sandwich','🥪':'sandwich','🍔':'sandwich','🌮':'sandwich','🍜':'soup','🍝':'soup','🍲':'soup','🫕':'soup','🍛':'soup','🥘':'soup','🥗':'salad','🍕':'pizza','🧂':'droplet','🫙':'droplet','🥫':'droplet','🍶':'droplet','🍯':'droplet','🥢':'droplet','🫖':'droplet','💧':'droplet','🌶':'flame','🫚':'flame','🔥':'flame','🍋':'citrus','🍊':'citrus','🍪':'cookie','🍩':'cookie','🥧':'cookie','🍿':'cookie','🍰':'cookie','🎂':'cookie','🍮':'cookie','🍡':'cookie','🍢':'cookie','🧁':'cookie','🧇':'cookie','🥞':'cookie','🍫':'candy','🍬':'candy','🍭':'candy','🍦':'ice-cream','🍧':'ice-cream','🍨':'ice-cream','🍒':'cherry','🍓':'cherry','🍇':'cherry','🍌':'banana','🍎':'apple','🍏':'apple','🍐':'apple','🍑':'apple','🧃':'cup-soda','🥤':'cup-soda','🧋':'cup-soda','🍹':'cup-soda','🧉':'cup-soda','☕':'coffee','🍵':'coffee','🍺':'wine','🥂':'wine','🍷':'wine','🍾':'wine','🍻':'wine','🧊':'snowflake','❄':'snowflake','🥶':'snowflake','🧹':'spray-can','🧺':'spray-can','🪣':'spray-can','🧽':'spray-can','🧼':'spray-can','🫧':'spray-can','🪠':'spray-can','🧴':'shower-head','🚿':'shower-head','💆':'shower-head','🧖':'shower-head','🛁':'bath','🪥':'bath','🪒':'bath','💊':'pill','💉':'pill','🩺':'pill','🩹':'pill','🌸':'flower','🌺':'flower','🌻':'flower','💐':'flower','✂':'brush','🪞':'brush','🏠':'home','🚪':'home','🪟':'home','🛋':'sofa','🛏':'sofa','🧸':'sofa','🪆':'sofa','🖼':'sofa','💡':'lamp','🔦':'lamp','🕯':'lamp','🪔':'lamp','🛒':'shopping-cart','📦':'package','🎁':'gift','🔧':'wrench','🪛':'wrench','🔋':'battery','📱':'smartphone','🖥':'smartphone','📋':'tag','📌':'tag','🗂':'tag','📝':'tag','🔑':'tag','🏷':'tag','⭐':'star','🌈':'star','❤':'heart','🧸':'baby','♾':'infinity'};
+
+function normalizeIconData() {
+  const isName = v => typeof v === 'string' && CATEGORY_ICONS.includes(v);
+  for (const [k, v] of Object.entries(State.customCategories)) {
+    if (!v || typeof v !== 'object') continue;
+    if (v.icon !== undefined && !isName(v.icon)) {
+      v.icon = EMOJI_TO_ICON[String(v.icon).replace(/\uFE0F/g, '')] || CATEGORIES[k]?.icon || 'tag';
+    }
+    if (v.color !== undefined && !CAT_COLORS.includes(v.color)) delete v.color;
+    // 自建分类必须有颜色，否则渲染时没底色
+    if (!CATEGORIES[k] && !v.deleted && !v.color) v.color = 'slate';
+  }
+  // 商店不再有 emoji 字段，只靠颜色
+  for (const v of Object.values(State.customStores)) { if (v && typeof v === 'object') delete v.emoji; }
+}
+
+// 内置商店。用户可以改名、换颜色、删除，也可以自己加，
 // 改动存在 State.customStores 里并随房间同步（跟分类是同一套机制）。
 const STORES = {
-  colruyt:   { name: 'Colruyt', emoji: '🔴', color: 'red' },
-  carrefour: { name: 'Carrefour', emoji: '🔵', color: 'blue' },
-  lidl:      { name: 'Lidl 大黑狮', emoji: '🟡', color: 'yellow' },
-  other:     { name: '其他', emoji: '🏪', color: 'slate' },
+  colruyt:   { name: 'Colruyt', color: 'red' },
+  carrefour: { name: 'Carrefour', color: 'blue' },
+  lidl:      { name: 'Lidl 大黑狮', color: 'yellow' },
+  other:     { name: '其他', color: 'slate' },
 };
 
 // ==================== i18n ====================
@@ -1039,6 +1141,7 @@ const State = {
       this.history          = JSON.parse(localStorage.getItem('hsl_history')    || '[]');
       const s               = JSON.parse(localStorage.getItem('hsl_settings')   || '{}');
       this.settings         = { ...this.settings, ...s };
+      normalizeIconData();
     } catch(e) { console.error('State load error', e); }
   },
 
@@ -1355,6 +1458,7 @@ const Cloud = {
     State.customStores     = (data.customStores && typeof data.customStores === 'object') ? data.customStores : {};
     State.catOrder         = this._toArr(data.catOrder);
     State.history          = this._toArr(data.history);
+    normalizeIconData();   // 别的设备可能还在推老格式的 emoji 图标
     State.saveLocal(); // 缓存到 localStorage，断网时仍可用
   },
 
@@ -1757,20 +1861,38 @@ function getStores() {
 
 function storeName(key) {
   const s = getStores()[key];
-  return s ? `${s.emoji || ''} ${s.name || key}`.trim() : key;
+  return s ? (s.name || key) : key;
 }
 
+// 商店色点。放在名字前面当"颜色提示"，代替以前的 🔴🔵 emoji
+function storeDot(key) {
+  const s = getStores()[key];
+  const color = s && STORE_COLORS.includes(s.color) ? s.color : 'slate';
+  return `<span class="sdot tint-${color}"></span>`;
+}
+
+// 纯文字的分类名（给 <option>、toast、confirm 这些放不了图标的地方用）
 function catLabel(cat) {
-  const cats = getCategories();
-  const c = cats[cat];
-  if (!c) return cat;
-  return `${c.icon} ${catName(cat)}`;
+  return catName(cat);
 }
 
-// 生成分类 <option> 列表（语言感知）
+// 分类图标：线性图标坐在同色系的淡色底托里。size: 'md'（默认 28px）/ 'sm'（20px）
+function catIcon(cat, size = 'md') {
+  const c = getCategories()[cat] || CATEGORIES[cat] || {};
+  const name  = CATEGORY_ICONS.includes(c.icon) ? c.icon : 'tag';
+  const color = CAT_COLORS.includes(c.color) ? c.color : 'slate';
+  return `<span class="cat-ico${size === 'sm' ? ' cat-ico-sm' : ''} tint-${color}">${icon(name)}</span>`;
+}
+
+// 图标 + 名字，给行内文字用
+function catLabelHtml(cat) {
+  return `${catIcon(cat, 'sm')}<span>${esc(catName(cat))}</span>`;
+}
+
+// 生成分类 <option> 列表（语言感知）。<option> 里放不了 SVG，所以只有文字
 function catOptions(selected) {
-  return Object.entries(getCategories()).map(([k,v]) =>
-    `<option value="${esc(k)}" ${selected===k?'selected':''}>${esc(v.icon)} ${esc(catName(k))}</option>`
+  return Object.entries(getCategories()).map(([k]) =>
+    `<option value="${esc(k)}" ${selected===k?'selected':''}>${esc(catName(k))}</option>`
   ).join('');
 }
 
@@ -1784,7 +1906,7 @@ function storeBadge(store) {
   if (!store) return '';
   const s = getStores()[store];
   if (!s) return '';
-  return `<span class="text-xs px-2 py-0.5 rounded-full border ${storeClass(store)}">${esc(s.emoji)} ${esc(s.name)}</span>`;
+  return `<span class="chip">${storeDot(store)}${esc(s.name)}</span>`;
 }
 
 function storeClass(store) {
@@ -2303,7 +2425,7 @@ const Inventory = {
       const prevVal = catFilter;
       catSel.innerHTML = `<option value="">${t('allCats')}</option>`;
       Object.entries(getCategories()).forEach(([k,v]) => {
-        const opt = document.createElement('option'); opt.value = k; opt.textContent = `${v.icon} ${catName(k)}`;
+        const opt = document.createElement('option'); opt.value = k; opt.textContent = catName(k);
         catSel.appendChild(opt);
       });
       catSel.value = prevVal;
@@ -2337,7 +2459,7 @@ const Inventory = {
     const btn = 'text-xs text-gray-300 hover:text-gray-600 dark:hover:text-gray-200 w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700';
     el.innerHTML = catKeys.map((cat, idx) => {
       const cats = getCategories();
-      const c = cats[cat] || { cn: cat, en: cat, fr: cat, icon: '📦' };
+      const c = cats[cat] || { cn: cat, en: cat, fr: cat, icon: 'tag', color: 'slate' };
       const items = grouped[cat];
       const lowCount = items.filter(i => i.minStock > 0 && i.quantity <= i.minStock).length;
       const collapsed = _collapsedCats.has('inv', cat);
@@ -2347,7 +2469,7 @@ const Inventory = {
         <div class="flex items-center gap-1.5 mb-2 section-hdr select-none">
           <button onclick="Inventory.toggleCat(${jsArg(cat)})" class="flex items-center gap-1.5 flex-1 text-left hover:text-gray-700 dark:hover:text-gray-200">
             ${icon(collapsed ? 'chevron-right' : 'chevron-down', 'w-4 h-4 text-gray-400')}
-            <span>${esc(c.icon)}</span><span>${esc(catName(cat))}</span>
+            ${catIcon(cat)}<span>${esc(catName(cat))}</span>
             <span class="text-xs font-normal text-gray-400">(${items.length})</span>
             ${lowCount > 0 ? `<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full">${lowCount} ${t('lowStock')}</span>` : ''}
           </button>
@@ -2587,15 +2709,15 @@ const Cart = {
       const order = [...known, ...Object.keys(groups).filter(k => k !== 'none' && !known.includes(k)), 'none'];
       order.forEach(k => {
         if (!groups[k]) return;
-        const label = k === 'none' ? '未指定商店' : esc(storeName(k));
+        const label = k === 'none' ? '未指定商店' : `${storeDot(k)}${esc(storeName(k))}`;
         html += `<div class="mb-4"><div class="section-hdr mb-2 flex items-center gap-2">${label}<span class="text-[11px] bg-gray-100 dark:bg-gray-700 px-1.5 rounded">${groups[k].length}</span></div><div class="bento-grid">${groups[k].map(i=>this.renderItem(i)).join('')}</div></div>`;
       });
     } else {
       const groups = {};
       active.forEach(item => { const k = item.category || 'other'; if(!groups[k]) groups[k]=[]; groups[k].push(item); });
       Object.entries(groups).forEach(([k,items]) => {
-        const c = getCategories()[k] || { cn: k, icon: '📦' };
-        html += `<div class="mb-4"><div class="section-hdr mb-2">${esc(c.icon)} ${esc(catName(k))}</div><div class="bento-grid">${items.map(i=>this.renderItem(i)).join('')}</div></div>`;
+        const c = getCategories()[k] || { cn: k, icon: 'tag', color: 'slate' };
+        html += `<div class="mb-4"><div class="section-hdr mb-2 flex items-center gap-2">${catIcon(k)}${esc(catName(k))}</div><div class="bento-grid">${items.map(i=>this.renderItem(i)).join('')}</div></div>`;
       });
     }
     if (done.length > 0) {
@@ -2614,7 +2736,7 @@ const Cart = {
           ${item.nameEn ? `<span class="text-xs text-gray-400 name-en">${esc(item.nameEn)}</span>` : ''}
           ${storeBadge(item.store)}
         </div>
-        <div class="text-sm text-gray-500 dark:text-gray-400">${esc(formatQty(item.quantity, item.unit))} · ${esc(catLabel(item.category))}</div>
+        <div class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">${esc(formatQty(item.quantity, item.unit))} · ${catLabelHtml(item.category)}</div>
         ${item.notes ? `<div class="text-xs text-gray-400">${esc(item.notes)}</div>` : ''}
       </div>
       <div class="flex items-center gap-1 shrink-0">
@@ -2858,7 +2980,7 @@ const Household = {
       const prevVal = catSel.value;
       catSel.innerHTML = `<option value="">全部分类</option>`;
       Object.entries(getCategories()).forEach(([k,v]) => {
-        const opt = document.createElement('option'); opt.value = k; opt.textContent = `${v.icon} ${catName(k)}`;
+        const opt = document.createElement('option'); opt.value = k; opt.textContent = catName(k);
         catSel.appendChild(opt);
       });
       catSel.value = prevVal;
@@ -2906,7 +3028,7 @@ const Household = {
     window._houseCatKeys = catKeys;
     const btn = 'text-xs text-gray-300 hover:text-gray-600 dark:hover:text-gray-200 w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700';
     el.innerHTML = catKeys.map((cat, idx) => {
-      const c = getCategories()[cat] || { cn: cat, icon: '📦' };
+      const c = getCategories()[cat] || { cn: cat, icon: 'tag', color: 'slate' };
       const items = grouped[cat];
       const lowCount = items.filter(i => i.minStock > 0 && i.quantity <= i.minStock).length;
       const collapsed = _collapsedCats.has('house', cat);
@@ -2914,7 +3036,7 @@ const Household = {
         <div class="flex items-center gap-1.5 mb-2 section-hdr select-none">
           <button onclick="Household.toggleCat(${jsArg(cat)})" class="flex items-center gap-1.5 flex-1 text-left hover:text-gray-700 dark:hover:text-gray-200">
             ${icon(collapsed ? 'chevron-right' : 'chevron-down', 'w-4 h-4 text-gray-400')}
-            <span>${esc(c.icon)}</span><span>${esc(catName(cat))}</span>
+            ${catIcon(cat)}<span>${esc(catName(cat))}</span>
             <span class="text-xs font-normal text-gray-400">(${items.length})</span>
             ${lowCount > 0 ? `<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full">${lowCount} 低库存</span>` : ''}
           </button>
@@ -3171,7 +3293,7 @@ const Settings = {
     if (storeEl) {
       storeEl.innerHTML = '<option value="">不设置</option>'
         + Object.entries(getStores())
-            .map(([k, v]) => `<option value="${esc(k)}">${esc(v.emoji)} ${esc(v.name)}</option>`).join('');
+            .map(([k, v]) => `<option value="${esc(k)}">${esc(v.name)}</option>`).join('');
       storeEl.value = s.preferredStore || '';
       // 常用商店被删掉了就退回"不设置"，避免存着一个已经不存在的键
       if (storeEl.value !== (s.preferredStore || '')) {
@@ -3180,6 +3302,7 @@ const Settings = {
       }
     }
     this.renderCategories();
+    this._renderNewCatIcon();
     this.renderStores();
     this.refreshQuickStoreQuestion();
     this.renderFirebaseStatus();
@@ -3198,9 +3321,9 @@ const Settings = {
           <button ${canUp ? `onclick="Settings._moveCat(${jsArg(key)},-1)"` : 'disabled'} class="${canUp ? btnMove : btnDis}" title="上移">${icon('chevron-up', 'w-3.5 h-3.5')}</button>
           <button ${canDown ? `onclick="Settings._moveCat(${jsArg(key)},1)"` : 'disabled'} class="${canDown ? btnMove : btnDis}" title="下移">${icon('chevron-down', 'w-3.5 h-3.5')}</button>
         </div>
-        <button onclick="EmojiPicker.open(e=>{Settings._setCatIcon(${jsArg(key)},e)})"
-          class="text-2xl w-9 h-9 shrink-0 rounded-lg bg-white dark:bg-gray-600 flex items-center justify-center hover:bg-blue-50 dark:hover:bg-gray-500 border border-gray-200 dark:border-gray-500 transition" title="点击更换图标">
-          ${esc(v.icon)}
+        <button onclick="IconPicker.open({icon:${jsArg(v.icon)},color:${jsArg(v.color || 'slate')}},(i,c)=>Settings._setCatIconColor(${jsArg(key)},i,c))"
+          class="shrink-0 rounded-lg flex items-center justify-center hover:opacity-75 transition" title="点击更换图标和颜色">
+          ${catIcon(key)}
         </button>
         <input type="text" value="${esc(v.cn)}" placeholder="中文名" onchange="Settings._setCatField(${jsArg(key)},'cn',this.value)"
           class="flex-1 min-w-0 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-400" />
@@ -3239,7 +3362,7 @@ const Settings = {
     const deletedRows = Object.entries(CATEGORIES)
       .filter(([k]) => State.customCategories[k]?.deleted)
       .map(([k,v]) => `<div class="text-xs text-gray-400 flex items-center gap-2 mb-1 px-2">
-        <span class="line-through">${esc(v.icon)} ${esc(v.cn)}</span>
+        <span class="line-through flex items-center gap-1.5">${catIcon(k, 'sm')}${esc(v.cn)}</span>
         <button onclick="Settings._restoreCat(${jsArg(k)})" class="text-blue-400 hover:underline">恢复</button>
       </div>`).join('');
 
@@ -3263,14 +3386,10 @@ const Settings = {
     return `
       <div class="p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
         <div class="flex items-center gap-1.5 mb-1.5">
-          <button onclick="EmojiPicker.open(e=>{Settings._setStoreIcon(${jsArg(key)},e)})"
-            class="text-2xl w-9 h-9 shrink-0 rounded-lg bg-white dark:bg-gray-600 flex items-center justify-center hover:bg-blue-50 dark:hover:bg-gray-500 border border-gray-200 dark:border-gray-500 transition" title="点击更换图标">
-            ${esc(v.emoji || '🏪')}
-          </button>
           <input type="text" value="${esc(v.name)}" placeholder="商店名称"
             onchange="Settings._setStoreField(${jsArg(key)},'name',this.value)"
             class="flex-1 min-w-0 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-400" />
-          <span class="text-xs px-2 py-0.5 rounded-full border shrink-0 ${storeClass(key)}">${esc(v.emoji || '')} ${esc(v.name)}</span>
+          <span class="shrink-0">${storeBadge(key)}</span>
           <button onclick="Settings._confirmDeleteStore(${jsArg(key)})" class="text-gray-400 hover:text-red-600 w-8 h-8 flex items-center justify-center rounded-lg shrink-0" title="删除">${icon('trash', 'w-[18px] h-[18px]')}</button>
         </div>
         <div class="flex items-center gap-1.5 pl-1">${swatches}</div>
@@ -3285,18 +3404,11 @@ const Settings = {
     const deleted = Object.entries(STORES)
       .filter(([k]) => State.customStores[k]?.deleted)
       .map(([k, v]) => `<div class="text-xs text-gray-400 flex items-center gap-2 px-2">
-        <span class="line-through">${esc(v.emoji)} ${esc(v.name)}</span>
+        <span class="line-through flex items-center gap-1.5">${storeDot(k)}${esc(v.name)}</span>
         <button onclick="Settings._restoreStore(${jsArg(k)})" class="text-blue-400 hover:underline">恢复</button>
       </div>`).join('');
     el.innerHTML = rows
       + (deleted ? `<div class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600 space-y-1">${deleted}</div>` : '');
-  },
-
-  _setStoreIcon(key, emoji) {
-    if (!State.customStores[key]) State.customStores[key] = { ...getStores()[key] };
-    State.customStores[key].emoji = emoji;
-    State.save(['customstores']);
-    this._afterStoreChange();
   },
 
   _setStoreField(key, field, val) {
@@ -3313,17 +3425,15 @@ const Settings = {
 
   addStore() {
     const nameEl = document.getElementById('new-store-name');
-    const iconEl = document.getElementById('new-store-icon');
     const name = nameEl?.value.trim();
     if (!name) { showToast('请输入商店名称', 'warn'); return; }
     const key = 'store_' + Date.now();
     // 新商店自动挑一个还没被用掉的颜色，避免一片同色
     const used = new Set(Object.values(getStores()).map(v => v.color));
     const color = STORE_COLORS.find(c => !used.has(c)) || 'slate';
-    State.customStores[key] = { name, emoji: iconEl?.value.trim() || '🏪', color };
+    State.customStores[key] = { name, color };
     State.save(['customstores']);
     if (nameEl) nameEl.value = '';
-    if (iconEl) iconEl.value = '';
     this._afterStoreChange();
     showToast(`商店「${name}」已添加`, 'success');
   },
@@ -3381,7 +3491,7 @@ const Settings = {
       const cur = State.settings.preferredStore || '';
       storeEl.innerHTML = '<option value="">不设置</option>'
         + Object.entries(getStores())
-            .map(([k, v]) => `<option value="${esc(k)}">${esc(v.emoji)} ${esc(v.name)}</option>`).join('');
+            .map(([k, v]) => `<option value="${esc(k)}">${esc(v.name)}</option>`).join('');
       storeEl.value = cur;
       if (storeEl.value !== cur) storeEl.value = '';
     }
@@ -3390,11 +3500,20 @@ const Settings = {
     this.refreshQuickStoreQuestion();
   },
 
-  _setCatIcon(key, emoji) {
+  _setCatIconColor(key, iconName, color) {
     if (!State.customCategories[key]) State.customCategories[key] = {};
-    State.customCategories[key].icon = emoji;
+    State.customCategories[key].icon = iconName;
+    State.customCategories[key].color = color;
     State.save(['customcats']);
     this.renderCategories();
+    Inventory.render(); Household.render(); Cart.render();
+  },
+
+  // 「新增分类」那一行当前选中的图标 + 颜色
+  _newCat: { icon: 'tag', color: 'slate' },
+  _renderNewCatIcon() {
+    const btn = document.getElementById('new-cat-icon-btn');
+    if (btn) btn.innerHTML = `<span class="cat-ico tint-${this._newCat.color}">${icon(this._newCat.icon)}</span>`;
   },
 
   _setCatField(key, field, val) {
@@ -3436,7 +3555,7 @@ const Settings = {
       migrateRow.classList.remove('hidden');
       targetSel.innerHTML = Object.entries(getCategories())
         .filter(([k]) => k !== key)
-        .map(([k,v]) => `<option value="${esc(k)}">${esc(v.icon)} ${esc(catName(k))}</option>`).join('');
+        .map(([k]) => `<option value="${esc(k)}">${esc(catName(k))}</option>`).join('');
       delBtn.style.display = '';
       moveBtn.style.display = '';
     } else {
@@ -3477,29 +3596,32 @@ const Settings = {
     if (!cn) { showToast('请先输入中文名', 'warn'); return; }
     showLoading('AI 识别分类中...');
     const text = await AI.call(
-      '你是分类助手。根据中文分类名返回JSON，包含：icon(一个最合适的emoji)、en(英文名)、fr(法文名)。只返回JSON，不加任何解释。',
+      `你是分类助手。根据中文分类名返回 JSON，字段：icon（只能从这个列表里选一个最贴切的：${CATEGORY_ICONS.join(', ')}）、color（只能从这个列表里选：${CAT_COLORS.join(', ')}）、en（英文名）、fr（法文名）。只返回 JSON，不加任何解释。`,
       cn
     );
     hideLoading();
     if (!text) return;
     const res = extractJSON(text);
     if (!res) { showToast('AI识别失败', 'warn'); return; }
-    if (res.icon) document.getElementById('new-cat-icon').value = res.icon;
+    if (CATEGORY_ICONS.includes(res.icon)) this._newCat.icon = res.icon;
+    if (CAT_COLORS.includes(res.color))    this._newCat.color = res.color;
+    this._renderNewCatIcon();
     if (res.en)   document.getElementById('new-cat-en').value   = res.en;
     if (res.fr)   document.getElementById('new-cat-fr').value   = res.fr;
     showToast('AI已填写，确认后点添加', 'success');
   },
 
   addCategory() {
-    const icon = document.getElementById('new-cat-icon')?.value.trim() || '📌';
+    const { icon: iconName, color } = this._newCat;
     const cn   = document.getElementById('new-cat-cn')?.value.trim();
     const en   = document.getElementById('new-cat-en')?.value.trim() || cn;
     const fr   = document.getElementById('new-cat-fr')?.value.trim() || en;
     if (!cn) { showToast('请输入中文名', 'warn'); return; }
     const key = 'custom_' + Date.now();
-    State.customCategories[key] = { cn, en, fr, icon };
+    State.customCategories[key] = { cn, en, fr, icon: iconName, color };
     State.save(['customcats']);
-    document.getElementById('new-cat-icon').value = '';
+    this._newCat = { icon: 'tag', color: 'slate' };
+    this._renderNewCatIcon();
     document.getElementById('new-cat-cn').value = '';
     document.getElementById('new-cat-en').value = '';
     document.getElementById('new-cat-fr').value = '';
@@ -3695,7 +3817,7 @@ const Modal = {
     const storeSel = document.getElementById('item-store');
     storeSel.innerHTML = '<option value="">未指定</option>'
       + Object.entries(getStores())
-          .map(([k, v]) => `<option value="${esc(k)}">${esc(v.emoji)} ${esc(v.name)}</option>`).join('');
+          .map(([k, v]) => `<option value="${esc(k)}">${esc(v.name)}</option>`).join('');
     storeSel.value = item?.store || '';
     document.getElementById('item-notes').value = item?.notes || '';
     document.getElementById('item-minstock').value = item?.minStock ?? 0;
@@ -3994,7 +4116,7 @@ const Modal = {
         <select onchange="window._editCartItems[${idx}].store=this.value"
           class="text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-1 py-1.5 focus:outline-none">
           <option value="">商店</option>
-          ${Object.entries(getStores()).map(([k,s])=>`<option value="${esc(k)}" ${item.store===k?'selected':''}>${esc(s.emoji)} ${esc(s.name)}</option>`).join('')}
+          ${Object.entries(getStores()).map(([k,s])=>`<option value="${esc(k)}" ${item.store===k?'selected':''}>${esc(s.name)}</option>`).join('')}
         </select>
         <button type="button" onclick="window._editCartItems.splice(${idx},1);Modal.showEditableCartConfirm(window._editCartItems)"
           class="text-red-400 hover:text-red-600 px-1"><svg class="ico w-5 h-5" aria-hidden="true"><use href="#i-x"/></svg></button>
@@ -4087,103 +4209,35 @@ const Modal = {
   },
 };
 
-// ==================== EMOJI PICKER ====================
-const EMOJI_GROUPS = [
-  { label:'🥦 蔬菜', emojis:['🥦','🥕','🍅','🧅','🧄','🌽','🥬','🥒','🫑','🍆','🥔','🫛','🥗','🌿','🌱','🥜','🫘','🍄','🧆','🥑'] },
-  { label:'🥩 肉类海鲜', emojis:['🥩','🍗','🐟','🍤','🦐','🦑','🦀','🐙','🍖','🐠','🐡','🦞','🐄','🐖','🐓','🐑','🦆','🥚','🍳'] },
-  { label:'🥛 乳制品', emojis:['🥛','🧀','🫙','🍼','🧈','🥮','🍦'] },
-  { label:'🍚 主食', emojis:['🍚','🍜','🍝','🍞','🫓','🥐','🥟','🍱','🍘','🍙','🌯','🥙','🍛','🍲','🫕','🍣','🍤','🍥','🥮'] },
-  { label:'🧂 调料', emojis:['🧂','🫙','🥫','🍶','🌶️','🫚','🍋','🧄','🍯','🥢','🫖','🍵','⭐','🌟','✨'] },
-  { label:'🧃 饮料', emojis:['🧃','🍵','☕','🍺','🥤','🧋','🍹','🧊','💧','🥂','🍷','🍾','🫖','🥛','🧉','🍻'] },
-  { label:'🍪 零食甜品', emojis:['🍪','🍩','🍫','🍬','🍭','🥧','🍿','🍰','🎂','🍮','🍡','🍢','🧁','🍦','🍧','🍨','🥐','🧇','🥞'] },
-  { label:'🧊 冷冻', emojis:['🧊','❄️','🫙','🥶','🍦','🧊','🫙'] },
-  { label:'🧹 清洁', emojis:['🧹','🧺','🧻','🪣','🧽','🧼','🪥','🛁','🚿','🪒','🧷','🪤','🪠','🫧','🧴','🫙'] },
-  { label:'🧴 洗护', emojis:['🧴','💊','💉','🩺','🩹','🪥','🧼','💆','🌸','🌺','🌻','💐','🧖','✂️','🪞','🛁'] },
-  { label:'🏠 家居', emojis:['🏠','🛋️','🪴','🧸','🪆','🖼️','🛏️','🚪','🪟','💡','🔦','🕯️','🪔','🛒','📦','🎁'] },
-  { label:'📦 其他', emojis:['📦','🛒','🎁','📋','🔧','🪛','💡','🔋','📱','🖥️','📌','🗂️','📝','🔑','🏷️','⭐','❤️','🌈'] },
-];
+// ==================== 图标选择器 ====================
+// 分类图标只能从 CATEGORY_ICONS 里选（Lucide 子集），颜色只能从 CAT_COLORS 里选。
+// 这样整个 App 永远只有一套线性图标，用户加多少分类都不会混进 emoji。
+const IconPicker = {
+  _cb: null, _icon: 'tag', _color: 'slate',
 
-const EmojiPicker = {
-  _targetCallback: null,
-  _searchTerm: '',
-
-  open(callback) {
-    this._targetCallback = callback;
-    this._searchTerm = '';
-    document.getElementById('emoji-search').value = '';
-    document.getElementById('emoji-ai-results').classList.add('hidden');
-    document.getElementById('emoji-ai-results').innerHTML = '';
-    this._render(EMOJI_GROUPS);
-    document.getElementById('modal-emoji').classList.add('open');
-    setTimeout(() => document.getElementById('emoji-search').focus(), 100);
+  // current: {icon, color}；cb(iconName, color) 在点「确定」时回调
+  open(current, cb) {
+    this._cb = cb;
+    this._icon  = CATEGORY_ICONS.includes(current?.icon)  ? current.icon  : 'tag';
+    this._color = CAT_COLORS.includes(current?.color)     ? current.color : 'slate';
+    this._render();
+    document.getElementById('modal-icon').classList.add('open');
   },
+  close() { document.getElementById('modal-icon').classList.remove('open'); },
+  setColor(c) { this._color = c; this._render(); },
+  setIcon(n)  { this._icon = n;  this._render(); },
+  confirm() { if (this._cb) this._cb(this._icon, this._color); this.close(); },
 
-  close() { document.getElementById('modal-emoji').classList.remove('open'); },
-
-  pick(emoji) {
-    if (this._targetCallback) this._targetCallback(emoji);
-    this.close();
-  },
-
-  search(term) {
-    this._searchTerm = term.trim().toLowerCase();
-    if (!this._searchTerm) { this._render(EMOJI_GROUPS); return; }
-    // 简单过滤：把所有 emoji 平铺，匹配组标签关键词
-    const keywords = {
-      '蔬菜':0,'菜':0,'vegetable':0,'veg':0,
-      '肉':1,'鱼':1,'海鲜':1,'meat':1,'fish':1,'seafood':1,
-      '奶':2,'乳':2,'蛋':2,'dairy':2,'milk':2,
-      '饭':3,'面':3,'主食':3,'grain':3,'staple':3,'noodle':3,'rice':3,
-      '调料':4,'酱':4,'sauce':4,'spice':4,'seasoning':4,
-      '饮料':5,'drink':5,'beverage':5,'tea':5,'coffee':5,
-      '零食':6,'甜':6,'糖':6,'snack':6,'sweet':6,'dessert':6,
-      '冷冻':7,'frozen':7,'冰':7,
-      '清洁':8,'清':8,'洗':8,'clean':8,
-      '洗护':9,'护肤':9,'beauty':9,
-      '家居':10,'家':10,'home':10,'house':10,
-      '其他':11,'other':11,
-    };
-    let bestGroup = null;
-    let bestScore = -1;
-    for (const [kw, idx] of Object.entries(keywords)) {
-      if (this._searchTerm.includes(kw) || kw.includes(this._searchTerm)) {
-        if (idx > bestScore) { bestGroup = EMOJI_GROUPS[idx]; bestScore = idx; }
-      }
-    }
-    if (bestGroup) {
-      this._render([bestGroup]);
-    } else {
-      // Show all
-      this._render(EMOJI_GROUPS);
-    }
-  },
-
-  async aiSuggest() {
-    const keyword = document.getElementById('emoji-search').value.trim();
-    if (!keyword) { showToast('请先输入关键词', 'warn'); return; }
-    if (!State.settings.claudeApiKey) { showToast('需要 API Key', 'warn'); return; }
-    const aiEl = document.getElementById('emoji-ai-results');
-    aiEl.innerHTML = '<span class="text-xs text-gray-400">AI推荐中...</span>';
-    aiEl.classList.remove('hidden');
-    const text = await AI.call(
-      'You are an emoji recommender. Given a Chinese or English keyword, return ONLY 8-12 relevant emojis as a JSON array of strings. No explanation.',
-      `Keyword: ${keyword}`
-    );
-    const emojis = extractJSON(text);
-    if (!emojis || !emojis.length) { aiEl.innerHTML = '<span class="text-xs text-red-400">AI无法推荐，请手动选择</span>'; return; }
-    aiEl.innerHTML = '<span class="text-xs text-gray-500 mr-1">AI推荐：</span>' +
-      emojis.map(e => `<button onclick="EmojiPicker.pick(${jsArg(e)})" class="text-2xl hover:scale-125 transition p-0.5 rounded">${esc(e)}</button>`).join('');
-  },
-
-  _render(groups) {
-    document.getElementById('emoji-grid').innerHTML = groups.map(g =>
-      `<div class="mb-3">
-        <div class="text-xs text-gray-400 mb-1">${g.label}</div>
-        <div class="flex flex-wrap gap-1">
-          ${g.emojis.map(e => `<button onclick="EmojiPicker.pick(${jsArg(e)})" class="text-2xl hover:scale-125 transition p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700">${e}</button>`).join('')}
-        </div>
-      </div>`
-    ).join('');
+  _render() {
+    document.getElementById('icon-preview').innerHTML =
+      `<span class="cat-ico cat-ico-lg tint-${this._color}">${icon(this._icon)}</span>`;
+    document.getElementById('icon-colors').innerHTML = CAT_COLORS.map(c =>
+      `<button type="button" onclick="IconPicker.setColor(${jsArg(c)})" title="${esc(c)}"
+        class="tint-${c} w-7 h-7 rounded-full ${c === this._color ? 'ring-2 ring-offset-2 ring-gray-400 dark:ring-offset-gray-800' : ''}"
+        style="background:var(--tint)"></button>`).join('');
+    document.getElementById('icon-grid').innerHTML = CATEGORY_ICONS.map(n =>
+      `<button type="button" onclick="IconPicker.setIcon(${jsArg(n)})" title="${esc(n)}"
+        class="icon-pick ${n === this._icon ? 'on' : ''}">${icon(n, 'w-5 h-5')}</button>`).join('');
   },
 };
 
