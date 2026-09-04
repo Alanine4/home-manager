@@ -18,11 +18,9 @@
   <img src="docs/screenshots/cart.png" width="190" alt="购物车：按商店分组，勾选已买一键入库">
   <img src="docs/screenshots/inventory.png" width="190" alt="库存：按分类折叠，扫条码、拍小票录入">
   <img src="docs/screenshots/recipes.png" width="190" alt="食谱：显示食材备齐度，缺的一键加购物车">
-  <img src="docs/screenshots/household.png" width="190" alt="家居必备：洗护清洁用品，低库存提醒">
 </p>
 <p align="center"><sub>购物车 · 库存 · 食谱 · 家居必备（也有深色模式）</sub></p>
 <p align="center">
-  <img src="docs/screenshots/add-item.png" width="190" alt="添加物品：中英文名、数量、分类、商店">
   <img src="docs/screenshots/ai-confirm.png" width="190" alt="AI 识别成功后逐条确认，可改数量和分类">
   <img src="docs/screenshots/categories.png" width="190" alt="分类管理：改名、排序、换图标和颜色">
   <img src="docs/screenshots/icon-picker.png" width="190" alt="给分类选图标和颜色">
