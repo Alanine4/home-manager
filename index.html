@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Home Manager</title>
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#e89520" /><!-- 和 manifest.json 保持一致 -->
+  <meta name="theme-color" content="#f5f7fa" /><!-- 页面底色；深色模式由 App.applyTheme 改，和 manifest.json 保持一致 -->
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -27,13 +27,13 @@
   </script>
   <style>
     /* ===== Bento design tokens ===== */
-    /* 主题：白底、1px 描边、8px 圆角、灰阶三档、整个应用只有一个强调色。
+    /* 主题：灰底白卡（靠明度差分层，不靠描边）、12px 圆角、灰阶三档、整个应用只有一个强调色。
        深色模式的灰阶对齐 Tailwind 的 gray-900/800/700，这样 dark: 工具类和这里不打架。 */
     :root {
-      --bg: #ffffff; --bg-2: #f9fafb; --tile: #ffffff; --tile-2: #f3f4f6;
+      --bg: #f5f7fa; --bg-2: #eef1f5; --tile: #ffffff; --tile-2: #f3f5f8;
       --border: #e5e7eb; --text: #111827; --muted: #6b7280;
       --accent: #2563eb; --accent-soft: #eff6ff;
-      --radius: 10px; --radius-sm: 8px;
+      --radius: 12px; --radius-sm: 12px;
       --shadow: none;
       --shadow-sm: none;
     }
@@ -106,33 +106,35 @@
            fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
     /* ===== 布局原语 ===== */
-    .bento-tile { background: var(--tile); border: 1px solid var(--border); border-radius: var(--radius); }
+    .bento-tile { background: var(--tile); border: 0; border-radius: var(--radius); }
     .bento-grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); }
     .icon-btn { color: var(--muted); border-radius: 8px; transition: background .15s, color .15s; }
     .icon-btn:hover { background: var(--bg-2); color: var(--text); }
     .icon-btn .ico { width: 20px; height: 20px; }
 
-    /* 卡片：白底 + 1px 描边，无投影 */
-    .item-card { background: var(--tile) !important; border: 1px solid var(--border) !important; border-radius: var(--radius-sm) !important; box-shadow: none !important; }
+    /* 卡片：白底、无描边、无投影，靠和灰页面的明度差分层（filled card） */
+    .item-card { background: var(--tile) !important; border: 0 !important; border-radius: var(--radius-sm) !important; box-shadow: none !important; }
 
     /* AI 输入区：和卡片一样的描边容器 */
-    .ai-input-bar { background: var(--tile) !important; background-image: none !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; box-shadow: none; }
+    .ai-input-bar { background: var(--tile) !important; background-image: none !important; border: 0 !important; border-radius: var(--radius) !important; box-shadow: none; }
 
     /* 弹窗 */
-    .modal-overlay > div { background: var(--tile) !important; border: 1px solid var(--border); border-radius: 14px !important; box-shadow: 0 24px 48px -12px rgba(0,0,0,.35); }
+    .modal-overlay > div { background: var(--tile) !important; border: 0; border-radius: 16px !important; box-shadow: 0 24px 48px -12px rgba(0,0,0,.35); }
 
-    /* 顶栏：白底 + 底部 hairline，不做卡片 */
-    header { border-bottom: 1px solid var(--border); }
+    /* 顶栏：和页面同色，不做卡片，也不画线（卡片滚到它下面会自然消失在灰底里） */
     header .bento-tile { background: transparent; border: 0; border-radius: 0; }
 
-    /* 分组标题：12px 大写、字距拉开、灰字 */
-    .section-hdr { font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+    /* 分组标题：15px 粗体正文色（大写眉题对中文无效）。后面的数量是 .count */
+    .section-hdr { font-size: 15px; font-weight: 600; color: var(--text); }
+    .section-hdr .count { font-size: 13px; font-weight: 400; color: var(--muted); }
 
     /* 次要按钮：白底 + 描边（主按钮是 .bg-blue-600 → 强调色） */
-    .btn-secondary { background: var(--tile); border: 1px solid var(--border); color: var(--text); transition: background .15s; }
-    .btn-secondary:hover { background: var(--bg-2); }
+    .btn-secondary { background: var(--tile); border: 1px solid transparent; color: var(--text); transition: filter .15s; }
+    .btn-secondary:hover { filter: brightness(.96); }
+    /* 放在白卡片里的次按钮要有灰底才看得见 */
+    .item-card .btn-secondary, .bento-tile .btn-secondary, .ai-input-bar .btn-secondary, .modal-overlay .btn-secondary { background: var(--tile-2); }
     /* 分段控件（按商店 / 按分类） */
-    .seg { background: var(--tile); border: 1px solid var(--border); color: var(--muted); }
+    .seg { background: var(--tile); border: 1px solid transparent; color: var(--muted); }
     .seg-on { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
 
     /* ===== 分类 / 商店的颜色系统：每个色号给出线色 --tint 和淡底 --tint-bg ===== */
@@ -150,21 +152,21 @@
     .tint-purple { --tint: #9333ea; --tint-bg: #f3e8ff; }  .dark .tint-purple { --tint: #c084fc; --tint-bg: rgba(88,28,135,.45); }
     .tint-pink { --tint: #db2777; --tint-bg: #fce7f3; }  .dark .tint-pink { --tint: #f472b6; --tint-bg: rgba(131,24,67,.45); }
     .tint-slate { --tint: #475569; --tint-bg: #f1f5f9; }  .dark .tint-slate { --tint: #94a3b8; --tint-bg: rgba(30,41,59,.6); }
-    /* 分类图标：线性图标坐在同色系淡色底托里（tinted container）。md 28px / sm 20px / lg 44px */
-    .cat-ico { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 7px;
+    /* 分类图标：线性图标坐在同色系淡色圆形底托里（tinted circular container）。md 32px / sm 20px / lg 44px */
+    .cat-ico { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%;
                flex-shrink: 0; color: var(--tint); background: var(--tint-bg); vertical-align: middle; }
-    .cat-ico .ico { width: 16px; height: 16px; }
-    .cat-ico-sm { width: 20px; height: 20px; border-radius: 5px; }
+    .cat-ico .ico { width: 18px; height: 18px; }
+    .cat-ico-sm { width: 20px; height: 20px; }
     .cat-ico-sm .ico { width: 12px; height: 12px; }
-    .cat-ico-lg { width: 44px; height: 44px; border-radius: 10px; }
+    .cat-ico-lg { width: 44px; height: 44px; }
     .cat-ico-lg .ico { width: 24px; height: 24px; }
     /* 商店：色点 + 中性灰 chip */
     .sdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--tint); flex-shrink: 0; }
     .chip { display: inline-flex; align-items: center; gap: .35em; font-size: 11px; line-height: 1.4; padding: 1px 7px; border-radius: 4px;
-            background: var(--tile-2); color: var(--text); border: 1px solid var(--border); white-space: nowrap; }
+            background: var(--tile-2); color: var(--text); border: 1px solid transparent; white-space: nowrap; }
     /* 图标选择器里的格子 */
     .icon-pick { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 8px;
-                 border: 1px solid var(--border); color: var(--muted); }
+                 background: var(--tile-2); border: 1px solid transparent; color: var(--muted); }
     .icon-pick.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
     /* 弹窗最高只能到「实际可见」的视口高度。100vh 在 iOS Safari 里是工具栏收起后的
        大视口，弹窗按它撑高会比屏幕还高，自己不进滚动状态，手指一滑滚的就是后面的页面。
@@ -172,6 +174,28 @@
        overscroll-behavior: contain 让弹窗滚到头时不把滚动"链"给后面的页面。 */
     .modal-overlay > div { max-height: calc(100vh - 1.5rem); max-height: calc(100dvh - 1.5rem); overflow-y: auto; overscroll-behavior: contain; }
     #modal-barcode > div { background: #000 !important; }
+
+    /* 填充式输入框（filled input）：卡片里灰底，直接放在页面上的白底；聚焦时描边变主色。
+       全局 !important 是因为标记里还带着 Tailwind 的 bg-gray-50 / border-gray-200 */
+    input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=color]), select, textarea {
+      background: var(--tile-2) !important; border: 1px solid transparent !important; }
+    .tab-content > div > input, .tab-content > div > select, .tab-content > div > textarea { background: var(--tile) !important; }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent) !important; }
+
+    /* 概览卡：左边大数字，右边两三个小指标。数字用等宽数字（tabular figures），变动时不左右抖 */
+    .summary { display: flex; align-items: center; gap: 12px; background: var(--tile); border-radius: var(--radius); padding: 12px 16px;
+               margin-bottom: 12px; font-variant-numeric: tabular-nums; }
+    .summary-main { flex: 1; min-width: 0; }
+    .summary-label { font-size: 12px; color: var(--muted); }
+    .summary-num { font-size: 28px; font-weight: 700; line-height: 1.15; color: var(--text); letter-spacing: -.01em; }
+    .summary-stats { display: flex; gap: 18px; }
+    .summary-stat { text-align: center; font-size: 12px; color: var(--muted); white-space: nowrap; }
+    .summary-stat b { display: block; font-size: 17px; font-weight: 600; color: var(--text); margin-top: 2px; }
+    .summary-stat b.warn { color: #dc2626; }
+    .dark .summary-stat b.warn { color: #f87171; }
+
+    /* 导航选中态：双色图标（duotone）——线条不变，内部填 18% 主色 */
+    .nav-tab.active .ico, .mobile-nav-tab.active .ico { fill: var(--accent); fill-opacity: .18; }
 
     /* recolor primary blue buttons to the Bento accent */
     .bg-blue-600 { background-color: var(--accent) !important; }
@@ -347,6 +371,7 @@
         <button onclick="Modal.showAddCart()" class="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition" data-i18n="add">+ 添加</button>
       </div>
     </div>
+    <div id="cart-summary"></div>
     <!-- AI Input -->
     <div class="ai-input-bar mb-4 rounded-xl p-3">
       <div class="flex items-center gap-2 mb-2 text-gray-500">
@@ -373,6 +398,7 @@
       <h2 class="text-xl font-semibold" data-i18n="invTitle">库存</h2>
       <button onclick="Modal.showAddInventory()" class="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition" data-i18n="add">+ 添加</button>
     </div>
+    <div id="inv-summary"></div>
     <!-- AI Input -->
     <div class="ai-input-bar mb-4 rounded-xl p-3">
       <div class="flex items-center gap-2 mb-2 text-gray-500">
@@ -437,6 +463,7 @@
       <h2 class="text-xl font-semibold">家居必备 <span class="text-gray-400 font-normal text-base">Household</span></h2>
       <button onclick="Modal.showAddHousehold()" class="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition">+ 添加</button>
     </div>
+    <div id="house-summary"></div>
     <!-- AI Input -->
     <div class="ai-input-bar mb-4 rounded-xl p-3">
       <div class="flex items-center gap-2 mb-2 text-gray-500">
@@ -487,7 +514,7 @@
     <h2 class="text-xl font-semibold mb-4">设置 <span class="text-gray-400 font-normal text-base">Settings</span></h2>
     <div class="space-y-4 max-w-lg">
       <!-- 昵称 -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+      <div class="bento-tile p-4">
         <h3 class="font-semibold mb-2 flex items-center gap-2"><svg class="ico text-gray-400" aria-hidden="true"><use href="#i-user"/></svg> 我的昵称</h3>
         <p class="text-xs text-gray-400 mb-2">操作记录里会显示这个名字，方便区分谁做了什么</p>
         <div class="flex gap-2">
@@ -497,7 +524,7 @@
       </div>
 
       <!-- 云同步配置 -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+      <div class="bento-tile p-4">
         <h3 class="font-semibold mb-1 flex items-center gap-2"><svg class="ico text-gray-400" aria-hidden="true"><use href="#i-cloud"/></svg> 云同步 · Firebase</h3>
         <p class="text-xs text-gray-500 mb-2">
           不填也能正常用，数据存在这台设备上。想在手机和电脑之间同步，就填自己的 Firebase。
@@ -517,7 +544,7 @@
       </div>
 
       <!-- 房间码 -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+      <div class="bento-tile p-4">
         <h3 class="font-semibold mb-1 flex items-center gap-2"><svg class="ico text-gray-400" aria-hidden="true"><use href="#i-link"/></svg> 多设备同步 · 房间码</h3>
         <p class="text-xs text-gray-500 mb-3">同一房间码的设备实时共享数据。把码发给家人，ta 在设置里输入即可加入。</p>
         <div class="flex items-center gap-2 mb-2">
@@ -531,7 +558,7 @@
         <p class="text-xs text-amber-600 mt-2 flex items-start gap-1"><svg class="ico mt-0.5" aria-hidden="true"><use href="#i-alert-triangle"/></svg><span>加入新房间会切换到对方的数据，当前数据仍保留在云端（原房间码可找回）</span></p>
       </div>
 
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+      <div class="bento-tile p-4">
         <h3 class="font-semibold mb-3 flex items-center gap-2"><svg class="ico text-gray-400" aria-hidden="true"><use href="#i-bot"/></svg> AI 设置</h3>
         <div class="space-y-3">
           <div>
@@ -560,7 +587,7 @@
           </div>
         </div>
       </div>
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+      <div class="bento-tile p-4">
         <h3 class="font-semibold mb-3 flex items-center gap-2"><svg class="ico text-gray-400" aria-hidden="true"><use href="#i-globe"/></svg> 界面设置</h3>
         <div class="space-y-3">
           <div>
@@ -583,7 +610,7 @@
         </div>
       </div>
       <button onclick="Settings.save()" class="w-full bg-blue-600 text-white py-2.5 rounded-xl hover:bg-blue-700 font-medium">保存设置 Save</button>
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+      <div class="bento-tile p-4">
         <h3 class="font-semibold mb-3 flex items-center gap-2"><svg class="ico text-gray-400" aria-hidden="true"><use href="#i-folder"/></svg> 分类管理</h3>
         <p class="text-xs text-gray-400 mb-3">所有分类均可删除，删除时可选择迁移物品</p>
         <!-- 块级容器，不能是 flex：里面是整行编辑卡片，做成 flex item 会按输入框的
@@ -605,7 +632,7 @@
           <button onclick="Settings.addCategory()" class="text-sm bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700">添加</button>
         </div>
       </div>
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+      <div class="bento-tile p-4">
         <h3 class="font-semibold mb-3 flex items-center gap-2"><svg class="ico text-gray-400" aria-hidden="true"><use href="#i-store"/></svg> 商店管理</h3>
         <p class="text-xs text-gray-400 mb-3">改名 / 换颜色 / 删除。颜色会出现在购物车分组和商品徽章上</p>
         <div id="store-list" class="space-y-2 mb-3"></div>
@@ -614,7 +641,7 @@
           <button onclick="Settings.addStore()" class="text-sm bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 shrink-0">添加</button>
         </div>
       </div>
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+      <div class="bento-tile p-4">
         <h3 class="font-semibold mb-3 flex items-center gap-2"><svg class="ico text-gray-400" aria-hidden="true"><use href="#i-database"/></svg> 数据管理</h3>
         <div class="flex flex-wrap gap-2">
           <button onclick="App.loadSampleData()" class="btn-secondary text-sm px-3 py-2 rounded-lg">加载示例数据</button>
@@ -659,6 +686,7 @@
 .mobile-nav-tab { color: #9ca3af; transition: color 0.15s; border-radius: 0; }
 .mobile-nav-tab.active { color: var(--accent); background: transparent; }
 .mobile-nav-tab .ico { width: 24px; height: 24px; }
+.mobile-nav-tab.active > span:last-child { font-weight: 600; }
 .mobile-nav-tab > span:first-child { display: flex; }
 </style>
 
@@ -969,6 +997,7 @@ const TRANSLATIONS = {
     aiSuggest:'AI 购物建议', aiInvInput:'AI 录入库存', aiRecipeInput:'AI 添加食谱',
     aiSend:'发送', aiRecognize:'识别', aiGenerate:'生成', aiRecommend:'AI推荐',
     lowStock:'低库存', inCart:'加入购物车', details:'查看详情',
+    sumToBuy:'待购（件）', sumStores:'商店', sumBought:'已买', sumLow:'库存告急', sumStock:'库存（件）', sumCats:'分类', sumStaples:'常备', sumHousehold:'家居（件）',
     catManage:'分类管理', catDesc:'所有分类均可删除，删除时可迁移物品', addCat:'添加',
     catIconPh:'图标', catCnPh:'中文名', catEnPh:'English', catFrPh:'Français',
     dataManage:'数据管理',
@@ -985,6 +1014,7 @@ const TRANSLATIONS = {
     aiSuggest:'AI Shopping Suggestions', aiInvInput:'AI Add Inventory', aiRecipeInput:'AI Add Recipe',
     aiSend:'Send', aiRecognize:'Parse', aiGenerate:'Generate', aiRecommend:'AI Suggest',
     lowStock:'Low stock', inCart:'Add to cart', details:'Details',
+    sumToBuy:'To buy (items)', sumStores:'Stores', sumBought:'Bought', sumLow:'Low stock', sumStock:'In stock (items)', sumCats:'Categories', sumStaples:'Staples', sumHousehold:'Household (items)',
     catManage:'Manage Categories', catDesc:'All categories can be deleted; items can be migrated', addCat:'Add',
     catIconPh:'Icon', catCnPh:'Chinese', catEnPh:'English', catFrPh:'French',
     dataManage:'Data',
@@ -1001,6 +1031,7 @@ const TRANSLATIONS = {
     aiSuggest:'Suggestions IA', aiInvInput:'IA ajouter stock', aiRecipeInput:'IA ajouter recette',
     aiSend:'Envoyer', aiRecognize:'Analyser', aiGenerate:'Générer', aiRecommend:'IA suggère',
     lowStock:'Stock bas', inCart:'Ajouter panier', details:'Détails',
+    sumToBuy:'À acheter (articles)', sumStores:'Magasins', sumBought:'Achetés', sumLow:'Stock bas', sumStock:'En stock (articles)', sumCats:'Catégories', sumStaples:'Basiques', sumHousehold:'Maison (articles)',
     catManage:'Catégories', catDesc:'Toutes les catégories peuvent être supprimées', addCat:'Ajouter',
     catIconPh:'Icône', catCnPh:'Chinois', catEnPh:'Anglais', catFrPh:'Français',
     dataManage:'Données',
@@ -1017,6 +1048,7 @@ const TRANSLATIONS = {
     aiSuggest:'Sugerencias IA', aiInvInput:'IA añadir stock', aiRecipeInput:'IA añadir receta',
     aiSend:'Enviar', aiRecognize:'Analizar', aiGenerate:'Generar', aiRecommend:'IA sugiere',
     lowStock:'Stock bajo', inCart:'Añadir al carrito', details:'Detalles',
+    sumToBuy:'Por comprar (artículos)', sumStores:'Tiendas', sumBought:'Comprados', sumLow:'Stock bajo', sumStock:'En stock (artículos)', sumCats:'Categorías', sumStaples:'Básicos', sumHousehold:'Hogar (artículos)',
     catManage:'Categorías', catDesc:'Todas las categorías se pueden eliminar', addCat:'Añadir',
     catIconPh:'Icono', catCnPh:'Chino', catEnPh:'Inglés', catFrPh:'Francés',
     dataManage:'Datos',
@@ -1033,6 +1065,7 @@ const TRANSLATIONS = {
     aiSuggest:'AI แนะนำสินค้า', aiInvInput:'AI เพิ่มคลัง', aiRecipeInput:'AI เพิ่มสูตร',
     aiSend:'ส่ง', aiRecognize:'วิเคราะห์', aiGenerate:'สร้าง', aiRecommend:'AI แนะนำ',
     lowStock:'สินค้าใกล้หมด', inCart:'เพิ่มตะกร้า', details:'รายละเอียด',
+    sumToBuy:'ต้องซื้อ (รายการ)', sumStores:'ร้านค้า', sumBought:'ซื้อแล้ว', sumLow:'ใกล้หมด', sumStock:'ในสต็อก (รายการ)', sumCats:'หมวดหมู่', sumStaples:'ของประจำ', sumHousehold:'ของใช้ในบ้าน (รายการ)',
     catManage:'จัดการหมวดหมู่', catDesc:'ลบหมวดหมู่ได้ทั้งหมด', addCat:'เพิ่ม',
     catIconPh:'ไอคอน', catCnPh:'ภาษาจีน', catEnPh:'ภาษาอังกฤษ', catFrPh:'ภาษาฝรั่งเศส',
     dataManage:'ข้อมูล',
@@ -2448,6 +2481,7 @@ const Inventory = {
     });
 
     const el = document.getElementById('inventory-list');
+    Summary.render('inventory');
     if (!el) return;
 
     if (filtered.length === 0) {
@@ -2502,7 +2536,7 @@ const Inventory = {
     <!-- 两行：「名称 | ✏️🛒🗑」「分类 | − 数量 +」。手机和桌面都这样——桌面是三列网格，
          一张卡也就 320px 宽，按钮放大到 32px 之后一行排不下；而名称 + 分类本来就叠成
          两行，所以改成两行高度不变。中间那个 basis-full 的空元素负责强制换行。 -->
-    <div class="item-card bg-white dark:bg-gray-800 rounded-xl p-3 border ${isLow ? 'border-red-300 dark:border-red-700' : unlimited ? 'border-purple-200 dark:border-purple-700' : 'border-gray-200 dark:border-gray-700'} flex flex-wrap items-center gap-x-2 gap-y-0">
+    <div class="item-card p-3 flex flex-wrap items-center gap-x-2 gap-y-0">
       <div class="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
         <span class="font-medium name-cn">${esc(item.nameCn)}</span>
         ${item.nameEn ? `<span class="text-xs text-gray-400 name-en">${esc(item.nameEn)}</span>` : ''}
@@ -2696,6 +2730,7 @@ const Cart = {
   render() {
     const el = document.getElementById('cart-list');
     if (!el) return;
+    Summary.render('cart');
     const active = State.cart.filter(i => !i.checked);
     const done = State.cart.filter(i => i.checked);
     if (State.cart.length === 0) {
@@ -2712,7 +2747,7 @@ const Cart = {
       order.forEach(k => {
         if (!groups[k]) return;
         const label = k === 'none' ? '未指定商店' : `${storeDot(k)}${esc(storeName(k))}`;
-        html += `<div class="mb-4"><div class="section-hdr mb-2 flex items-center gap-2">${label}<span class="text-[11px] bg-gray-100 dark:bg-gray-700 px-1.5 rounded">${groups[k].length}</span></div><div class="bento-grid">${groups[k].map(i=>this.renderItem(i)).join('')}</div></div>`;
+        html += `<div class="mb-4"><div class="section-hdr mb-2 flex items-center gap-2">${label}<span class="count">${groups[k].length}</span></div><div class="bento-grid">${groups[k].map(i=>this.renderItem(i)).join('')}</div></div>`;
       });
     } else {
       const groups = {};
@@ -2730,7 +2765,7 @@ const Cart = {
 
   renderItem(item) {
     return `
-    <div class="item-card bg-white dark:bg-gray-800 rounded-xl p-3 border border-gray-200 dark:border-gray-700 flex items-center gap-3 ${item.checked?'checked-item':''}">
+    <div class="item-card p-3 flex items-center gap-3 ${item.checked?'checked-item':''}">
       <input type="checkbox" ${item.checked?'checked':''} onchange="Cart.toggleBought(${jsArg(item.id)})" class="w-5 h-5 rounded accent-blue-600 shrink-0 cursor-pointer" />
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
@@ -2747,6 +2782,35 @@ const Cart = {
         <button onclick="Cart.remove(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-gray-700">${icon('trash', 'w-[18px] h-[18px]')}</button>
       </div>
     </div>`;
+  },
+};
+
+// ==================== 概览卡 ====================
+// 购物车 / 库存 / 家居三个列表顶上各一行：左边大数字，右边两三个小指标。
+// 数据每次从 State 现算，在各自 render() 开头刷新，所以增删改之后跟着变；列表为空时不显示。
+const Summary = {
+  _low(list) { const cats = getCategories(); return list.filter(i => !cats[i.category]?.unlimited && i.minStock > 0 && i.quantity <= i.minStock).length; },
+  _html(label, num, stats) {
+    return `<div class="summary"><div class="summary-main"><div class="summary-label">${label}</div><div class="summary-num">${num}</div></div>
+      <div class="summary-stats">${stats.map(([k, v, warn]) => `<div class="summary-stat">${k}<b class="${warn && v > 0 ? 'warn' : ''}">${v}</b></div>`).join('')}</div></div>`;
+  },
+  render(which) {
+    const el = document.getElementById({ cart: 'cart-summary', inventory: 'inv-summary', household: 'house-summary' }[which]);
+    if (!el) return;
+    const cats = getCategories();
+    if (which === 'cart') {
+      const active = State.cart.filter(i => !i.checked), done = State.cart.filter(i => i.checked);
+      el.innerHTML = State.cart.length === 0 ? '' : this._html(t('sumToBuy'), active.length, [
+        [t('sumStores'), new Set(active.map(i => i.store || 'none')).size], [t('sumBought'), done.length],
+        [t('sumLow'), this._low(State.inventory) + this._low(State.household), true]]);
+    } else if (which === 'inventory') {
+      el.innerHTML = State.inventory.length === 0 ? '' : this._html(t('sumStock'), State.inventory.length, [
+        [t('sumCats'), new Set(State.inventory.map(i => i.category)).size], [t('sumLow'), this._low(State.inventory), true],
+        [t('sumStaples'), State.inventory.filter(i => cats[i.category]?.unlimited).length]]);
+    } else {
+      el.innerHTML = State.household.length === 0 ? '' : this._html(t('sumHousehold'), State.household.length, [
+        [t('sumCats'), new Set(State.household.map(i => i.category)).size], [t('sumLow'), this._low(State.household), true]]);
+    }
   },
 };
 
@@ -2870,7 +2934,7 @@ const Recipes = {
       const missing = checked.filter(i => (i.status === 'missing' || i.status === 'low') && !i.optional).length;
       const tags = (recipe.tags || []).map(t => `<span class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">${esc(t)}</span>`).join('');
       return `
-      <div class="item-card bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+      <div class="item-card p-4">
         <div class="flex items-start justify-between gap-2 mb-2">
           <div>
             <div class="font-semibold name-cn">${esc(recipe.nameCn)}</div>
@@ -2975,6 +3039,7 @@ const Household = {
     const el = document.getElementById('household-list');
     const lowEl = document.getElementById('household-low-stock');
     if (!el) return;
+    Summary.render('household');
 
     // Fill category filter dropdown
     const catSel = document.getElementById('house-cat-filter');
@@ -3057,7 +3122,7 @@ const Household = {
   renderItem(item) {
     const isLow = item.minStock > 0 && item.quantity <= item.minStock;
     // 布局和 Inventory.renderItem 一样：两行，见那边的注释
-    return `<div class="item-card bg-white dark:bg-gray-800 rounded-xl p-3 border ${isLow ? 'border-red-300 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'} flex flex-wrap items-center gap-x-2 gap-y-0">
+    return `<div class="item-card p-3 flex flex-wrap items-center gap-x-2 gap-y-0">
       <div class="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
         <span class="font-medium name-cn">${esc(item.nameCn)}</span>
         ${item.nameEn ? `<span class="text-xs text-gray-400 name-en">${esc(item.nameEn)}</span>` : ''}
@@ -4297,6 +4362,8 @@ const App = {
   applyTheme() {
     const dark = State.settings.theme === 'dark';
     document.documentElement.classList.toggle('dark', dark);
+    // 状态栏 / 浏览器工具栏的颜色跟着页面底色走
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#111827' : '#f5f7fa');
     const icon = document.getElementById('theme-icon');
     if (icon) icon.querySelector('use').setAttribute('href', dark ? '#i-sun' : '#i-moon');
   },
