@@ -651,9 +651,11 @@
   </div>
 </nav>
 <style>
-.mobile-nav { padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px)); padding-left: 0; padding-right: 0; padding-top: 0; }
-/* Tab Bar：白底 + 顶部 hairline，选中只变色 */
-.mobile-nav .bento-tile { border: 0; border-top: 1px solid var(--border); border-radius: 0; padding: 4px 0 0; }
+/* Tab Bar：白底 + 顶部 hairline，选中只变色。
+   底色必须刷在 nav 本身而不是里面的 tile 上：nav 底部留给 iPhone 横条的那段
+   safe-area 内边距（约 34px）否则是透明的，列表会从 Tab Bar 下面露出来 */
+.mobile-nav { background: var(--tile); border-top: 1px solid var(--border); padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px)); padding-left: 0; padding-right: 0; padding-top: 0; }
+.mobile-nav .bento-tile { border: 0; border-radius: 0; padding: 4px 0 0; }
 .mobile-nav-tab { color: #9ca3af; transition: color 0.15s; border-radius: 0; }
 .mobile-nav-tab.active { color: var(--accent); background: transparent; }
 .mobile-nav-tab .ico { width: 24px; height: 24px; }
