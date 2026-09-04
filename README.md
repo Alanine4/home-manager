@@ -21,6 +21,13 @@
   <img src="docs/screenshots/household.png" width="190" alt="家居必备：洗护清洁用品，低库存提醒">
 </p>
 <p align="center"><sub>购物车 · 库存 · 食谱 · 家居必备（也有深色模式）</sub></p>
+<p align="center">
+  <img src="docs/screenshots/add-item.png" width="190" alt="添加物品：中英文名、数量、分类、商店">
+  <img src="docs/screenshots/ai-confirm.png" width="190" alt="AI 识别成功后逐条确认，可改数量和分类">
+  <img src="docs/screenshots/categories.png" width="190" alt="分类管理：改名、排序、换图标和颜色">
+  <img src="docs/screenshots/icon-picker.png" width="190" alt="给分类选图标和颜色">
+</p>
+<p align="center"><sub>添加物品 · 识别成功后确认 · 分类管理 · 选图标</sub></p>
 
 ---
 
@@ -98,7 +105,7 @@
 - 换了浏览器或换了手机
 - iPhone 上很久不打开 Safari，系统可能会自动清掉网站数据
 
-自动备份还没做，在计划里（[ROADMAP.md](ROADMAP.md) 第 2 项）。
+自动备份还没做。稳妥的办法是隔一阵在**设置**里点一次「导出数据」，把文件存到网盘或发给自己。
 
 ---
 
@@ -169,7 +176,8 @@ iPhone 上，主屏幕图标打开的应用和 Safari 标签页是**两个独立
 
 ## 接下来做什么
 
-见 [ROADMAP.md](ROADMAP.md)，里面也写了决定**不做**的事和原因。
+现在想和家人共用一份清单，要按上面「和家人同步」那几步自己配一下，配好之后也是**免费**的。
+如果用的人多、需求大，会考虑把数据库放到我自己的服务器上，到时候打开就能登录，不用再自己配。
 
 ## 参与开发
 
