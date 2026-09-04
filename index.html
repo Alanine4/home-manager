@@ -27,20 +27,22 @@
   </script>
   <style>
     /* ===== Bento design tokens ===== */
+    /* 主题：白底、1px 描边、8px 圆角、灰阶三档、整个应用只有一个强调色。
+       深色模式的灰阶对齐 Tailwind 的 gray-900/800/700，这样 dark: 工具类和这里不打架。 */
     :root {
-      --bg: #f3efe6; --bg-2: #ebe5d7; --tile: #ffffff; --tile-2: #faf7f0;
-      --border: #e7e1d2; --text: #2c2823; --muted: #8c8475;
-      --accent: #e8691d; --accent-soft: #fcebda;
-      --radius: 20px; --radius-sm: 13px;
-      --shadow: 0 1px 2px rgba(40,30,15,.05), 0 12px 28px -16px rgba(40,30,15,.28);
-      --shadow-sm: 0 1px 2px rgba(40,30,15,.07);
+      --bg: #ffffff; --bg-2: #f9fafb; --tile: #ffffff; --tile-2: #f3f4f6;
+      --border: #e5e7eb; --text: #111827; --muted: #6b7280;
+      --accent: #2563eb; --accent-soft: #eff6ff;
+      --radius: 10px; --radius-sm: 8px;
+      --shadow: none;
+      --shadow-sm: none;
     }
     .dark {
-      --bg: #141318; --bg-2: #1d1c24; --tile: #221f2a; --tile-2: #1b1a22;
-      --border: #34313e; --text: #ece9f1; --muted: #948fa3;
-      --accent: #fb8c3c; --accent-soft: #33240f;
-      --shadow: 0 1px 2px rgba(0,0,0,.45), 0 16px 32px -18px rgba(0,0,0,.8);
-      --shadow-sm: 0 1px 2px rgba(0,0,0,.35);
+      --bg: #111827; --bg-2: #1f2937; --tile: #1f2937; --tile-2: #374151;
+      --border: #374151; --text: #f9fafb; --muted: #9ca3af;
+      --accent: #60a5fa; --accent-soft: #1e3a8a;
+      --shadow: none;
+      --shadow-sm: none;
     }
     * { box-sizing: border-box; }
     input, textarea, select { font-size: 16px !important; -webkit-user-select: auto !important; user-select: auto !important; }
@@ -67,7 +69,7 @@
     input[type=range] { accent-color: var(--accent); }
     .ai-input-bar textarea { resize: none; }
     ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-thumb { background: #cabfa6; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
     .dark ::-webkit-scrollbar-thumb { background: #45414f; }
     .ingredient-ok { color: #16a34a; }
     .ingredient-low { color: #d97706; }
@@ -92,28 +94,46 @@
     .dark .store-c-slate  { background: #1e293b; border-color: #475569; color: #94a3b8; }
     .chat-bubble-user { background: var(--accent); color: white; border-radius: 18px 18px 4px 18px; }
     .chat-bubble-ai { background: var(--tile); color: var(--text); border: 1px solid var(--border); border-radius: 18px 18px 18px 4px; box-shadow: var(--shadow-sm); }
-    .recipe-availability-bar { height: 7px; border-radius: 4px; background: var(--bg-2); }
+    .recipe-availability-bar { height: 6px; border-radius: 3px; background: var(--tile-2); }
     .recipe-availability-fill { height: 100%; border-radius: 4px; background: linear-gradient(to right, #22c55e, #86efac); transition: width 0.5s; }
     /* 语言切换 */
     body.lang-zh  .name-en, body.lang-zh  .label-en  { display: none !important; }
     body.lang-en  .name-cn, body.lang-en  .label-cn  { display: none !important; }
     body.lang-fr  .name-cn, body.lang-fr  .label-cn  { display: none !important; }
 
-    /* ===== Bento layout primitives ===== */
-    .bento-tile { background: var(--tile); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
-    .bento-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); }
-    .icon-btn { color: var(--muted); border-radius: 12px; transition: background .15s, color .15s; }
+    /* ===== 图标：内联 sprite 的引用方式。颜色跟随文字，大小跟随字号 ===== */
+    .ico { width: 1.15em; height: 1.15em; display: inline-block; vertical-align: -0.2em; flex-shrink: 0;
+           fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ===== 布局原语 ===== */
+    .bento-tile { background: var(--tile); border: 1px solid var(--border); border-radius: var(--radius); }
+    .bento-grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); }
+    .icon-btn { color: var(--muted); border-radius: 8px; transition: background .15s, color .15s; }
     .icon-btn:hover { background: var(--bg-2); color: var(--text); }
+    .icon-btn .ico { width: 20px; height: 20px; }
 
-    /* item cards as bento tiles (JS-rendered) */
-    .item-card { transition: transform .15s, box-shadow .15s; background: var(--tile) !important; border-radius: var(--radius-sm) !important; box-shadow: var(--shadow-sm); }
-    .item-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    /* 卡片：白底 + 1px 描边，无投影 */
+    .item-card { background: var(--tile) !important; border: 1px solid var(--border) !important; border-radius: var(--radius-sm) !important; box-shadow: none !important; }
 
-    /* AI assist panels -> neutral bento tiles */
-    .ai-input-bar { background: var(--tile) !important; background-image: none !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; box-shadow: var(--shadow-sm); }
+    /* AI 输入区：和卡片一样的描边容器 */
+    .ai-input-bar { background: var(--tile) !important; background-image: none !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; box-shadow: none; }
 
-    /* modal panels -> bento sheets */
-    .modal-overlay > div { background: var(--tile) !important; border: 1px solid var(--border); border-radius: 24px !important; box-shadow: 0 32px 70px -22px rgba(0,0,0,.55); }
+    /* 弹窗 */
+    .modal-overlay > div { background: var(--tile) !important; border: 1px solid var(--border); border-radius: 14px !important; box-shadow: 0 24px 48px -12px rgba(0,0,0,.35); }
+
+    /* 顶栏：白底 + 底部 hairline，不做卡片 */
+    header { border-bottom: 1px solid var(--border); }
+    header .bento-tile { background: transparent; border: 0; border-radius: 0; }
+
+    /* 分组标题：12px 大写、字距拉开、灰字 */
+    .section-hdr { font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+
+    /* 次要按钮：白底 + 描边（主按钮是 .bg-blue-600 → 强调色） */
+    .btn-secondary { background: var(--tile); border: 1px solid var(--border); color: var(--text); transition: background .15s; }
+    .btn-secondary:hover { background: var(--bg-2); }
+    /* 分段控件（按商店 / 按分类） */
+    .seg { background: var(--tile); border: 1px solid var(--border); color: var(--muted); }
+    .seg-on { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
     /* 弹窗最高只能到「实际可见」的视口高度。100vh 在 iOS Safari 里是工具栏收起后的
        大视口，弹窗按它撑高会比屏幕还高，自己不进滚动状态，手指一滑滚的就是后面的页面。
        100dvh 才是当前真正可见的高度；老浏览器不认 dvh 就退回上一行的 vh。
@@ -138,37 +158,93 @@
     }
   </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen" ontouchstart="">
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen" ontouchstart="">
+
+<!-- 图标库：Lucide（ISC 许可）的一个子集，做成内联 SVG sprite。界面上所有图标都写成
+     <svg class="ico"><use href="#i-名字"/></svg> 引用这里的 symbol：一处维护、断网可用、
+     颜色跟随文字。分类/商店的图标（用户数据）不在这里，见 CATEGORY_ICONS。 -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-shopping-cart" viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></symbol>
+  <symbol id="i-package" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+  <symbol id="i-chef-hat" viewBox="0 0 24 24"><path d="M17 21a1 1 0 0 0 1-1v-5.35c0-.457.316-.844.727-1.041a4 4 0 0 0-2.134-7.589 5 5 0 0 0-9.186 0 4 4 0 0 0-2.134 7.588c.411.198.727.585.727 1.041V20a1 1 0 0 0 1 1Z"/><path d="M6 17h12"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1Z"/></symbol>
+  <symbol id="i-bot" viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></symbol>
+  <symbol id="i-refresh-cw" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></symbol>
+  <symbol id="i-alert-triangle" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-alert-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+  <symbol id="i-x-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></symbol>
+  <symbol id="i-check-circle" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></symbol>
+  <symbol id="i-help-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></symbol>
+  <symbol id="i-scan-barcode" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M8 7v10"/><path d="M12 7v10"/><path d="M17 7v10"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></symbol>
+  <symbol id="i-archive-down" viewBox="0 0 24 24"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="m9 15 3 3 3-3"/><path d="M12 11v7"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+  <symbol id="i-chevron-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>
+  <symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></symbol>
+  <symbol id="i-arrow-up-to-line" viewBox="0 0 24 24"><path d="M5 3h14"/><path d="m18 13-6-6-6 6"/><path d="M12 7v14"/></symbol>
+  <symbol id="i-arrow-down-to-line" viewBox="0 0 24 24"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+  <symbol id="i-store" viewBox="0 0 24 24"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2 2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"/></symbol>
+  <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></symbol>
+  <symbol id="i-list-ordered" viewBox="0 0 24 24"><path d="M10 6h11"/><path d="M10 12h11"/><path d="M10 18h11"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></symbol>
+  <symbol id="i-loader" viewBox="0 0 24 24"><path d="M12 2v4"/><path d="m16.2 7.8 2.9-2.9"/><path d="M18 12h4"/><path d="m16.2 16.2 2.9 2.9"/><path d="M12 18v4"/><path d="m4.9 19.1 2.9-2.9"/><path d="M2 12h4"/><path d="m4.9 4.9 2.9 2.9"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></symbol>
+  <symbol id="i-utensils" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></symbol>
+  <symbol id="i-infinity" viewBox="0 0 24 24"><path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4Z"/></symbol>
+  <symbol id="i-circle-dot" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-lightbulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></symbol>
+</svg>
 
 <!-- HEADER -->
 <header class="sticky top-0 z-40" style="background:var(--bg)">
-  <div class="max-w-5xl mx-auto px-3 pt-3">
-    <div class="bento-tile flex items-center justify-between gap-2 px-3" style="height:58px">
+  <div class="max-w-5xl mx-auto px-4">
+    <div class="bento-tile flex items-center justify-between gap-2" style="height:48px">
       <div class="flex items-center gap-2.5">
-        <span class="flex items-center justify-center w-9 h-9 rounded-xl text-lg shrink-0" style="background:var(--accent-soft)">🛒</span>
+        <span class="flex items-center justify-center w-7 h-7 rounded-lg text-white shrink-0" style="background:var(--accent)"><svg class="ico w-4 h-4" aria-hidden="true"><use href="#i-shopping-cart"/></svg></span>
         <div class="leading-tight">
-          <div class="font-extrabold text-base" style="color:var(--text)">家庭购物管家</div>
+          <div class="font-semibold text-[15px]" style="color:var(--text)">家庭购物管家</div>
           <div class="text-[10px] font-semibold tracking-[0.14em] hidden sm:block" style="color:var(--muted)">HOME MANAGER · LIN²</div>
         </div>
       </div>
       <div class="flex items-center gap-0.5">
-        <button onclick="History.open()" class="icon-btn w-9 h-9 flex items-center justify-center" title="操作记录">🕐</button>
-        <span id="sync-status" class="text-xs flex items-center gap-1 px-1" style="color:var(--muted)" title="云同步状态">🔄 <span class="hidden sm:inline">连接中...</span></span>
+        <button onclick="History.open()" class="icon-btn w-9 h-9 flex items-center justify-center" title="操作记录"><svg class="ico" aria-hidden="true"><use href="#i-history"/></svg></button>
+        <span id="sync-status" class="text-xs flex items-center gap-1 px-1" style="color:var(--muted)" title="云同步状态"><svg class="ico" aria-hidden="true"><use href="#i-refresh-cw"/></svg> <span class="hidden sm:inline">连接中...</span></span>
         <button onclick="App.toggleTheme()" class="icon-btn w-9 h-9 flex items-center justify-center" title="切换主题 Theme">
-          <span id="theme-icon">🌙</span>
+          <svg id="theme-icon" class="ico" aria-hidden="true"><use href="#i-moon"/></svg>
         </button>
-        <button onclick="App.switchTab('settings')" class="icon-btn w-9 h-9 flex items-center justify-center" title="设置 Settings">⚙️</button>
+        <button onclick="App.switchTab('settings')" class="icon-btn w-9 h-9 flex items-center justify-center" title="设置 Settings"><svg class="ico" aria-hidden="true"><use href="#i-settings"/></svg></button>
       </div>
     </div>
   </div>
   <!-- Desktop Nav -->
-  <div class="desktop-nav max-w-5xl mx-auto px-3 pt-2">
+  <div class="desktop-nav max-w-5xl mx-auto px-4 pb-2">
     <div class="bento-tile flex gap-1 p-1.5">
-      <button class="nav-tab" data-tab="cart">🛒 <span data-i18n="cart">购物车</span></button>
-      <button class="nav-tab" data-tab="inventory">📦 <span data-i18n="inventory">库存</span></button>
-      <button class="nav-tab" data-tab="recipes">🍳 <span data-i18n="recipes">食谱</span></button>
-      <button class="nav-tab" data-tab="household">🏠 <span data-i18n="household">家居必备</span></button>
-      <button class="nav-tab" data-tab="ai">🤖 <span data-i18n="ai">AI助手</span></button>
+      <button class="nav-tab" data-tab="cart"><svg class="ico" aria-hidden="true"><use href="#i-shopping-cart"/></svg> <span data-i18n="cart">购物车</span></button>
+      <button class="nav-tab" data-tab="inventory"><svg class="ico" aria-hidden="true"><use href="#i-package"/></svg> <span data-i18n="inventory">库存</span></button>
+      <button class="nav-tab" data-tab="recipes"><svg class="ico" aria-hidden="true"><use href="#i-chef-hat"/></svg> <span data-i18n="recipes">食谱</span></button>
+      <button class="nav-tab" data-tab="household"><svg class="ico" aria-hidden="true"><use href="#i-home"/></svg> <span data-i18n="household">家居必备</span></button>
+      <button class="nav-tab" data-tab="ai"><svg class="ico" aria-hidden="true"><use href="#i-bot"/></svg> <span data-i18n="ai">AI助手</span></button>
     </div>
   </div>
 </header>
@@ -176,7 +252,8 @@
 <style>
 .nav-tab { flex: 1; justify-content: center; padding: 9px 12px; border-radius: 13px; font-size: 14px; color: var(--muted); transition: all 0.15s; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 .nav-tab:hover { background: var(--bg-2); color: var(--text); }
-.nav-tab.active { background: var(--accent); color: #fff; font-weight: 600; box-shadow: 0 7px 16px -8px var(--accent); }
+.nav-tab.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.nav-tab .ico { width: 18px; height: 18px; }
 </style>
 
 <!-- MAIN CONTENT -->
@@ -187,28 +264,28 @@
   <!-- ===== CART TAB ===== -->
   <div id="tab-cart" class="tab-content">
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-xl font-bold" data-i18n="cartTitle">🛒 购物车</h2>
+      <h2 class="text-xl font-semibold" data-i18n="cartTitle">购物车</h2>
       <div class="flex gap-2">
-        <button onclick="Cart.moveAllBoughtToInventory()" class="text-sm bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-3 py-1.5 rounded-lg hover:bg-green-200 dark:hover:bg-green-800 transition" data-i18n="boughtToInv">✅ 已购入库</button>
+        <button onclick="Cart.moveAllBoughtToInventory()" class="btn-secondary text-sm px-3 py-1.5 rounded-lg flex items-center gap-1.5"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg><span data-i18n="boughtToInv">已购入库</span></button>
         <button onclick="Modal.showAddCart()" class="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition" data-i18n="add">+ 添加</button>
       </div>
     </div>
     <!-- AI Input -->
-    <div class="ai-input-bar mb-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 rounded-xl p-3 border border-blue-200 dark:border-blue-800">
-      <div class="flex items-center gap-2 mb-2">
-        <span class="text-purple-500">🤖</span>
-        <span class="text-sm font-medium text-purple-700 dark:text-purple-300">AI 购物建议</span>
+    <div class="ai-input-bar mb-4 rounded-xl p-3">
+      <div class="flex items-center gap-2 mb-2 text-gray-500">
+        <svg class="ico" aria-hidden="true"><use href="#i-bot"/></svg>
+        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">AI 购物建议</span>
       </div>
       <div class="flex gap-2">
         <textarea id="cart-ai-input" rows="1" placeholder="告诉AI你想买什么，或让它根据库存推荐... (需要API Key)" class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400 resize-none"></textarea>
-        <button id="mic-cart" onclick="Voice.toggle('cart-ai-input','mic-cart')" title="语音输入" class="text-lg px-2 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">🎤</button>
-        <button onclick="AI.cartSuggest()" class="bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 text-sm whitespace-nowrap">发送</button>
+        <button id="mic-cart" onclick="Voice.toggle('cart-ai-input','mic-cart')" title="语音输入" class="btn-secondary w-10 rounded-lg flex items-center justify-center text-gray-500"><svg class="ico w-5 h-5" aria-hidden="true"><use href="#i-mic"/></svg></button>
+        <button onclick="AI.cartSuggest()" class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 text-sm whitespace-nowrap">发送</button>
       </div>
     </div>
     <!-- Group toggle -->
     <div class="flex gap-2 mb-3">
-      <button id="cart-group-store" onclick="Cart.setGroupBy('store')" class="text-xs px-3 py-1 rounded-full bg-blue-600 text-white">按商店</button>
-      <button id="cart-group-category" onclick="Cart.setGroupBy('category')" class="text-xs px-3 py-1 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300">按分类</button>
+      <button id="cart-group-store" onclick="Cart.setGroupBy('store')" class="seg seg-on text-xs px-3 py-1 rounded-full">按商店</button>
+      <button id="cart-group-category" onclick="Cart.setGroupBy('category')" class="seg text-xs px-3 py-1 rounded-full">按分类</button>
     </div>
     <div id="cart-list"></div>
   </div>
@@ -216,26 +293,26 @@
   <!-- ===== INVENTORY TAB ===== -->
   <div id="tab-inventory" class="tab-content">
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-xl font-bold" data-i18n="invTitle">📦 库存</h2>
+      <h2 class="text-xl font-semibold" data-i18n="invTitle">库存</h2>
       <button onclick="Modal.showAddInventory()" class="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition" data-i18n="add">+ 添加</button>
     </div>
     <!-- AI Input -->
-    <div class="ai-input-bar mb-4 bg-gradient-to-r from-green-50 to-teal-50 dark:from-green-950 dark:to-teal-950 rounded-xl p-3 border border-green-200 dark:border-green-800">
-      <div class="flex items-center gap-2 mb-2">
-        <span class="text-green-500">🤖</span>
-        <span class="text-sm font-medium text-green-700 dark:text-green-300">AI 录入库存</span>
+    <div class="ai-input-bar mb-4 rounded-xl p-3">
+      <div class="flex items-center gap-2 mb-2 text-gray-500">
+        <svg class="ico" aria-hidden="true"><use href="#i-bot"/></svg>
+        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">AI 录入库存</span>
       </div>
       <div class="flex gap-2 mb-2">
-        <textarea id="inv-ai-input" rows="1" placeholder='例如："我买了2个番茄、一瓶生抽、500克猪肉"' class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-green-400 resize-none"></textarea>
-        <button id="mic-inv" onclick="Voice.toggle('inv-ai-input','mic-inv')" title="语音输入" class="text-lg px-2 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">🎤</button>
-        <button onclick="AI.inventoryInput()" class="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 text-sm whitespace-nowrap">识别</button>
+        <textarea id="inv-ai-input" rows="1" placeholder='例如："我买了2个番茄、一瓶生抽、500克猪肉"' class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400 resize-none"></textarea>
+        <button id="mic-inv" onclick="Voice.toggle('inv-ai-input','mic-inv')" title="语音输入" class="btn-secondary w-10 rounded-lg flex items-center justify-center text-gray-500"><svg class="ico w-5 h-5" aria-hidden="true"><use href="#i-mic"/></svg></button>
+        <button onclick="AI.inventoryInput()" class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 text-sm whitespace-nowrap">识别</button>
       </div>
       <div class="flex gap-2">
-        <button onclick="BarcodeScanner.start()" class="flex-1 flex items-center justify-center gap-1.5 text-sm bg-white dark:bg-gray-800 border border-green-300 dark:border-green-700 text-green-700 dark:text-green-300 px-3 py-2 rounded-lg hover:bg-green-50 dark:hover:bg-green-900 transition">
-          📷 扫条形码
+        <button onclick="BarcodeScanner.start()" class="btn-secondary flex-1 flex items-center justify-center gap-1.5 text-sm px-3 py-2 rounded-lg">
+          <svg class="ico" aria-hidden="true"><use href="#i-scan-barcode"/></svg> 扫条形码
         </button>
-        <button onclick="ReceiptScanner.openPicker()" class="flex-1 flex items-center justify-center gap-1.5 text-sm bg-white dark:bg-gray-800 border border-green-300 dark:border-green-700 text-green-700 dark:text-green-300 px-3 py-2 rounded-lg hover:bg-green-50 dark:hover:bg-green-900 transition">
-          🧾 拍小票/选图片
+        <button onclick="ReceiptScanner.openPicker()" class="btn-secondary flex-1 flex items-center justify-center gap-1.5 text-sm px-3 py-2 rounded-lg">
+          <svg class="ico" aria-hidden="true"><use href="#i-receipt"/></svg> 拍小票/选图片
         </button>
       </div>
       <!-- hidden inputs for receipt scanning -->
@@ -254,24 +331,24 @@
   <!-- ===== RECIPES TAB ===== -->
   <div id="tab-recipes" class="tab-content">
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-xl font-bold" data-i18n="recTitle">🍳 食谱</h2>
+      <h2 class="text-xl font-semibold" data-i18n="recTitle">食谱</h2>
       <div class="flex gap-2">
-        <button onclick="AI.recipeRecommend()" class="text-sm bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 px-3 py-1.5 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-800 transition">
-          🤖 AI推荐
+        <button onclick="AI.recipeRecommend()" class="btn-secondary text-sm px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+          <svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg> AI推荐
         </button>
         <button onclick="Modal.showAddRecipe()" class="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition">+ 添加</button>
       </div>
     </div>
     <!-- AI Recipe Input -->
-    <div class="ai-input-bar mb-4 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950 dark:to-yellow-950 rounded-xl p-3 border border-orange-200 dark:border-orange-800">
-      <div class="flex items-center gap-2 mb-2">
-        <span class="text-orange-500">🤖</span>
-        <span class="text-sm font-medium text-orange-700 dark:text-orange-300">AI 添加食谱</span>
+    <div class="ai-input-bar mb-4 rounded-xl p-3">
+      <div class="flex items-center gap-2 mb-2 text-gray-500">
+        <svg class="ico" aria-hidden="true"><use href="#i-bot"/></svg>
+        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">AI 添加食谱</span>
       </div>
       <div class="flex gap-2">
-        <textarea id="recipe-ai-input" rows="1" placeholder='例如："教我做番茄炒蛋" 或 "add pasta carbonara recipe"' class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-400 resize-none"></textarea>
-        <button id="mic-recipe" onclick="Voice.toggle('recipe-ai-input','mic-recipe')" title="语音输入" class="text-lg px-2 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">🎤</button>
-        <button onclick="AI.recipeInput()" class="bg-orange-600 text-white px-3 py-2 rounded-lg hover:bg-orange-700 text-sm whitespace-nowrap">生成</button>
+        <textarea id="recipe-ai-input" rows="1" placeholder='例如："教我做番茄炒蛋" 或 "add pasta carbonara recipe"' class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400 resize-none"></textarea>
+        <button id="mic-recipe" onclick="Voice.toggle('recipe-ai-input','mic-recipe')" title="语音输入" class="btn-secondary w-10 rounded-lg flex items-center justify-center text-gray-500"><svg class="ico w-5 h-5" aria-hidden="true"><use href="#i-mic"/></svg></button>
+        <button onclick="AI.recipeInput()" class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 text-sm whitespace-nowrap">生成</button>
       </div>
     </div>
     <div id="recipes-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
@@ -280,18 +357,18 @@
   <!-- ===== HOUSEHOLD TAB ===== -->
   <div id="tab-household" class="tab-content">
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-xl font-bold">🏠 家居必备 Household</h2>
+      <h2 class="text-xl font-semibold">家居必备 <span class="text-gray-400 font-normal text-base">Household</span></h2>
       <button onclick="Modal.showAddHousehold()" class="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition">+ 添加</button>
     </div>
     <!-- AI Input -->
-    <div class="ai-input-bar mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 rounded-xl p-3 border border-blue-200 dark:border-blue-800">
-      <div class="flex items-center gap-2 mb-2">
-        <span class="text-blue-500">🤖</span>
-        <span class="text-sm font-medium text-blue-700 dark:text-blue-300">AI 录入家居用品</span>
+    <div class="ai-input-bar mb-4 rounded-xl p-3">
+      <div class="flex items-center gap-2 mb-2 text-gray-500">
+        <svg class="ico" aria-hidden="true"><use href="#i-bot"/></svg>
+        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">AI 录入家居用品</span>
       </div>
       <div class="flex gap-2">
         <textarea id="house-ai-input" rows="1" placeholder='例如："买了3卷卫生纸、两瓶洗洁精"' class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400 resize-none"></textarea>
-        <button id="mic-house" onclick="Voice.toggle('house-ai-input','mic-house')" title="语音输入" class="text-lg px-2 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">🎤</button>
+        <button id="mic-house" onclick="Voice.toggle('house-ai-input','mic-house')" title="语音输入" class="btn-secondary w-10 rounded-lg flex items-center justify-center text-gray-500"><svg class="ico w-5 h-5" aria-hidden="true"><use href="#i-mic"/></svg></button>
         <button onclick="AI.householdInput()" class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 text-sm whitespace-nowrap">识别</button>
       </div>
     </div>
@@ -309,32 +386,32 @@
   <!-- ===== AI CHAT TAB ===== -->
   <div id="tab-ai" class="tab-content">
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-xl font-bold">🤖 AI助手 Assistant</h2>
+      <h2 class="text-xl font-semibold">AI助手 <span class="text-gray-400 font-normal text-base">Assistant</span></h2>
       <button onclick="AIChat.clear()" class="text-xs text-gray-400 hover:text-gray-600 px-2 py-2">清空对话</button>
     </div>
     <!-- Suggestion chips -->
     <div class="flex flex-wrap gap-2 mb-3" id="ai-chips">
-      <button onclick="AIChat.quickSend(this.textContent)" class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800">根据库存推荐今晚晚饭</button>
-      <button onclick="AIChat.quickSend(this.textContent)" class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800">我需要补充哪些调料？</button>
-      <button onclick="AIChat.quickSend(this.textContent)" class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800">帮我规划本周购物清单</button>
-      <button onclick="AIChat.quickSend(this.textContent)" class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800" id="quick-store-q">有什么值得买的？</button>
-      <button onclick="AIChat.quickSend(this.textContent)" class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800">家里缺什么生活用品？</button>
+      <button onclick="AIChat.quickSend(this.textContent)" class="btn-secondary text-xs px-3 py-1.5 rounded-full">根据库存推荐今晚晚饭</button>
+      <button onclick="AIChat.quickSend(this.textContent)" class="btn-secondary text-xs px-3 py-1.5 rounded-full">我需要补充哪些调料？</button>
+      <button onclick="AIChat.quickSend(this.textContent)" class="btn-secondary text-xs px-3 py-1.5 rounded-full">帮我规划本周购物清单</button>
+      <button onclick="AIChat.quickSend(this.textContent)" class="btn-secondary text-xs px-3 py-1.5 rounded-full" id="quick-store-q">有什么值得买的？</button>
+      <button onclick="AIChat.quickSend(this.textContent)" class="btn-secondary text-xs px-3 py-1.5 rounded-full">家里缺什么生活用品？</button>
     </div>
     <div id="ai-chat-messages" class="space-y-3 mb-4 min-h-32" style="max-height: 50vh; overflow-y: auto;"></div>
     <div class="flex gap-2 sticky bottom-4">
       <textarea id="ai-chat-input" rows="2" placeholder="问AI任何关于购物、食谱、库存的问题..." class="flex-1 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-400 resize-none"></textarea>
-      <button id="mic-chat" onclick="Voice.toggle('ai-chat-input','mic-chat')" title="语音输入" class="text-lg px-2 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">🎤</button>
+      <button id="mic-chat" onclick="Voice.toggle('ai-chat-input','mic-chat')" title="语音输入" class="btn-secondary w-11 rounded-xl flex items-center justify-center text-gray-500"><svg class="ico w-5 h-5" aria-hidden="true"><use href="#i-mic"/></svg></button>
       <button onclick="AIChat.send()" class="bg-blue-600 text-white px-4 rounded-xl hover:bg-blue-700 text-sm font-medium">发送</button>
     </div>
   </div>
 
   <!-- ===== SETTINGS TAB ===== -->
   <div id="tab-settings" class="tab-content">
-    <h2 class="text-xl font-bold mb-4">⚙️ 设置 Settings</h2>
+    <h2 class="text-xl font-semibold mb-4">设置 <span class="text-gray-400 font-normal text-base">Settings</span></h2>
     <div class="space-y-4 max-w-lg">
       <!-- 昵称 -->
       <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <h3 class="font-semibold mb-2">👤 我的昵称</h3>
+        <h3 class="font-semibold mb-2 flex items-center gap-2"><svg class="ico text-gray-400" aria-hidden="true"><use href="#i-user"/></svg> 我的昵称</h3>
         <p class="text-xs text-gray-400 mb-2">操作记录里会显示这个名字，方便区分谁做了什么</p>
         <div class="flex gap-2">
           <input type="text" id="settings-username" maxlength="20" placeholder="例如：Yichuan" class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
@@ -344,17 +421,17 @@
 
       <!-- 云同步配置 -->
       <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <h3 class="font-semibold mb-1 text-sky-600 dark:text-sky-400">☁️ 云同步 · Firebase</h3>
+        <h3 class="font-semibold mb-1 flex items-center gap-2"><svg class="ico text-gray-400" aria-hidden="true"><use href="#i-cloud"/></svg> 云同步 · Firebase</h3>
         <p class="text-xs text-gray-500 mb-2">
           不填也能正常用，数据存在这台设备上。想在手机和电脑之间同步，就填自己的 Firebase。
           配置只存本机，不会上传，也不在代码仓库里。
         </p>
         <p id="fb-status" class="text-xs mb-2"></p>
         <textarea id="fb-config-input" rows="4" placeholder='从 Firebase 控制台整段复制过来，JSON 或 const firebaseConfig = {...} 都行'
-          class="w-full text-xs font-mono bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-sky-400"></textarea>
+          class="w-full text-xs font-mono bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400"></textarea>
         <div class="flex gap-2 mt-2">
-          <button onclick="Settings.saveFirebaseConfig()" class="flex-1 text-sm bg-sky-600 text-white px-3 py-2 rounded-lg hover:bg-sky-700">保存并连接</button>
-          <button onclick="Settings.clearFirebaseConfig()" class="text-sm bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">断开</button>
+          <button onclick="Settings.saveFirebaseConfig()" class="flex-1 text-sm bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700">保存并连接</button>
+          <button onclick="Settings.clearFirebaseConfig()" class="btn-secondary text-sm px-3 py-2 rounded-lg">断开</button>
         </div>
         <p class="text-xs text-gray-400 mt-2">
           还没有 Firebase？去 console.firebase.google.com 新建项目 → 建 Realtime Database →
@@ -363,22 +440,22 @@
       </div>
 
       <!-- 房间码 -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border-2 border-green-300 dark:border-green-700">
-        <h3 class="font-semibold mb-1 text-green-700 dark:text-green-400">🔗 多设备同步 · 房间码</h3>
+      <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+        <h3 class="font-semibold mb-1 flex items-center gap-2"><svg class="ico text-gray-400" aria-hidden="true"><use href="#i-link"/></svg> 多设备同步 · 房间码</h3>
         <p class="text-xs text-gray-500 mb-3">同一房间码的设备实时共享数据。把码发给家人，ta 在设置里输入即可加入。</p>
         <div class="flex items-center gap-2 mb-2">
-          <span class="font-mono text-xl font-bold tracking-widest text-green-700 dark:text-green-300" id="display-room-code">------</span>
-          <button onclick="Settings.copyRoomCode()" class="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded-lg hover:bg-green-200">📋 复制</button>
+          <span class="font-mono text-xl font-semibold tracking-widest" id="display-room-code">------</span>
+          <button onclick="Settings.copyRoomCode()" class="btn-secondary text-xs px-2 py-1 rounded-lg flex items-center gap-1"><svg class="ico" aria-hidden="true"><use href="#i-copy"/></svg> 复制</button>
         </div>
         <div class="flex gap-2">
-          <input type="text" id="input-room-code" maxlength="10" placeholder="输入别人的房间码加入" class="flex-1 font-mono text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-green-400 uppercase" />
-          <button onclick="Settings.joinRoom()" class="text-sm bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700">加入</button>
+          <input type="text" id="input-room-code" maxlength="10" placeholder="输入别人的房间码加入" class="flex-1 font-mono text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400 uppercase" />
+          <button onclick="Settings.joinRoom()" class="text-sm bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700">加入</button>
         </div>
-        <p class="text-xs text-orange-500 mt-2">⚠️ 加入新房间会切换到对方的数据，当前数据仍保留在云端（原房间码可找回）</p>
+        <p class="text-xs text-amber-600 mt-2 flex items-start gap-1"><svg class="ico mt-0.5" aria-hidden="true"><use href="#i-alert-triangle"/></svg><span>加入新房间会切换到对方的数据，当前数据仍保留在云端（原房间码可找回）</span></p>
       </div>
 
       <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <h3 class="font-semibold mb-3 text-blue-600 dark:text-blue-400">🤖 AI 设置</h3>
+        <h3 class="font-semibold mb-3 flex items-center gap-2"><svg class="ico text-gray-400" aria-hidden="true"><use href="#i-bot"/></svg> AI 设置</h3>
         <div class="space-y-3">
           <div>
             <label class="text-sm font-medium mb-1 block">AI 提供商 Provider</label>
@@ -390,16 +467,16 @@
             <label class="text-sm font-medium mb-1 block">API Key</label>
             <div class="flex gap-2">
               <input type="password" id="settings-api-key" placeholder="" class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
-              <button onclick="Settings.testApiKey()" class="text-sm bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">测试</button>
+              <button onclick="Settings.testApiKey()" class="btn-secondary text-sm px-3 py-2 rounded-lg">测试</button>
             </div>
-            <p id="settings-key-hint" class="text-xs text-gray-400 mt-1">⚠️ API Key 仅存储在浏览器本地，请勿分享此文件</p>
+            <p id="settings-key-hint" class="text-xs text-gray-400 mt-1">API Key 只存在这台设备的浏览器里，不会上传</p>
           </div>
           <div>
             <label class="text-sm font-medium mb-1 block">AI 模型 Model</label>
             <div class="flex gap-2">
               <select id="settings-model" onchange="Settings.onModelChange()" class="flex-1 min-w-0 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none">
               </select>
-              <button onclick="Settings.refreshModels()" title="从服务商拉取你账号可用的型号" class="shrink-0 text-sm bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">🔄</button>
+              <button onclick="Settings.refreshModels()" title="从服务商拉取你账号可用的型号" class="btn-secondary shrink-0 w-10 rounded-lg flex items-center justify-center text-gray-500"><svg class="ico" aria-hidden="true"><use href="#i-refresh-cw"/></svg></button>
             </div>
             <p id="settings-model-note" class="text-xs text-gray-400 mt-1"></p>
             <input type="text" id="settings-model-custom" placeholder="输入模型 ID，例如 gemini-2.5-flash" class="hidden w-full mt-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
@@ -407,7 +484,7 @@
         </div>
       </div>
       <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <h3 class="font-semibold mb-3">🌐 界面设置</h3>
+        <h3 class="font-semibold mb-3 flex items-center gap-2"><svg class="ico text-gray-400" aria-hidden="true"><use href="#i-globe"/></svg> 界面设置</h3>
         <div class="space-y-3">
           <div>
             <label class="text-sm font-medium mb-1 block">界面语言 Language</label>
@@ -430,7 +507,7 @@
       </div>
       <button onclick="Settings.save()" class="w-full bg-blue-600 text-white py-2.5 rounded-xl hover:bg-blue-700 font-medium">保存设置 Save</button>
       <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <h3 class="font-semibold mb-3 text-purple-600">🗂 分类管理</h3>
+        <h3 class="font-semibold mb-3 flex items-center gap-2"><svg class="ico text-gray-400" aria-hidden="true"><use href="#i-folder"/></svg> 分类管理</h3>
         <p class="text-xs text-gray-400 mb-3">所有分类均可删除，删除时可选择迁移物品</p>
         <!-- 块级容器，不能是 flex：里面是整行编辑卡片，做成 flex item 会按输入框的
              固有宽度撑开，手机上直接横向溢出 -->
@@ -438,7 +515,7 @@
         <div id="cat-custom" class="space-y-2 mb-3"></div>
         <div class="flex gap-2 mb-2">
           <input type="text" id="new-cat-cn" placeholder="中文名（必填）" class="flex-1 min-w-0 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
-          <button onclick="Settings.aiCatFill()" class="text-sm bg-indigo-500 text-white px-3 py-2 rounded-lg hover:bg-indigo-600 whitespace-nowrap">🤖 AI填写</button>
+          <button onclick="Settings.aiCatFill()" class="btn-secondary text-sm px-3 py-2 rounded-lg whitespace-nowrap flex items-center gap-1.5"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg> AI填写</button>
         </div>
         <div class="flex gap-2">
           <input type="text" id="new-cat-icon" placeholder="🍱" class="w-12 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-2 focus:outline-none text-center" />
@@ -446,25 +523,25 @@
                自己的固有宽度（约 20 字符），两个并排在手机上就撑出屏幕 -->
           <input type="text" id="new-cat-en" placeholder="English" class="flex-1 min-w-0 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
           <input type="text" id="new-cat-fr" placeholder="Français" class="flex-1 min-w-0 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
-          <button onclick="Settings.addCategory()" class="text-sm bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700">添加</button>
+          <button onclick="Settings.addCategory()" class="text-sm bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700">添加</button>
         </div>
       </div>
       <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <h3 class="font-semibold mb-3 text-emerald-600">🏬 商店管理</h3>
+        <h3 class="font-semibold mb-3 flex items-center gap-2"><svg class="ico text-gray-400" aria-hidden="true"><use href="#i-store"/></svg> 商店管理</h3>
         <p class="text-xs text-gray-400 mb-3">改名 / 换图标 / 换颜色 / 删除。改动会同步到购物车分组、商品徽章和常用商店</p>
         <div id="store-list" class="space-y-2 mb-3"></div>
         <div class="flex gap-2">
           <input type="text" id="new-store-icon" placeholder="🏪" class="w-12 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-2 focus:outline-none text-center" />
           <input type="text" id="new-store-name" placeholder="商店名称（必填）" class="flex-1 min-w-0 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none" />
-          <button onclick="Settings.addStore()" class="text-sm bg-emerald-600 text-white px-3 py-2 rounded-lg hover:bg-emerald-700 shrink-0">添加</button>
+          <button onclick="Settings.addStore()" class="text-sm bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 shrink-0">添加</button>
         </div>
       </div>
       <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <h3 class="font-semibold mb-3 text-orange-600">📋 数据管理</h3>
+        <h3 class="font-semibold mb-3 flex items-center gap-2"><svg class="ico text-gray-400" aria-hidden="true"><use href="#i-database"/></svg> 数据管理</h3>
         <div class="flex flex-wrap gap-2">
-          <button onclick="App.loadSampleData()" class="text-sm bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 px-3 py-2 rounded-lg hover:bg-orange-200">加载示例数据</button>
-          <button onclick="App.exportData()" class="text-sm bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">导出数据</button>
-          <button onclick="App.importData()" class="text-sm bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">导入数据</button>
+          <button onclick="App.loadSampleData()" class="btn-secondary text-sm px-3 py-2 rounded-lg">加载示例数据</button>
+          <button onclick="App.exportData()" class="btn-secondary text-sm px-3 py-2 rounded-lg">导出数据</button>
+          <button onclick="App.importData()" class="btn-secondary text-sm px-3 py-2 rounded-lg">导入数据</button>
           <button onclick="App.clearAllData()" class="text-sm bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-3 py-2 rounded-lg hover:bg-red-200">清空所有数据</button>
         </div>
         <input type="file" id="import-file" accept=".json" onchange="App.handleImport(event)" class="hidden" />
@@ -479,26 +556,30 @@
 <nav class="mobile-nav fixed bottom-0 left-0 right-0 z-40 px-3 pt-1">
   <div class="bento-tile flex p-1 gap-0.5">
     <button class="mobile-nav-tab flex-1 py-1.5 flex flex-col items-center gap-0.5" data-tab="cart">
-      <span class="text-xl">🛒</span><span class="text-[11px]" data-i18n="cart">购物车</span>
+      <span><svg class="ico" aria-hidden="true"><use href="#i-shopping-cart"/></svg></span><span class="text-[10px] font-medium" data-i18n="cart">购物车</span>
     </button>
     <button class="mobile-nav-tab flex-1 py-1.5 flex flex-col items-center gap-0.5" data-tab="inventory">
-      <span class="text-xl">📦</span><span class="text-[11px]" data-i18n="inventory">库存</span>
+      <span><svg class="ico" aria-hidden="true"><use href="#i-package"/></svg></span><span class="text-[10px] font-medium" data-i18n="inventory">库存</span>
     </button>
     <button class="mobile-nav-tab flex-1 py-1.5 flex flex-col items-center gap-0.5" data-tab="recipes">
-      <span class="text-xl">🍳</span><span class="text-[11px]" data-i18n="recipes">食谱</span>
+      <span><svg class="ico" aria-hidden="true"><use href="#i-chef-hat"/></svg></span><span class="text-[10px] font-medium" data-i18n="recipes">食谱</span>
     </button>
     <button class="mobile-nav-tab flex-1 py-1.5 flex flex-col items-center gap-0.5" data-tab="household">
-      <span class="text-xl">🏠</span><span class="text-[11px]" data-i18n="household">家居必备</span>
+      <span><svg class="ico" aria-hidden="true"><use href="#i-home"/></svg></span><span class="text-[10px] font-medium" data-i18n="household">家居必备</span>
     </button>
     <button class="mobile-nav-tab flex-1 py-1.5 flex flex-col items-center gap-0.5" data-tab="ai">
-      <span class="text-xl">🤖</span><span class="text-[11px]" data-i18n="ai">AI助手</span>
+      <span><svg class="ico" aria-hidden="true"><use href="#i-bot"/></svg></span><span class="text-[10px] font-medium" data-i18n="ai">AI助手</span>
     </button>
   </div>
 </nav>
 <style>
-.mobile-nav { padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px)); }
-.mobile-nav-tab { color: var(--muted); transition: all 0.15s; border-radius: 12px; }
-.mobile-nav-tab.active { color: #fff; background: var(--accent); }
+.mobile-nav { padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px)); padding-left: 0; padding-right: 0; padding-top: 0; }
+/* Tab Bar：白底 + 顶部 hairline，选中只变色 */
+.mobile-nav .bento-tile { border: 0; border-top: 1px solid var(--border); border-radius: 0; padding: 4px 0 0; }
+.mobile-nav-tab { color: #9ca3af; transition: color 0.15s; border-radius: 0; }
+.mobile-nav-tab.active { color: var(--accent); background: transparent; }
+.mobile-nav-tab .ico { width: 24px; height: 24px; }
+.mobile-nav-tab > span:first-child { display: flex; }
 </style>
 
 <!-- ===== MODALS ===== -->
@@ -508,7 +589,7 @@
   <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-md mx-4 overflow-y-auto">
     <div class="flex items-center justify-between mb-4">
       <h3 id="modal-item-title" class="text-lg font-bold">添加物品</h3>
-      <button onclick="Modal.closeItem()" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+      <button onclick="Modal.closeItem()" class="text-gray-400 hover:text-gray-600 text-xl"><svg class="ico w-5 h-5" aria-hidden="true"><use href="#i-x"/></svg></button>
     </div>
     <form id="item-form" onsubmit="Modal.submitItem(event)" class="space-y-3">
       <input type="hidden" id="item-id" />
@@ -581,7 +662,7 @@
   <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-lg mx-4 overflow-y-auto">
     <div class="flex items-center justify-between mb-4">
       <h3 id="modal-recipe-title" class="text-lg font-bold">添加食谱</h3>
-      <button onclick="Modal.closeRecipe()" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+      <button onclick="Modal.closeRecipe()" class="text-gray-400 hover:text-gray-600 text-xl"><svg class="ico w-5 h-5" aria-hidden="true"><use href="#i-x"/></svg></button>
     </div>
     <form id="recipe-form" onsubmit="Modal.submitRecipe(event)" class="space-y-3">
       <input type="hidden" id="recipe-id" />
@@ -633,7 +714,7 @@
   <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-lg mx-4 overflow-y-auto">
     <div class="flex items-center justify-between mb-4">
       <h3 id="recipe-detail-title" class="text-lg font-bold"></h3>
-      <button onclick="Modal.closeRecipeDetail()" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+      <button onclick="Modal.closeRecipeDetail()" class="text-gray-400 hover:text-gray-600 text-xl"><svg class="ico w-5 h-5" aria-hidden="true"><use href="#i-x"/></svg></button>
     </div>
     <div id="recipe-detail-content"></div>
   </div>
@@ -670,8 +751,8 @@
 <div id="modal-history" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-lg mx-4 max-h-[85vh] flex flex-col">
     <div class="flex items-center justify-between mb-3 flex-shrink-0">
-      <h3 class="text-lg font-bold">🕐 操作记录</h3>
-      <button onclick="document.getElementById('modal-history').classList.remove('open')" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+      <h3 class="text-lg font-bold flex items-center gap-2"><svg class="ico text-gray-400" aria-hidden="true"><use href="#i-history"/></svg> 操作记录</h3>
+      <button onclick="document.getElementById('modal-history').classList.remove('open')" class="text-gray-400 hover:text-gray-600 text-xl"><svg class="ico w-5 h-5" aria-hidden="true"><use href="#i-x"/></svg></button>
     </div>
     <div id="history-list" class="overflow-y-auto flex-1 -mx-1 px-1"></div>
     <button onclick="History.clearAll()" class="mt-3 w-full text-xs text-gray-400 hover:text-red-500 py-1 flex-shrink-0">清空记录</button>
@@ -681,8 +762,8 @@
 <div id="modal-ai-confirm" class="modal-overlay" onclick="if(event.target===this&&this._bdPressed){this._bdPressed=false;Modal.closeAIConfirm()}">
   <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-lg mx-4 overflow-y-auto">
     <div class="flex items-center justify-between mb-4">
-      <h3 id="ai-confirm-title" class="text-lg font-bold">🤖 AI 建议确认</h3>
-      <button onclick="Modal.closeAIConfirm()" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+      <h3 id="ai-confirm-title" class="text-lg font-bold">AI 建议确认</h3>
+      <button onclick="Modal.closeAIConfirm()" class="text-gray-400 hover:text-gray-600 text-xl"><svg class="ico w-5 h-5" aria-hidden="true"><use href="#i-x"/></svg></button>
     </div>
     <div id="ai-confirm-content"></div>
     <div class="flex gap-2 mt-4">
@@ -695,7 +776,7 @@
 <!-- Loading Overlay -->
 <div id="loading-overlay" class="modal-overlay" style="background:rgba(0,0,0,0.3)">
   <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 flex flex-col items-center gap-3">
-    <div class="spin text-3xl">⚙️</div>
+    <div class="spin text-3xl text-gray-400"><svg class="ico w-8 h-8" aria-hidden="true"><use href="#i-loader"/></svg></div>
     <p class="text-sm text-gray-600 dark:text-gray-300" id="loading-text">AI 思考中...</p>
   </div>
 </div>
@@ -708,12 +789,12 @@
   <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 w-full max-w-sm mx-4 max-h-[80vh] flex flex-col">
     <div class="flex items-center justify-between mb-3">
       <h3 class="font-bold text-base">选择图标</h3>
-      <button onclick="EmojiPicker.close()" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+      <button onclick="EmojiPicker.close()" class="text-gray-400 hover:text-gray-600 text-xl"><svg class="ico w-5 h-5" aria-hidden="true"><use href="#i-x"/></svg></button>
     </div>
     <div class="flex gap-2 mb-3">
       <input id="emoji-search" type="text" placeholder="输入关键词搜索，如：蔬菜、肉类..." oninput="EmojiPicker.search(this.value)"
         class="flex-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400" />
-      <button onclick="EmojiPicker.aiSuggest()" class="text-sm bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 whitespace-nowrap">🤖AI推荐</button>
+      <button onclick="EmojiPicker.aiSuggest()" class="btn-secondary text-sm px-3 py-2 rounded-lg whitespace-nowrap flex items-center gap-1.5"><svg class="ico" aria-hidden="true"><use href="#i-sparkles"/></svg>AI推荐</button>
     </div>
     <div id="emoji-ai-results" class="flex flex-wrap gap-1 mb-2 hidden"></div>
     <div id="emoji-grid" class="overflow-y-auto flex-1"></div>
@@ -723,7 +804,7 @@
 <!-- Category Delete Migration Modal -->
 <div id="modal-cat-delete" class="modal-overlay" onclick="if(event.target===this)document.getElementById('modal-cat-delete').classList.remove('open')">
   <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-md mx-4 max-h-[90vh] flex flex-col">
-    <h3 class="font-bold text-base mb-1">⚠️ 删除分类</h3>
+    <h3 class="font-bold text-base mb-1 flex items-center gap-2"><svg class="ico text-amber-500" aria-hidden="true"><use href="#i-alert-triangle"/></svg> 删除分类</h3>
     <p id="cat-delete-msg" class="text-sm text-gray-600 dark:text-gray-300 mb-3"></p>
     <!-- Item list -->
     <div id="cat-delete-items" class="hidden overflow-y-auto mb-3 rounded-xl border border-gray-200 dark:border-gray-600 divide-y divide-gray-100 dark:divide-gray-700" style="max-height:220px"></div>
@@ -734,8 +815,8 @@
     </div>
     <div class="flex gap-2 mt-auto shrink-0">
       <button onclick="document.getElementById('modal-cat-delete').classList.remove('open')" class="flex-1 py-2 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 text-sm">取消</button>
-      <button id="cat-delete-del-btn" class="flex-1 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 text-sm">🗑 删除物品</button>
-      <button id="cat-delete-move-btn" class="flex-1 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 text-sm">📦 迁移物品</button>
+      <button id="cat-delete-del-btn" class="flex-1 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 text-sm flex items-center justify-center gap-1.5"><svg class="ico" aria-hidden="true"><use href="#i-trash"/></svg>删除物品</button>
+      <button id="cat-delete-move-btn" class="flex-1 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 text-sm flex items-center justify-center gap-1.5"><svg class="ico" aria-hidden="true"><use href="#i-package"/></svg>迁移物品</button>
     </div>
   </div>
 </div>
@@ -779,81 +860,81 @@ const TRANSLATIONS = {
     cart:'购物车', inventory:'库存', recipes:'食谱', household:'家居必备', ai:'AI助手', settings:'设置',
     add:'+ 添加', save:'保存设置', cancel:'取消', confirm:'确认',
     search:'搜索...', allCats:'全部分类',
-    cartTitle:'🛒 购物车', invTitle:'📦 库存', recTitle:'🍳 食谱', houseTitle:'🏠 家居必备', aiTitle:'🤖 AI助手', settingsTitle:'⚙️ 设置',
-    boughtToInv:'✅ 已购入库', groupByStore:'按商店', groupByCat:'按分类',
+    cartTitle:'购物车', invTitle:'库存', recTitle:'食谱', houseTitle:'家居必备', aiTitle:'AI助手', settingsTitle:'设置',
+    boughtToInv:'已购入库', groupByStore:'按商店', groupByCat:'按分类',
     aiSuggest:'AI 购物建议', aiInvInput:'AI 录入库存', aiRecipeInput:'AI 添加食谱',
-    aiSend:'发送', aiRecognize:'识别', aiGenerate:'生成', aiRecommend:'🤖 AI推荐',
+    aiSend:'发送', aiRecognize:'识别', aiGenerate:'生成', aiRecommend:'AI推荐',
     lowStock:'低库存', inCart:'加入购物车', details:'查看详情',
-    catManage:'🗂 分类管理', catDesc:'所有分类均可删除，删除时可迁移物品', addCat:'添加',
+    catManage:'分类管理', catDesc:'所有分类均可删除，删除时可迁移物品', addCat:'添加',
     catIconPh:'图标', catCnPh:'中文名', catEnPh:'English', catFrPh:'Français',
-    dataManage:'📋 数据管理',
-    invConfirmTitle:'📦 AI识别库存 (可编辑后确认)', invConfirmBtn:'✅ 全部加入库存', addRow:'+ 添加一行',
+    dataManage:'数据管理',
+    invConfirmTitle:'AI识别库存 (可编辑后确认)', invConfirmBtn:'全部加入库存', addRow:'+ 添加一行',
     nameCnLabel:'中文名', nameEnLabel:'英文名', qtyLabel:'数量', unitLabel:'单位', catLabel:'分类',
-    canCook:'✅ 可以做', missingN:'🛒 缺',
+    canCook:'可以做', missingN:'缺',
   },
   en: {
     cart:'Cart', inventory:'Inventory', recipes:'Recipes', household:'Household', ai:'AI Chat', settings:'Settings',
     add:'+ Add', save:'Save Settings', cancel:'Cancel', confirm:'Confirm',
     search:'Search...', allCats:'All Categories',
-    cartTitle:'🛒 Shopping Cart', invTitle:'📦 Inventory', recTitle:'🍳 Recipes', houseTitle:'🏠 Household', aiTitle:'🤖 AI Chat', settingsTitle:'⚙️ Settings',
-    boughtToInv:'✅ Move bought to stock', groupByStore:'By Store', groupByCat:'By Category',
+    cartTitle:'Shopping Cart', invTitle:'Inventory', recTitle:'Recipes', houseTitle:'Household', aiTitle:'AI Chat', settingsTitle:'Settings',
+    boughtToInv:'Move bought to stock', groupByStore:'By Store', groupByCat:'By Category',
     aiSuggest:'AI Shopping Suggestions', aiInvInput:'AI Add Inventory', aiRecipeInput:'AI Add Recipe',
-    aiSend:'Send', aiRecognize:'Parse', aiGenerate:'Generate', aiRecommend:'🤖 AI Suggest',
+    aiSend:'Send', aiRecognize:'Parse', aiGenerate:'Generate', aiRecommend:'AI Suggest',
     lowStock:'Low stock', inCart:'Add to cart', details:'Details',
-    catManage:'🗂 Manage Categories', catDesc:'All categories can be deleted; items can be migrated', addCat:'Add',
+    catManage:'Manage Categories', catDesc:'All categories can be deleted; items can be migrated', addCat:'Add',
     catIconPh:'Icon', catCnPh:'Chinese', catEnPh:'English', catFrPh:'French',
-    dataManage:'📋 Data',
-    invConfirmTitle:'📦 AI detected items (edit then confirm)', invConfirmBtn:'✅ Add all to inventory', addRow:'+ Add row',
+    dataManage:'Data',
+    invConfirmTitle:'AI detected items (edit then confirm)', invConfirmBtn:'Add all to inventory', addRow:'+ Add row',
     nameCnLabel:'Chinese', nameEnLabel:'English', qtyLabel:'Qty', unitLabel:'Unit', catLabel:'Category',
-    canCook:'✅ Can cook', missingN:'🛒 Missing ',
+    canCook:'Can cook', missingN:'Missing ',
   },
   fr: {
     cart:'Panier', inventory:'Inventaire', recipes:'Recettes', household:'Maison', ai:'IA', settings:'Réglages',
     add:'+ Ajouter', save:'Enregistrer', cancel:'Annuler', confirm:'Confirmer',
     search:'Chercher...', allCats:'Toutes catégories',
-    cartTitle:'🛒 Panier', invTitle:'📦 Inventaire', recTitle:'🍳 Recettes', houseTitle:'🏠 Maison', aiTitle:'🤖 Assistant IA', settingsTitle:'⚙️ Réglages',
-    boughtToInv:'✅ Acheté→stock', groupByStore:'Par magasin', groupByCat:'Par catégorie',
+    cartTitle:'Panier', invTitle:'Inventaire', recTitle:'Recettes', houseTitle:'Maison', aiTitle:'Assistant IA', settingsTitle:'Réglages',
+    boughtToInv:'Acheté→stock', groupByStore:'Par magasin', groupByCat:'Par catégorie',
     aiSuggest:'Suggestions IA', aiInvInput:'IA ajouter stock', aiRecipeInput:'IA ajouter recette',
-    aiSend:'Envoyer', aiRecognize:'Analyser', aiGenerate:'Générer', aiRecommend:'🤖 IA suggère',
+    aiSend:'Envoyer', aiRecognize:'Analyser', aiGenerate:'Générer', aiRecommend:'IA suggère',
     lowStock:'Stock bas', inCart:'Ajouter panier', details:'Détails',
-    catManage:'🗂 Catégories', catDesc:'Toutes les catégories peuvent être supprimées', addCat:'Ajouter',
+    catManage:'Catégories', catDesc:'Toutes les catégories peuvent être supprimées', addCat:'Ajouter',
     catIconPh:'Icône', catCnPh:'Chinois', catEnPh:'Anglais', catFrPh:'Français',
-    dataManage:'📋 Données',
-    invConfirmTitle:'📦 Détection IA (modifiable)', invConfirmBtn:'✅ Tout ajouter', addRow:'+ Ajouter ligne',
+    dataManage:'Données',
+    invConfirmTitle:'Détection IA (modifiable)', invConfirmBtn:'Tout ajouter', addRow:'+ Ajouter ligne',
     nameCnLabel:'Chinois', nameEnLabel:'Anglais', qtyLabel:'Qté', unitLabel:'Unité', catLabel:'Catégorie',
-    canCook:'✅ Faisable', missingN:'🛒 Manque ',
+    canCook:'Faisable', missingN:'Manque ',
   },
   es: {
     cart:'Carrito', inventory:'Inventario', recipes:'Recetas', household:'Hogar', ai:'Asistente IA', settings:'Ajustes',
     add:'+ Añadir', save:'Guardar', cancel:'Cancelar', confirm:'Confirmar',
     search:'Buscar...', allCats:'Todas las categorías',
-    cartTitle:'🛒 Carrito', invTitle:'📦 Inventario', recTitle:'🍳 Recetas', houseTitle:'🏠 Hogar', aiTitle:'🤖 Asistente IA', settingsTitle:'⚙️ Ajustes',
-    boughtToInv:'✅ Comprado→stock', groupByStore:'Por tienda', groupByCat:'Por categoría',
+    cartTitle:'Carrito', invTitle:'Inventario', recTitle:'Recetas', houseTitle:'Hogar', aiTitle:'Asistente IA', settingsTitle:'Ajustes',
+    boughtToInv:'Comprado→stock', groupByStore:'Por tienda', groupByCat:'Por categoría',
     aiSuggest:'Sugerencias IA', aiInvInput:'IA añadir stock', aiRecipeInput:'IA añadir receta',
-    aiSend:'Enviar', aiRecognize:'Analizar', aiGenerate:'Generar', aiRecommend:'🤖 IA sugiere',
+    aiSend:'Enviar', aiRecognize:'Analizar', aiGenerate:'Generar', aiRecommend:'IA sugiere',
     lowStock:'Stock bajo', inCart:'Añadir al carrito', details:'Detalles',
-    catManage:'🗂 Categorías', catDesc:'Todas las categorías se pueden eliminar', addCat:'Añadir',
+    catManage:'Categorías', catDesc:'Todas las categorías se pueden eliminar', addCat:'Añadir',
     catIconPh:'Icono', catCnPh:'Chino', catEnPh:'Inglés', catFrPh:'Francés',
-    dataManage:'📋 Datos',
-    invConfirmTitle:'📦 Detección IA (editable)', invConfirmBtn:'✅ Añadir todo', addRow:'+ Añadir fila',
+    dataManage:'Datos',
+    invConfirmTitle:'Detección IA (editable)', invConfirmBtn:'Añadir todo', addRow:'+ Añadir fila',
     nameCnLabel:'Chino', nameEnLabel:'Inglés', qtyLabel:'Cant.', unitLabel:'Unidad', catLabel:'Categoría',
-    canCook:'✅ Se puede cocinar', missingN:'🛒 Faltan ',
+    canCook:'Se puede cocinar', missingN:'Faltan ',
   },
   th: {
     cart:'ตะกร้า', inventory:'คลัง', recipes:'สูตรอาหาร', household:'ของใช้บ้าน', ai:'ผู้ช่วย AI', settings:'ตั้งค่า',
     add:'+ เพิ่ม', save:'บันทึก', cancel:'ยกเลิก', confirm:'ยืนยัน',
     search:'ค้นหา...', allCats:'ทุกหมวด',
-    cartTitle:'🛒 ตะกร้าซื้อของ', invTitle:'📦 คลังสินค้า', recTitle:'🍳 สูตรอาหาร', houseTitle:'🏠 ของใช้บ้าน', aiTitle:'🤖 ผู้ช่วย AI', settingsTitle:'⚙️ ตั้งค่า',
-    boughtToInv:'✅ ซื้อแล้ว→คลัง', groupByStore:'แยกร้านค้า', groupByCat:'แยกหมวด',
+    cartTitle:'ตะกร้าซื้อของ', invTitle:'คลังสินค้า', recTitle:'สูตรอาหาร', houseTitle:'ของใช้บ้าน', aiTitle:'ผู้ช่วย AI', settingsTitle:'ตั้งค่า',
+    boughtToInv:'ซื้อแล้ว→คลัง', groupByStore:'แยกร้านค้า', groupByCat:'แยกหมวด',
     aiSuggest:'AI แนะนำสินค้า', aiInvInput:'AI เพิ่มคลัง', aiRecipeInput:'AI เพิ่มสูตร',
-    aiSend:'ส่ง', aiRecognize:'วิเคราะห์', aiGenerate:'สร้าง', aiRecommend:'🤖 AI แนะนำ',
+    aiSend:'ส่ง', aiRecognize:'วิเคราะห์', aiGenerate:'สร้าง', aiRecommend:'AI แนะนำ',
     lowStock:'สินค้าใกล้หมด', inCart:'เพิ่มตะกร้า', details:'รายละเอียด',
-    catManage:'🗂 จัดการหมวดหมู่', catDesc:'ลบหมวดหมู่ได้ทั้งหมด', addCat:'เพิ่ม',
+    catManage:'จัดการหมวดหมู่', catDesc:'ลบหมวดหมู่ได้ทั้งหมด', addCat:'เพิ่ม',
     catIconPh:'ไอคอน', catCnPh:'ภาษาจีน', catEnPh:'ภาษาอังกฤษ', catFrPh:'ภาษาฝรั่งเศส',
-    dataManage:'📋 ข้อมูล',
-    invConfirmTitle:'📦 AI ตรวจสอบ (แก้ไขได้)', invConfirmBtn:'✅ เพิ่มทั้งหมด', addRow:'+ เพิ่มแถว',
+    dataManage:'ข้อมูล',
+    invConfirmTitle:'AI ตรวจสอบ (แก้ไขได้)', invConfirmBtn:'เพิ่มทั้งหมด', addRow:'+ เพิ่มแถว',
     nameCnLabel:'ชื่อจีน', nameEnLabel:'ชื่ออังกฤษ', qtyLabel:'จำนวน', unitLabel:'หน่วย', catLabel:'หมวด',
-    canCook:'✅ ทำได้เลย', missingN:'🛒 ขาด ',
+    canCook:'ทำได้เลย', missingN:'ขาด ',
   },
 };
 
@@ -1283,19 +1364,19 @@ const Cloud = {
     // 第四项是鼠标悬停/长按时的解释。「仅本地」是一个正常且完整的状态，
     // 文案要说清楚它不是「你还差一步没配好」。
     const map = {
-      connecting:  ['🔄', 'text-gray-400',   '连接中',  '正在连接云端…'],
-      syncing:     ['🔄', 'text-blue-500',   '同步中',  '正在把改动推送到云端'],
-      synced:      ['☁️',  'text-green-500',  '已同步',  () => `已连接云端 · 房间码 ${Cloud.getCode()}\n点击查看`],
-      offline:     ['⚠️',  'text-orange-400', '离线',    '连不上云端，改动已存在本机，联网后会自动补上'],
-      local:       ['🔒', 'text-gray-400',   '仅本地',  '数据只存在这台设备上，没有连接任何服务器。\n这是完整可用的状态；想多设备同步就点这里'],
-      localForced: ['🔒', 'text-gray-400',   '仅本地',  '本次以 ?mode=local 打开，暂不连接云端。\n去掉网址里的 ?mode=local 就会恢复同步'],
-      error:       ['❌', 'text-red-500',    '同步失败', '云端连接出错了，点击检查配置。数据仍然安全地存在本机'],
+      connecting:  ['refresh-cw',     'text-gray-400',   '连接中',  '正在连接云端…'],
+      syncing:     ['refresh-cw',     'text-blue-500',   '同步中',  '正在把改动推送到云端'],
+      synced:      ['cloud',          'text-green-600',  '已同步',  () => `已连接云端 · 房间码 ${Cloud.getCode()}\n点击查看`],
+      offline:     ['alert-triangle', 'text-amber-500',  '离线',    '连不上云端，改动已存在本机，联网后会自动补上'],
+      local:       ['lock',           'text-gray-400',   '仅本地',  '数据只存在这台设备上，没有连接任何服务器。\n这是完整可用的状态；想多设备同步就点这里'],
+      localForced: ['lock',           'text-gray-400',   '仅本地',  '本次以 ?mode=local 打开，暂不连接云端。\n去掉网址里的 ?mode=local 就会恢复同步'],
+      error:       ['x-circle',       'text-red-500',    '同步失败', '云端连接出错了，点击检查配置。数据仍然安全地存在本机'],
     };
-    const [icon, cls, label, hint] = map[status] || map.error;
+    const [name, cls, label, hint] = map[status] || map.error;
     el.className = `text-xs ${cls} flex items-center gap-1 px-1 cursor-pointer`;
     el.title = typeof hint === 'function' ? hint() : hint;
     el.onclick = () => App.switchTab('settings');
-    el.innerHTML = `<span>${icon}</span><span class="hidden sm:inline">${label}</span>`;
+    el.innerHTML = `${icon(name, 'w-4 h-4')}<span class="hidden sm:inline">${label}</span>`;
   },
 };
 
@@ -1325,8 +1406,8 @@ const Voice = {
 
     this._rec.onstart = () => {
       const btn = document.getElementById(btnId);
-      if (btn) { btn.textContent = '🔴'; btn.classList.add('animate-pulse'); btn.title = '点击停止'; }
-      showToast('🎤 开始说话...', 'info');
+      if (btn) { btn.innerHTML = icon('circle-dot', 'w-5 h-5'); btn.classList.add('animate-pulse', 'text-red-500'); btn.title = '点击停止'; }
+      showToast('开始说话...', 'info');
     };
 
     this._rec.onresult = (e) => {
@@ -1347,7 +1428,7 @@ const Voice = {
   stop() {
     if (this._rec) { try { this._rec.stop(); } catch(e) {} this._rec = null; }
     const btn = document.getElementById(this._btnId);
-    if (btn) { btn.textContent = '🎤'; btn.classList.remove('animate-pulse'); btn.title = '语音输入'; }
+    if (btn) { btn.innerHTML = icon('mic', 'w-5 h-5'); btn.classList.remove('animate-pulse', 'text-red-500'); btn.title = '语音输入'; }
     this._btnId = null;
   },
 };
@@ -1390,7 +1471,7 @@ const BarcodeScanner = {
       if (barcodes.length > 0) {
         this._found = true;
         const code = barcodes[0].rawValue;
-        document.getElementById('barcode-status').textContent = '✅ 识别到: ' + code;
+        document.getElementById('barcode-status').textContent = '识别到: ' + code;
         setTimeout(() => { this.stop(); this._lookup(code); }, 400);
         return;
       }
@@ -1571,10 +1652,10 @@ const History = {
   },
 
   _verbLabel(v) {
-    return { add_inv:'➕ 加入库存', del_inv:'🗑 删除库存', edit_inv:'✏️ 修改库存',
-             add_recipe:'➕ 添加食谱', del_recipe:'🗑 删除食谱',
-             add_cart:'➕ 加入购物车', del_cart:'🗑 删除购物车',
-             cart_to_inv:'📥 购物车入库' }[v] || v;
+    return { add_inv:'加入库存', del_inv:'删除库存', edit_inv:'修改库存',
+             add_recipe:'添加食谱', del_recipe:'删除食谱',
+             add_cart:'加入购物车', del_cart:'删除购物车',
+             cart_to_inv:'购物车入库' }[v] || v;
   },
 
   _timeAgo(ts) {
@@ -1612,7 +1693,7 @@ const History = {
           </div>
           <div class="text-xs text-gray-400 mt-0.5">${this._timeAgo(e.ts)}</div>
         </div>
-        ${undoable.has(e.verb) ? `<button onclick="History.undo(${jsArg(e.id)})" class="text-xs bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-300 px-2 py-1 rounded-lg hover:bg-orange-200 flex-shrink-0">↩ 撤销</button>` : ''}
+        ${undoable.has(e.verb) ? `<button onclick="History.undo(${jsArg(e.id)})" class="btn-secondary text-xs px-2 py-1 rounded-lg flex-shrink-0 flex items-center gap-1">${icon('undo')} 撤销</button>` : ''}
       </div>`).join('');
   },
 };
@@ -1629,6 +1710,12 @@ function esc(v) {
 }
 function jsArg(v) {
   return esc(JSON.stringify(String(v ?? '')));
+}
+
+// 图标：全部来自页面顶部的内联 SVG sprite（Lucide），用 <use> 引用。
+// name 是 symbol id 去掉 "i-" 前缀；cls 加在 svg 上，控制大小和颜色。
+function icon(name, cls = '') {
+  return `<svg class="ico${cls ? ' ' + cls : ''}" aria-hidden="true"><use href="#i-${name}"/></svg>`;
 }
 
 function uid() {
@@ -1824,7 +1911,7 @@ const PROVIDERS = {
   openai: {
     label: 'OpenAI', kind: 'openai', vision: true,
     base: 'https://api.openai.com/v1',
-    ph: 'sk-...', hint: '⚠️ OpenAI 的 /chat/completions 不返回 CORS 头，浏览器直连通常会失败。想用 GPT 建议改选 OpenRouter',
+    ph: 'sk-...', hint: 'OpenAI 的官方接口不能在浏览器里直接调用，想用 GPT 请改选 OpenRouter',
     models: ['gpt-5.6-luna', 'gpt-5.6-terra'],
   },
   deepseek: {
@@ -2240,7 +2327,7 @@ const Inventory = {
     if (!el) return;
 
     if (filtered.length === 0) {
-      el.innerHTML = `<div class="text-center py-12 text-gray-400"><div class="text-4xl mb-2">📦</div><p>库存为空，添加物品或使用AI录入</p></div>`;
+      el.innerHTML = `<div class="text-center py-12 text-gray-400"><div class="mb-2 text-gray-300">${icon('package', 'w-12 h-12')}</div><p>库存为空，添加物品或使用AI录入</p></div>`;
       return;
     }
 
@@ -2257,18 +2344,18 @@ const Inventory = {
       const nb = JSON.stringify(catKeys).replace(/"/g,'&quot;');
       return `
       <div class="mb-3">
-        <div class="flex items-center gap-1.5 mb-2 text-sm font-semibold text-gray-500 dark:text-gray-400 select-none">
+        <div class="flex items-center gap-1.5 mb-2 section-hdr select-none">
           <button onclick="Inventory.toggleCat(${jsArg(cat)})" class="flex items-center gap-1.5 flex-1 text-left hover:text-gray-700 dark:hover:text-gray-200">
-            <span class="text-xs w-3">${collapsed ? '▶' : '▼'}</span>
+            ${icon(collapsed ? 'chevron-right' : 'chevron-down', 'w-4 h-4 text-gray-400')}
             <span>${esc(c.icon)}</span><span>${esc(catName(cat))}</span>
             <span class="text-xs font-normal text-gray-400">(${items.length})</span>
             ${lowCount > 0 ? `<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full">${lowCount} ${t('lowStock')}</span>` : ''}
           </button>
           <div class="flex gap-0.5 shrink-0">
-            ${idx > 0 ? `<button onclick="moveCatToEdge(${jsArg(cat)},'top',window._invCatKeys)" class="${btn}" title="置顶">⤒</button>` : '<span class="w-6"></span>'}
-            ${idx > 0 ? `<button onclick="moveCatInList(${jsArg(cat)},${jsArg(catKeys[idx-1])})" class="${btn}" title="上移">↑</button>` : '<span class="w-6"></span>'}
-            ${idx < catKeys.length-1 ? `<button onclick="moveCatInList(${jsArg(cat)},${jsArg(catKeys[idx+1])})" class="${btn}" title="下移">↓</button>` : '<span class="w-6"></span>'}
-            ${idx < catKeys.length-1 ? `<button onclick="moveCatToEdge(${jsArg(cat)},'bottom',window._invCatKeys)" class="${btn}" title="置底">⤓</button>` : '<span class="w-6"></span>'}
+            ${idx > 0 ? `<button onclick="moveCatToEdge(${jsArg(cat)},'top',window._invCatKeys)" class="${btn}" title="置顶">${icon('arrow-up-to-line', 'w-3.5 h-3.5')}</button>` : '<span class="w-6"></span>'}
+            ${idx > 0 ? `<button onclick="moveCatInList(${jsArg(cat)},${jsArg(catKeys[idx-1])})" class="${btn}" title="上移">${icon('arrow-up', 'w-3.5 h-3.5')}</button>` : '<span class="w-6"></span>'}
+            ${idx < catKeys.length-1 ? `<button onclick="moveCatInList(${jsArg(cat)},${jsArg(catKeys[idx+1])})" class="${btn}" title="下移">${icon('arrow-down', 'w-3.5 h-3.5')}</button>` : '<span class="w-6"></span>'}
+            ${idx < catKeys.length-1 ? `<button onclick="moveCatToEdge(${jsArg(cat)},'bottom',window._invCatKeys)" class="${btn}" title="置底">${icon('arrow-down-to-line', 'w-3.5 h-3.5')}</button>` : '<span class="w-6"></span>'}
           </div>
         </div>
         ${collapsed ? '' : `<div class="bento-grid">${items.map(item => this.renderItem(item)).join('')}</div>`}
@@ -2283,7 +2370,7 @@ const Inventory = {
     const unlimited = cats[item.category]?.unlimited;
     const isLow = !unlimited && item.minStock > 0 && item.quantity <= item.minStock;
     const qtyDisplay = unlimited
-      ? `<span class="text-lg font-bold text-purple-500 min-w-12 text-center">♾️</span>`
+      ? `<span class="text-purple-500 min-w-12 flex justify-center">${icon('infinity', 'w-5 h-5')}</span>`
       : `<button onclick="Inventory.adjustQty(${jsArg(item.id)},-1)" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 font-bold">−</button>
         <span class="text-sm font-medium min-w-10 text-center">${esc(formatQty(item.quantity, item.unit))}</span>
         <button onclick="Inventory.adjustQty(${jsArg(item.id)},1)" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 font-bold">+</button>`;
@@ -2299,9 +2386,9 @@ const Inventory = {
         ${unlimited ? '<span class="text-xs bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded">常备</span>' : ''}
       </div>
       <div class="flex items-center gap-1 shrink-0">
-        <button onclick="Modal.showEditInventory(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-blue-500 hover:bg-blue-50 dark:hover:bg-gray-700">✏️</button>
-        ${!unlimited ? `<button onclick="Inventory.addToCart(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-green-500 hover:bg-green-50 dark:hover:bg-gray-700" title="加入购物车">🛒</button>` : ''}
-        <button onclick="Inventory.remove(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-red-400 hover:bg-red-50 dark:hover:bg-gray-700">🗑</button>
+        <button onclick="Modal.showEditInventory(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700">${icon('pencil', 'w-[18px] h-[18px]')}</button>
+        ${!unlimited ? `<button onclick="Inventory.addToCart(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700" title="加入购物车">${icon('shopping-cart', 'w-[18px] h-[18px]')}</button>` : ''}
+        <button onclick="Inventory.remove(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-gray-700">${icon('trash', 'w-[18px] h-[18px]')}</button>
       </div>
       <div class="basis-full h-0"></div>
       <div class="flex-1 min-w-0 flex items-center gap-1 flex-wrap mt-1.5">
@@ -2339,11 +2426,11 @@ const Cart = {
   setGroupBy(mode) {
     this.groupBy = mode;
     document.getElementById('cart-group-store').className = mode === 'store'
-      ? 'text-xs px-3 py-1 rounded-full bg-blue-600 text-white'
-      : 'text-xs px-3 py-1 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300';
+      ? 'seg seg-on text-xs px-3 py-1 rounded-full'
+      : 'seg text-xs px-3 py-1 rounded-full';
     document.getElementById('cart-group-category').className = mode === 'category'
-      ? 'text-xs px-3 py-1 rounded-full bg-blue-600 text-white'
-      : 'text-xs px-3 py-1 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300';
+      ? 'seg seg-on text-xs px-3 py-1 rounded-full'
+      : 'seg text-xs px-3 py-1 rounded-full';
     this.render();
   },
 
@@ -2390,7 +2477,7 @@ const Cart = {
     if (!item) return;
     // 单件入库弹窗，可修改数量和分类
     Modal.showAIConfirm(
-      `📥 确认入库：${item.nameCn}`,
+      `确认入库：${item.nameCn}`,
       [{ id, qty: item.quantity, unit: item.unit, cat: item.category || 'other' }],
       'cart-single-inventory',
       `<div class="space-y-3">
@@ -2427,7 +2514,7 @@ const Cart = {
       Modal.closeAIConfirm();
       showToast(`${item.nameCn} 已入库`, 'success');
     };
-    document.getElementById('ai-confirm-btn').textContent = '✅ 确认入库';
+    document.getElementById('ai-confirm-btn').textContent = '确认入库';
   },
 
   moveAllBoughtToInventory() {
@@ -2465,8 +2552,8 @@ const Cart = {
       <p class="text-xs text-gray-400 pt-1">确认后以上 ${bought.length} 件物品将加入库存并从购物车移除</p>
     </div>`;
 
-    Modal.showAIConfirm(`📥 确认入库（${bought.length} 件）`, null, 'bulk-inventory', html);
-    document.getElementById('ai-confirm-btn').textContent = `✅ 确认入库 ${bought.length} 件`;
+    Modal.showAIConfirm(`确认入库（${bought.length} 件）`, null, 'bulk-inventory', html);
+    document.getElementById('ai-confirm-btn').textContent = `确认入库 ${bought.length} 件`;
     document.getElementById('ai-confirm-btn').onclick = () => {
       bought.forEach((item, idx) => {
         const qty  = parseFloat(document.getElementById(`bulk-qty-${idx}`)?.value) || item.quantity;
@@ -2488,7 +2575,7 @@ const Cart = {
     const active = State.cart.filter(i => !i.checked);
     const done = State.cart.filter(i => i.checked);
     if (State.cart.length === 0) {
-      el.innerHTML = `<div class="text-center py-12 text-gray-400"><div class="text-4xl mb-2">🛒</div><p>购物车为空，从食谱或库存添加物品</p></div>`;
+      el.innerHTML = `<div class="text-center py-12 text-gray-400"><div class="mb-2 text-gray-300">${icon('shopping-cart', 'w-12 h-12')}</div><p>购物车为空，从食谱或库存添加物品</p></div>`;
       return;
     }
     let html = '';
@@ -2500,19 +2587,19 @@ const Cart = {
       const order = [...known, ...Object.keys(groups).filter(k => k !== 'none' && !known.includes(k)), 'none'];
       order.forEach(k => {
         if (!groups[k]) return;
-        const label = k === 'none' ? '📋 未指定商店' : esc(storeName(k));
-        html += `<div class="mb-4"><div class="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-2">${label}<span class="text-xs font-normal bg-gray-100 dark:bg-gray-700 px-1.5 rounded">${groups[k].length}</span></div><div class="bento-grid">${groups[k].map(i=>this.renderItem(i)).join('')}</div></div>`;
+        const label = k === 'none' ? '未指定商店' : esc(storeName(k));
+        html += `<div class="mb-4"><div class="section-hdr mb-2 flex items-center gap-2">${label}<span class="text-[11px] bg-gray-100 dark:bg-gray-700 px-1.5 rounded">${groups[k].length}</span></div><div class="bento-grid">${groups[k].map(i=>this.renderItem(i)).join('')}</div></div>`;
       });
     } else {
       const groups = {};
       active.forEach(item => { const k = item.category || 'other'; if(!groups[k]) groups[k]=[]; groups[k].push(item); });
       Object.entries(groups).forEach(([k,items]) => {
         const c = getCategories()[k] || { cn: k, icon: '📦' };
-        html += `<div class="mb-4"><div class="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">${esc(c.icon)} ${esc(catName(k))}</div><div class="bento-grid">${items.map(i=>this.renderItem(i)).join('')}</div></div>`;
+        html += `<div class="mb-4"><div class="section-hdr mb-2">${esc(c.icon)} ${esc(catName(k))}</div><div class="bento-grid">${items.map(i=>this.renderItem(i)).join('')}</div></div>`;
       });
     }
     if (done.length > 0) {
-      html += `<div class="mt-4"><div class="text-sm font-semibold text-gray-400 mb-2">✅ 已购买 (${done.length})</div><div class="bento-grid">${done.map(i=>this.renderItem(i)).join('')}</div></div>`;
+      html += `<div class="mt-4"><div class="section-hdr mb-2 flex items-center gap-1.5">${icon('check')} 已购买 (${done.length})</div><div class="bento-grid">${done.map(i=>this.renderItem(i)).join('')}</div></div>`;
     }
     el.innerHTML = html;
   },
@@ -2531,9 +2618,9 @@ const Cart = {
         ${item.notes ? `<div class="text-xs text-gray-400">${esc(item.notes)}</div>` : ''}
       </div>
       <div class="flex items-center gap-1 shrink-0">
-        <button onclick="Cart.confirmMoveToInventory(${jsArg(item.id)})" class="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded-lg hover:bg-green-200 dark:hover:bg-green-800" title="入库">📥入库</button>
-        <button onclick="Modal.showEditCart(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-blue-500 hover:bg-blue-50 dark:hover:bg-gray-700">✏️</button>
-        <button onclick="Cart.remove(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-red-400 hover:bg-red-50 dark:hover:bg-gray-700">🗑</button>
+        <button onclick="Cart.confirmMoveToInventory(${jsArg(item.id)})" class="btn-secondary text-xs px-2 py-1.5 rounded-lg flex items-center gap-1" title="入库">${icon('archive-down')}入库</button>
+        <button onclick="Modal.showEditCart(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700">${icon('pencil', 'w-[18px] h-[18px]')}</button>
+        <button onclick="Cart.remove(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-gray-700">${icon('trash', 'w-[18px] h-[18px]')}</button>
       </div>
     </div>`;
   },
@@ -2591,9 +2678,9 @@ const Recipes = {
     const checked = this.checkIngredients(recipe);
     const missing = checked.filter(i => i.status !== 'ok');
     if (missing.length === 0) { showToast('库存充足，无需购买！', 'success'); return; }
-    const statusIcon = { low: '⚠️', missing: '❌', mismatch: '❓' };
+    const statusIcon = { low: icon('alert-triangle', 'text-amber-500'), missing: icon('x-circle', 'text-red-500'), mismatch: icon('help-circle', 'text-amber-500') };
     Modal.showAIConfirm(
-      `🛒 ${recipe.nameCn} — 缺货清单`,
+      `${recipe.nameCn} — 缺货清单`,
       { recipeId: id, missing },
       'recipe-missing-cart',
       `<div class="space-y-2">
@@ -2615,7 +2702,7 @@ const Recipes = {
           return `<label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
             <input type="checkbox" class="missing-ing-cb w-4 h-4 accent-blue-600" data-idx="${idx}" ${isMismatch ? '' : 'checked'} />
             <span class="flex-1">
-              <span class="font-medium">${esc(statusIcon[ing.status]||'❌')} ${esc(ing.nameCn)}</span>
+              <span class="font-medium">${statusIcon[ing.status] || statusIcon.missing} ${esc(ing.nameCn)}</span>
               ${ing.optional ? '<span class="text-xs text-gray-400 ml-1">可选</span>' : ''}
               ${haveStr ? `<span class="block text-xs mt-0.5 text-gray-400">${haveStr}</span>` : ''}
             </span>
@@ -2624,7 +2711,7 @@ const Recipes = {
         }).join('')}
       </div>`
     );
-    document.getElementById('ai-confirm-btn').textContent = '🛒 加入购物车';
+    document.getElementById('ai-confirm-btn').textContent = '加入购物车';
     document.getElementById('ai-confirm-btn').onclick = () => {
       const cbs = document.querySelectorAll('.missing-ing-cb');
       let count = 0;
@@ -2647,7 +2734,7 @@ const Recipes = {
     const el = document.getElementById('recipes-list');
     if (!el) return;
     if (State.recipes.length === 0) {
-      el.innerHTML = `<div class="col-span-2 text-center py-12 text-gray-400"><div class="text-4xl mb-2">🍳</div><p>还没有食谱，点击添加或让AI推荐</p></div>`;
+      el.innerHTML = `<div class="col-span-2 text-center py-12 text-gray-400"><div class="mb-2 text-gray-300">${icon('chef-hat', 'w-12 h-12')}</div><p>还没有食谱，点击添加或让AI推荐</p></div>`;
       return;
     }
     el.innerHTML = State.recipes.map(recipe => {
@@ -2666,8 +2753,8 @@ const Recipes = {
             ${recipe.nameEn ? `<div class="text-xs text-gray-400 name-en">${esc(recipe.nameEn)}</div>` : ''}
           </div>
           <div class="flex gap-1 shrink-0">
-            <button onclick="Modal.showEditRecipe(${jsArg(recipe.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-blue-500 hover:bg-blue-50 dark:hover:bg-gray-700">✏️</button>
-            <button onclick="Recipes.remove(${jsArg(recipe.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-red-400 hover:bg-red-50 dark:hover:bg-gray-700">🗑</button>
+            <button onclick="Modal.showEditRecipe(${jsArg(recipe.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700">${icon('pencil', 'w-[18px] h-[18px]')}</button>
+            <button onclick="Recipes.remove(${jsArg(recipe.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-gray-700">${icon('trash', 'w-[18px] h-[18px]')}</button>
           </div>
         </div>
         ${recipe.description ? `<p class="text-sm text-gray-500 dark:text-gray-400 mb-2">${esc(recipe.description)}</p>` : ''}
@@ -2680,9 +2767,9 @@ const Recipes = {
           <div class="recipe-availability-bar"><div class="recipe-availability-fill" style="width:${pct}%"></div></div>
         </div>` : ''}
         <div class="flex gap-2 mt-3">
-          <button onclick="Modal.showRecipeDetail(${jsArg(recipe.id)})" class="flex-1 text-sm py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">查看详情</button>
-          <button onclick="Recipes.addMissingToCart(${jsArg(recipe.id)})" class="flex-1 text-sm py-1.5 ${missing > 0 ? 'bg-orange-500 text-white hover:bg-orange-600' : mismatchCount > 0 ? 'bg-yellow-500 text-white hover:bg-yellow-600' : 'bg-green-500 text-white hover:bg-green-600'} rounded-lg">
-            ${missing > 0 ? `🛒 缺${missing}样` : mismatchCount > 0 ? `❓ ${mismatchCount}项待确认` : '✅ 可以做'}
+          <button onclick="Modal.showRecipeDetail(${jsArg(recipe.id)})" class="btn-secondary flex-1 text-sm py-1.5 rounded-lg">查看详情</button>
+          <button onclick="Recipes.addMissingToCart(${jsArg(recipe.id)})" class="flex-1 text-sm py-1.5 ${missing > 0 ? 'bg-blue-600 text-white hover:bg-blue-700' : mismatchCount > 0 ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-green-600 text-white hover:bg-green-700'} rounded-lg flex items-center justify-center gap-1.5">
+            ${missing > 0 ? `${icon('shopping-cart')} 缺${missing}样` : mismatchCount > 0 ? `${icon('help-circle')} ${mismatchCount}项待确认` : `${icon('check')} 可以做`}
           </button>
         </div>
       </div>`;
@@ -2792,18 +2879,18 @@ const Household = {
       if (low.length > 0) {
         lowEl.innerHTML = `<div class="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl p-3">
           <div class="flex items-center justify-between mb-2">
-            <span class="font-semibold text-red-700 dark:text-red-400">⚠️ 低库存提醒 (${low.length})</span>
+            <span class="font-semibold text-red-700 dark:text-red-400 flex items-center gap-1.5">${icon('alert-triangle')} 低库存提醒 (${low.length})</span>
             <button onclick="Household.addAllLowToCart()" class="text-xs bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700">全部加入购物车</button>
           </div>
           <div class="flex flex-wrap gap-1">${low.map(i=>`<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 px-2 py-1 rounded-full">${esc(i.nameCn)}: ${esc(i.quantity)}${esc(i.unit)}</span>`).join('')}</div>
         </div>`;
       } else {
-        lowEl.innerHTML = '<div class="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-xl p-3 text-green-700 dark:text-green-400 text-sm">✅ 所有家居用品库存充足</div>';
+        lowEl.innerHTML = `<div class="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-xl p-3 text-green-700 dark:text-green-400 text-sm flex items-center gap-2">${icon('check-circle')} 所有家居用品库存充足</div>`;
       }
     }
 
     if (filtered.length === 0) {
-      el.innerHTML = `<div class="text-center py-12 text-gray-400"><div class="text-4xl mb-2">🏠</div><p>暂无家居用品，添加或使用AI录入</p></div>`;
+      el.innerHTML = `<div class="text-center py-12 text-gray-400"><div class="mb-2 text-gray-300">${icon('home', 'w-12 h-12')}</div><p>暂无家居用品，添加或使用AI录入</p></div>`;
       return;
     }
 
@@ -2824,18 +2911,18 @@ const Household = {
       const lowCount = items.filter(i => i.minStock > 0 && i.quantity <= i.minStock).length;
       const collapsed = _collapsedCats.has('house', cat);
       return `<div class="mb-3">
-        <div class="flex items-center gap-1.5 mb-2 text-sm font-semibold text-gray-500 dark:text-gray-400 select-none">
+        <div class="flex items-center gap-1.5 mb-2 section-hdr select-none">
           <button onclick="Household.toggleCat(${jsArg(cat)})" class="flex items-center gap-1.5 flex-1 text-left hover:text-gray-700 dark:hover:text-gray-200">
-            <span class="text-xs w-3">${collapsed ? '▶' : '▼'}</span>
+            ${icon(collapsed ? 'chevron-right' : 'chevron-down', 'w-4 h-4 text-gray-400')}
             <span>${esc(c.icon)}</span><span>${esc(catName(cat))}</span>
             <span class="text-xs font-normal text-gray-400">(${items.length})</span>
             ${lowCount > 0 ? `<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full">${lowCount} 低库存</span>` : ''}
           </button>
           <div class="flex gap-0.5 shrink-0">
-            ${idx > 0 ? `<button onclick="moveCatToEdge(${jsArg(cat)},'top',window._houseCatKeys)" class="${btn}" title="置顶">⤒</button>` : '<span class="w-6"></span>'}
-            ${idx > 0 ? `<button onclick="moveCatInList(${jsArg(cat)},${jsArg(catKeys[idx-1])})" class="${btn}" title="上移">↑</button>` : '<span class="w-6"></span>'}
-            ${idx < catKeys.length-1 ? `<button onclick="moveCatInList(${jsArg(cat)},${jsArg(catKeys[idx+1])})" class="${btn}" title="下移">↓</button>` : '<span class="w-6"></span>'}
-            ${idx < catKeys.length-1 ? `<button onclick="moveCatToEdge(${jsArg(cat)},'bottom',window._houseCatKeys)" class="${btn}" title="置底">⤓</button>` : '<span class="w-6"></span>'}
+            ${idx > 0 ? `<button onclick="moveCatToEdge(${jsArg(cat)},'top',window._houseCatKeys)" class="${btn}" title="置顶">${icon('arrow-up-to-line', 'w-3.5 h-3.5')}</button>` : '<span class="w-6"></span>'}
+            ${idx > 0 ? `<button onclick="moveCatInList(${jsArg(cat)},${jsArg(catKeys[idx-1])})" class="${btn}" title="上移">${icon('arrow-up', 'w-3.5 h-3.5')}</button>` : '<span class="w-6"></span>'}
+            ${idx < catKeys.length-1 ? `<button onclick="moveCatInList(${jsArg(cat)},${jsArg(catKeys[idx+1])})" class="${btn}" title="下移">${icon('arrow-down', 'w-3.5 h-3.5')}</button>` : '<span class="w-6"></span>'}
+            ${idx < catKeys.length-1 ? `<button onclick="moveCatToEdge(${jsArg(cat)},'bottom',window._houseCatKeys)" class="${btn}" title="置底">${icon('arrow-down-to-line', 'w-3.5 h-3.5')}</button>` : '<span class="w-6"></span>'}
           </div>
         </div>
         ${collapsed ? '' : `<div class="bento-grid">${items.map(item => this.renderItem(item)).join('')}</div>`}
@@ -2853,9 +2940,9 @@ const Household = {
         ${isLow ? '<span class="text-xs bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded">低库存</span>' : ''}
       </div>
       <div class="flex items-center gap-1 shrink-0">
-        <button onclick="Modal.showEditHousehold(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-blue-500 hover:bg-blue-50 dark:hover:bg-gray-700">✏️</button>
-        <button onclick="Household.addToCart(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-green-500 hover:bg-green-50 dark:hover:bg-gray-700" title="加入购物车">🛒</button>
-        <button onclick="Household.remove(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-base text-red-400 hover:bg-red-50 dark:hover:bg-gray-700">🗑</button>
+        <button onclick="Modal.showEditHousehold(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700">${icon('pencil', 'w-[18px] h-[18px]')}</button>
+        <button onclick="Household.addToCart(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700" title="加入购物车">${icon('shopping-cart', 'w-[18px] h-[18px]')}</button>
+        <button onclick="Household.remove(${jsArg(item.id)})" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-gray-700">${icon('trash', 'w-[18px] h-[18px]')}</button>
       </div>
       <div class="basis-full h-0"></div>
       <div class="flex-1 min-w-0 flex items-center gap-1 flex-wrap mt-1.5">
@@ -2914,7 +3001,7 @@ const AIChat = {
       const items = extractJSON(actionMatch[1]);
       if (items && items.length > 0) {
         window._aiChatActionItems = items;
-        actionHtml = `<div class="mt-2"><button onclick="AIChat.applyCartAction()" class="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700">🛒 加入购物车 (${items.length}项)</button></div>`;
+        actionHtml = `<div class="mt-2"><button onclick="AIChat.applyCartAction()" class="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 inline-flex items-center gap-1.5">${icon('shopping-cart')} 加入购物车 (${items.length}项)</button></div>`;
       }
     }
     this.appendMessage('ai', cleanText, false, actionHtml);
@@ -2935,7 +3022,7 @@ const AIChat = {
     div.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
     if (typing) div.classList.add('typing-indicator');
     const bubble = role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai';
-    div.innerHTML = `<div class="${bubble} px-4 py-2.5 max-w-xs sm:max-w-sm text-sm">${typing ? '<span class="spin inline-block">⚙️</span> 思考中...' : esc(text).replace(/\n/g,'<br>')}${actionHtml}</div>`;
+    div.innerHTML = `<div class="${bubble} px-4 py-2.5 max-w-xs sm:max-w-sm text-sm">${typing ? `<span class="spin inline-block">${icon('loader')}</span> 思考中...` : esc(text).replace(/\n/g,'<br>')}${actionHtml}</div>`;
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
   },
@@ -2955,13 +3042,13 @@ const Settings = {
     const list = modelsFor(provider);
     const fetched = !!loadFetchedModels(provider);
     modelSel.innerHTML = list.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('')
-      + `<option value="custom">✏️ 自定义模型 ID...</option>`;
+      + `<option value="custom">自定义模型 ID...</option>`;
     modelSel.value = list[0];
     const note = document.getElementById('settings-model-note');
     if (note) {
       note.textContent = fetched
-        ? `共 ${list.length} 个型号，来自你的账号（点 🔄 可再次刷新）`
-        : '内置清单可能已过期。填好 Key 后点 🔄 拉取你账号真实可用的型号。';
+        ? `共 ${list.length} 个型号，来自你的账号（点右边的刷新按钮可再次拉取）`
+        : '内置清单可能已过期。填好 Key 后点右边的刷新按钮，拉取你账号真实可用的型号。';
     }
     this.onModelChange();
   },
@@ -2983,7 +3070,7 @@ const Settings = {
     const hint = document.getElementById('settings-key-hint');
     const c = providerCfg(provider);
     if (keyEl) keyEl.placeholder = c.ph;
-    if (hint) hint.textContent = c.hint + '（⚠️ 仅存于浏览器本地，不会同步到云端）';
+    if (hint) hint.textContent = c.hint + '（仅存于浏览器本地，不会同步到云端）';
   },
 
   // 当前设置页里填的 Key，去掉会让 header 报错的非 ASCII 字符
@@ -3031,10 +3118,10 @@ const Settings = {
       saveFetchedModels(provider, list);
       this._updateModelOptions(provider);
       hideLoading();
-      showToast(`✅ 拉到 ${list.length} 个可用型号`, 'success');
+      showToast(`拉到 ${list.length} 个可用型号`, 'success');
     } catch(e) {
       hideLoading();
-      showToast(`❌ 拉取失败: ${e.message}`, 'error');
+      showToast(`拉取失败: ${e.message}`, 'error');
     }
   },
 
@@ -3108,8 +3195,8 @@ const Settings = {
     return `<div class="mb-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-xl">
       <div class="flex items-center gap-1.5 mb-1.5">
         <div class="flex flex-col gap-0.5 shrink-0">
-          <button ${canUp ? `onclick="Settings._moveCat(${jsArg(key)},-1)"` : 'disabled'} class="${canUp ? btnMove : btnDis}" title="上移">▲</button>
-          <button ${canDown ? `onclick="Settings._moveCat(${jsArg(key)},1)"` : 'disabled'} class="${canDown ? btnMove : btnDis}" title="下移">▼</button>
+          <button ${canUp ? `onclick="Settings._moveCat(${jsArg(key)},-1)"` : 'disabled'} class="${canUp ? btnMove : btnDis}" title="上移">${icon('chevron-up', 'w-3.5 h-3.5')}</button>
+          <button ${canDown ? `onclick="Settings._moveCat(${jsArg(key)},1)"` : 'disabled'} class="${canDown ? btnMove : btnDis}" title="下移">${icon('chevron-down', 'w-3.5 h-3.5')}</button>
         </div>
         <button onclick="EmojiPicker.open(e=>{Settings._setCatIcon(${jsArg(key)},e)})"
           class="text-2xl w-9 h-9 shrink-0 rounded-lg bg-white dark:bg-gray-600 flex items-center justify-center hover:bg-blue-50 dark:hover:bg-gray-500 border border-gray-200 dark:border-gray-500 transition" title="点击更换图标">
@@ -3118,8 +3205,8 @@ const Settings = {
         <input type="text" value="${esc(v.cn)}" placeholder="中文名" onchange="Settings._setCatField(${jsArg(key)},'cn',this.value)"
           class="flex-1 min-w-0 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-400" />
         <button onclick="Settings._toggleUnlimited(${jsArg(key)})" title="${isUnlimited ? '点击取消无限量' : '设为常备(无限量)分类'}"
-          class="shrink-0 px-1.5 py-1 rounded-lg text-sm border transition ${isUnlimited ? 'bg-purple-100 dark:bg-purple-900 border-purple-300 dark:border-purple-600 text-purple-600' : 'bg-white dark:bg-gray-600 border-gray-200 dark:border-gray-500 text-gray-400 hover:border-purple-300'}">♾️</button>
-        <button onclick="Settings._confirmDeleteCat(${jsArg(key)})" class="text-red-400 hover:text-red-600 px-1 text-lg shrink-0" title="删除">🗑</button>
+          class="shrink-0 px-1.5 py-1 rounded-lg text-sm border transition ${isUnlimited ? 'bg-purple-100 dark:bg-purple-900 border-purple-300 dark:border-purple-600 text-purple-600' : 'bg-white dark:bg-gray-600 border-gray-200 dark:border-gray-500 text-gray-400 hover:border-purple-300'}">${icon('infinity')}</button>
+        <button onclick="Settings._confirmDeleteCat(${jsArg(key)})" class="text-gray-400 hover:text-red-600 w-8 h-8 flex items-center justify-center rounded-lg shrink-0" title="删除">${icon('trash', 'w-[18px] h-[18px]')}</button>
       </div>
       <div class="flex gap-1.5 pl-9">
         <input type="text" value="${esc(v.en)}" placeholder="English" onchange="Settings._setCatField(${jsArg(key)},'en',this.value)"
@@ -3143,7 +3230,7 @@ const Settings = {
     const sectionHdr = (icon, label) =>
       `<div class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 mt-3 first:mt-0 flex items-center gap-1.5">${icon} ${label}</div>`;
 
-    const hint = `<div class="text-xs text-gray-400 mb-2">▲▼排序 / 图标 / 中文名 / ♾️常备 / 🗑删除</div>`;
+    const hint = `<div class="text-xs text-gray-400 mb-2">上下箭头排序 · 点图标更换 · 无限符号 = 常备（不计数量）</div>`;
 
     const foodRows  = foodKeys.map(k => this._catRow(k, allCats[k], allKeys)).join('');
     const houseRows = houseKeys.map(k => this._catRow(k, allCats[k], allKeys)).join('');
@@ -3157,9 +3244,9 @@ const Settings = {
       </div>`).join('');
 
     el.innerHTML = hint
-      + sectionHdr('🍽️','食物库存 Food') + foodRows
-      + sectionHdr('🏠','家居用品 Household') + houseRows
-      + (custRows ? sectionHdr('📌','自定义') + custRows : '')
+      + sectionHdr(icon('utensils'),'食物库存 Food') + foodRows
+      + sectionHdr(icon('home'),'家居用品 Household') + houseRows
+      + (custRows ? sectionHdr(icon('pin'),'自定义') + custRows : '')
       + (deletedRows ? `<div class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">${deletedRows}</div>` : '');
     const customEl = document.getElementById('cat-custom');
     if (customEl) customEl.innerHTML = '';
@@ -3184,7 +3271,7 @@ const Settings = {
             onchange="Settings._setStoreField(${jsArg(key)},'name',this.value)"
             class="flex-1 min-w-0 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-400" />
           <span class="text-xs px-2 py-0.5 rounded-full border shrink-0 ${storeClass(key)}">${esc(v.emoji || '')} ${esc(v.name)}</span>
-          <button onclick="Settings._confirmDeleteStore(${jsArg(key)})" class="text-red-400 hover:text-red-600 px-1 text-lg shrink-0" title="删除">🗑</button>
+          <button onclick="Settings._confirmDeleteStore(${jsArg(key)})" class="text-gray-400 hover:text-red-600 w-8 h-8 flex items-center justify-center rounded-lg shrink-0" title="删除">${icon('trash', 'w-[18px] h-[18px]')}</button>
         </div>
         <div class="flex items-center gap-1.5 pl-1">${swatches}</div>
       </div>`;
@@ -3357,7 +3444,7 @@ const Settings = {
       migrateRow.classList.add('hidden');
       delBtn.style.display = 'none';
       moveBtn.style.display = '';
-      moveBtn.textContent = '✅ 确认删除';
+      moveBtn.textContent = '确认删除';
     }
 
     const doDelete = (migrate) => {
@@ -3378,7 +3465,7 @@ const Settings = {
       Inventory.render(); Household.render();
       const msg = total === 0 ? `分类"${cat?.cn||key}"已删除` : migrate ? `分类已删除，${total}件物品迁移到"${catLabel(target)}"` : `分类已删除，${total}件物品移至"其他"`;
       showToast(msg, migrate || total === 0 ? 'success' : 'info');
-      moveBtn.textContent = '📦 迁移物品'; // reset
+      moveBtn.textContent = '迁移物品'; // reset
     };
     delBtn.onclick = () => doDelete(false);
     moveBtn.onclick = () => doDelete(true);
@@ -3484,13 +3571,13 @@ const Settings = {
     const cfg = loadFirebaseConfig();
     if (cfg && LOCAL_ONLY) {
       el.className = 'text-xs mb-2 text-orange-500';
-      el.textContent = '🔒 本次以 ?mode=local 打开，配置还在但暂不连接云端';
+      el.textContent = '本次以 ?mode=local 打开，配置还在但暂不连接云端';
     } else if (cfg) {
       el.className = 'text-xs mb-2 text-green-600 dark:text-green-400';
-      el.textContent = `☁️ 已连接：${cfg.projectId || cfg.databaseURL}`;
+      el.textContent = `已连接：${cfg.projectId || cfg.databaseURL}`;
     } else {
       el.className = 'text-xs mb-2 text-gray-400';
-      el.textContent = '🔒 仅本地模式：数据只在这台设备上，页面不向外发任何请求';
+      el.textContent = '仅本地模式：数据只在这台设备上，页面不向外发任何请求';
     }
     // 没连云端的时候，房间码那块是没意义的
     const roomBlock = document.getElementById('display-room-code')?.closest('.rounded-xl');
@@ -3503,12 +3590,12 @@ const Settings = {
     try {
       cfg = parseFirebaseConfig(el?.value);
     } catch (e) {
-      showToast(`❌ 配置读不懂：${e.message}`, 'error');
+      showToast(`配置读不懂：${e.message}`, 'error');
       return;
     }
     localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(cfg));
     if (el) el.value = '';
-    showToast('✅ 已保存，正在重新加载以连接云端...', 'success');
+    showToast('已保存，正在重新加载以连接云端...', 'success');
     // Firebase SDK 初始化过就不能换配置，重载最省事也最不容易出错
     setTimeout(() => location.reload(), 800);
   },
@@ -3547,7 +3634,7 @@ const Settings = {
     if (!raw) { showToast('请先输入 API Key', 'warn'); return; }
     const key = this._currentKey();
     if (key !== raw) {
-      showToast('⚠️ Key 中含有非法字符（如中文），已自动清除，请核对', 'warn');
+      showToast('Key 中含有非法字符（如中文），已自动清除，请核对', 'warn');
       document.getElementById('settings-api-key').value = key;
     }
     if (!key) { showToast('清理后 Key 为空，请重新复制粘贴', 'error'); return; }
@@ -3562,16 +3649,16 @@ const Settings = {
         State.settings.provider = provider;
         State.settings.model = model;
         State.save(['settings']);
-        showToast('✅ API Key 有效，已自动保存！', 'success');
+        showToast('API Key 有效，已自动保存！', 'success');
         // 顺手把该账号真实可用的型号拉回来，省得一直用可能过期的内置清单
         this.refreshModels();
       } else {
         const e = await r.json().catch(() => ({}));
-        showToast(`❌ 无效: ${e.error?.message || e.message || r.status}`, 'error');
+        showToast(`无效: ${e.error?.message || e.message || r.status}`, 'error');
       }
     } catch(e) {
       hideLoading();
-      showToast(`❌ 连接错误: ${e.message}（该服务商可能不允许浏览器直连，或本地网络不通）`, 'error');
+      showToast(`连接错误: ${e.message}（该服务商可能不允许浏览器直连，或本地网络不通）`, 'error');
     }
   },
 };
@@ -3691,7 +3778,7 @@ const Modal = {
         <label class="flex items-center gap-1 text-xs text-gray-500 whitespace-nowrap">
           <input type="checkbox" ${ing.optional?'checked':''} onchange="Modal._ingredientRows[${idx}].optional=this.checked" class="accent-blue-600" />可选
         </label>
-        <button type="button" onclick="Modal._removeIngredient(${idx})" class="text-red-400 hover:text-red-600 shrink-0">✕</button>
+        <button type="button" onclick="Modal._removeIngredient(${idx})" class="text-red-400 hover:text-red-600 shrink-0"><svg class="ico w-5 h-5" aria-hidden="true"><use href="#i-x"/></svg></button>
       </div>`).join('');
   },
 
@@ -3728,22 +3815,22 @@ const Modal = {
     const recipe = State.recipes.find(r => r.id === id);
     if (!recipe) return;
     const checked = Recipes.checkIngredients(recipe);
-    const statusIcon = { ok: '✅', low: '⚠️', missing: '❌', mismatch: '❓' };
+    const statusIcon = { ok: icon('check-circle', 'text-green-600'), low: icon('alert-triangle', 'text-amber-500'), missing: icon('x-circle', 'text-red-500'), mismatch: icon('help-circle', 'text-amber-500') };
     const statusText = { ok: 'ingredient-ok', low: 'ingredient-low', missing: 'ingredient-missing', mismatch: 'ingredient-low' };
     document.getElementById('recipe-detail-title').textContent = `${recipe.nameCn} ${recipe.nameEn||''}`;
     document.getElementById('recipe-detail-content').innerHTML = `
       ${recipe.description ? `<p class="text-sm text-gray-500 mb-3">${esc(recipe.description)}</p>` : ''}
-      <div class="text-sm font-semibold mb-2">🧂 食材清单 (${esc(recipe.servings||2)}人份)</div>
+      <div class="text-sm font-semibold mb-2 flex items-center gap-1.5">${icon('list', 'text-gray-400')} 食材清单 (${esc(recipe.servings||2)}人份)</div>
       <div class="space-y-1 mb-4">
         ${checked.map(ing => {
-          const invDisplay = ing.invQty === Infinity ? '♾️常备'
+          const invDisplay = ing.invQty === Infinity ? '常备（不计数量）'
             : ing.invQty > 0 ? `${esc(ing.invQty)}${esc(ing.invUnit)}`
             : '无';
           const unitNote = ing.status === 'mismatch' ? `<span class="text-xs text-orange-400 ml-1">单位不同</span>` : '';
           return `
           <div class="flex items-center justify-between py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
             <div class="flex items-center gap-2">
-              <span>${esc(statusIcon[ing.status]||'❌')}</span>
+              <span class="flex">${statusIcon[ing.status] || statusIcon.missing}</span>
               <span class="${esc(statusText[ing.status]||'ingredient-missing')} font-medium">${esc(ing.nameCn)}</span>
               ${ing.optional?'<span class="text-xs text-gray-400">可选</span>':''}
             </div>
@@ -3755,12 +3842,12 @@ const Modal = {
         }).join('')}
       </div>
       ${recipe.steps && recipe.steps.length > 0 ? `
-      <div class="text-sm font-semibold mb-2">📝 烹饪步骤</div>
+      <div class="text-sm font-semibold mb-2 flex items-center gap-1.5">${icon('list-ordered', 'text-gray-400')} 烹饪步骤</div>
       <div class="space-y-2">
         ${recipe.steps.map((s,i) => `<div class="flex gap-3"><span class="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-bold shrink-0">${i+1}</span><span class="text-sm text-gray-700 dark:text-gray-300">${esc(s)}</span></div>`).join('')}
       </div>` : ''}
       <div class="flex gap-2 mt-4">
-        <button onclick="Modal.closeRecipeDetail();Recipes.addMissingToCart(${jsArg(id)})" class="flex-1 py-2 bg-orange-500 text-white rounded-xl hover:bg-orange-600 text-sm">🛒 选择缺货加购物车</button>
+        <button onclick="Modal.closeRecipeDetail();Recipes.addMissingToCart(${jsArg(id)})" class="flex-1 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 text-sm flex items-center justify-center gap-1.5">${icon('shopping-cart')} 选择缺货加购物车</button>
       </div>`;
     document.getElementById('modal-recipe-detail').classList.add('open');
   },
@@ -3814,7 +3901,7 @@ const Modal = {
           <input type="text" value="${esc(item.nameEn)}" placeholder="${t('nameEnLabel')}" oninput="window._editInvItems[${idx}].nameEn=this.value"
             class="flex-1 min-w-0 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-400" />
           <button type="button" onclick="window._editInvItems.splice(${idx},1);Modal.showEditableInventoryConfirm(window._editInvItems)"
-            class="text-red-400 hover:text-red-600 shrink-0 px-1 text-lg">✕</button>
+            class="text-red-400 hover:text-red-600 shrink-0 px-1 text-lg"><svg class="ico w-5 h-5" aria-hidden="true"><use href="#i-x"/></svg></button>
         </div>
         <div class="flex gap-2">
           <input type="number" inputmode="decimal"value="${esc(item.quantity||1)}" min="0" step="0.1" oninput="window._editInvItems[${idx}].quantity=parseFloat(this.value)||1"
@@ -3857,7 +3944,7 @@ const Modal = {
           <input type="text" value="${esc(item.nameEn)}" placeholder="English" oninput="window._editHouseItems[${idx}].nameEn=this.value"
             class="flex-1 min-w-0 text-sm bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-400" />
           <button type="button" onclick="window._editHouseItems.splice(${idx},1);Modal.showEditableHouseholdConfirm(window._editHouseItems)"
-            class="text-red-400 hover:text-red-600 shrink-0 px-1 text-lg">✕</button>
+            class="text-red-400 hover:text-red-600 shrink-0 px-1 text-lg"><svg class="ico w-5 h-5" aria-hidden="true"><use href="#i-x"/></svg></button>
         </div>
         <div class="flex gap-2">
           <input type="number" inputmode="decimal"value="${esc(item.quantity||1)}" min="0" step="0.1" oninput="window._editHouseItems[${idx}].quantity=parseFloat(this.value)||1"
@@ -3910,9 +3997,9 @@ const Modal = {
           ${Object.entries(getStores()).map(([k,s])=>`<option value="${esc(k)}" ${item.store===k?'selected':''}>${esc(s.emoji)} ${esc(s.name)}</option>`).join('')}
         </select>
         <button type="button" onclick="window._editCartItems.splice(${idx},1);Modal.showEditableCartConfirm(window._editCartItems)"
-          class="text-red-400 hover:text-red-600 px-1">✕</button>
+          class="text-red-400 hover:text-red-600 px-1"><svg class="ico w-5 h-5" aria-hidden="true"><use href="#i-x"/></svg></button>
       </div>`).join('');
-    document.getElementById('ai-confirm-title').textContent = `🛒 AI购物建议 (可编辑后确认)`;
+    document.getElementById('ai-confirm-title').textContent = `AI购物建议 (可编辑后确认)`;
     document.getElementById('ai-confirm-content').innerHTML = `
       <div class="text-xs text-gray-400 mb-2 grid gap-1" style="grid-template-columns:1fr 1fr 60px 70px 100px auto">
         <span>中文名</span><span>英文名</span><span>数量</span><span>单位</span><span>商店</span><span></span>
@@ -3920,7 +4007,7 @@ const Modal = {
       <div id="editable-cart-rows">${renderRows()}</div>
       <button onclick="window._editCartItems.push({nameCn:'',nameEn:'',quantity:1,unit:'个',category:'other',store:''});Modal.showEditableCartConfirm(window._editCartItems)"
         class="mt-2 text-sm text-blue-500 hover:underline">+ 添加一行</button>`;
-    document.getElementById('ai-confirm-btn').textContent = '🛒 全部加入购物车';
+    document.getElementById('ai-confirm-btn').textContent = '全部加入购物车';
     document.getElementById('ai-confirm-btn').onclick = () => {
       const valid = window._editCartItems.filter(i => i.nameCn && i.nameCn.trim());
       if (!valid.length) { showToast('没有有效物品', 'warn'); return; }
@@ -3941,14 +4028,14 @@ const Modal = {
     const updateConfirmBtn = () => {
       const n = window._editRecipeSel.filter(Boolean).length;
       const btn = document.getElementById('ai-confirm-btn');
-      btn.textContent = n === 0 ? '请选择食谱' : `✅ 保存选中的 ${n} 个食谱`;
+      btn.textContent = n === 0 ? '请选择食谱' : `保存选中的 ${n} 个食谱`;
       btn.disabled = n === 0;
       btn.className = n === 0
         ? 'px-4 py-2 rounded-lg text-sm font-medium bg-gray-300 text-gray-500 cursor-not-allowed'
         : 'px-4 py-2 rounded-lg text-sm font-medium bg-green-600 hover:bg-green-700 text-white transition';
     };
 
-    document.getElementById('ai-confirm-title').textContent = isSingle ? '🍳 AI生成食谱 (确认后保存)' : '🍳 AI推荐食谱 (勾选要保存的)';
+    document.getElementById('ai-confirm-title').textContent = isSingle ? 'AI生成食谱 (确认后保存)' : 'AI推荐食谱 (勾选要保存的)';
 
     document.getElementById('ai-confirm-content').innerHTML =
       (!isSingle ? `<div class="flex gap-2 mb-3">
@@ -4084,7 +4171,7 @@ const EmojiPicker = {
     );
     const emojis = extractJSON(text);
     if (!emojis || !emojis.length) { aiEl.innerHTML = '<span class="text-xs text-red-400">AI无法推荐，请手动选择</span>'; return; }
-    aiEl.innerHTML = '<span class="text-xs text-purple-500 mr-1">🤖AI推荐：</span>' +
+    aiEl.innerHTML = '<span class="text-xs text-gray-500 mr-1">AI推荐：</span>' +
       emojis.map(e => `<button onclick="EmojiPicker.pick(${jsArg(e)})" class="text-2xl hover:scale-125 transition p-0.5 rounded">${esc(e)}</button>`).join('');
   },
 
@@ -4135,7 +4222,7 @@ const App = {
     State.load();
     Cloud.init();
     if (!localStorage.getItem('hsl_username')) {
-      setTimeout(() => showToast('💡 请在设置里填写你的昵称，方便记录谁做了什么', 'info'), 2000);
+      setTimeout(() => showToast('请在设置里填写你的昵称，方便记录谁做了什么', 'info'), 2000);
     }
     Household.init();
     this.applyTheme();
@@ -4155,7 +4242,7 @@ const App = {
     const dark = State.settings.theme === 'dark';
     document.documentElement.classList.toggle('dark', dark);
     const icon = document.getElementById('theme-icon');
-    if (icon) icon.textContent = dark ? '☀️' : '🌙';
+    if (icon) icon.querySelector('use').setAttribute('href', dark ? '#i-sun' : '#i-moon');
   },
 
   applyLanguage() {
