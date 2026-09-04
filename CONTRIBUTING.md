@@ -30,6 +30,33 @@ python3 -m http.server 5173
 （实测），装不了 PWA 也没有离线缓存；摄像头和麦克风权限也普遍受限。
 `127.0.0.1` 被浏览器当作安全上下文，等于免费拿到 https 的待遇。
 
+## 主题与图标（两条铁律）
+
+**1. 界面上不用 emoji，只用 Lucide 线性图标。** 页面顶部 `<body>` 里有一个内联的 SVG
+sprite（Lucide 子集，ISC 许可），每个图标是一个 `<symbol id="i-名字">`。用法：
+
+```html
+<svg class="ico" aria-hidden="true"><use href="#i-shopping-cart"/></svg>
+```
+```js
+icon('shopping-cart', 'w-4 h-4')   // JS 模板里用这个 helper
+```
+
+`.ico` 的大小跟字号、颜色跟文字（`currentColor`）。要新图标就去 lucide.dev 复制
+路径加一个 `<symbol>`，别引第二套图标库，别用 emoji 顶替。
+
+**2. 分类和商店的图标是数据，不是界面。** 分类存 `icon`（`CATEGORY_ICONS` 里的名字）
+和 `color`（`CAT_COLORS` 里的色号），渲染用 `catIcon(key, 'md'|'sm')`——线性图标坐在
+同色系淡色底托里（tinted container）。商店只有 `color`，渲染用 `storeDot()` /
+`storeBadge()`。用户只能从 `IconPicker` 里选，所以永远不会混进 emoji。
+老数据里的 emoji 由 `normalizeIconData()` 在读档和云端拉取时自动迁移。
+
+**主题**：白底、`#e5e7eb` 描边、8px 圆角、无投影、灰阶三档、**只有一个强调色**
+（`--accent`）。design tokens 在 `<style>` 开头的 `:root` / `.dark`。主按钮用
+`bg-blue-600`（映射到 `--accent`），次按钮用 `.btn-secondary`，分段控件用
+`.seg` / `.seg-on`，分组标题用 `.section-hdr`。语义色只在有含义的地方出现：
+红 = 低库存 / 删除，琥珀 = 待确认，绿 = 一切正常。**不要再给某个板块单独配色。**
+
 ## 改之前必须知道的四条
 
 1. **拼 HTML 时用户数据必须过 `esc()`，写进内联事件处理器的参数必须过
@@ -89,3 +116,8 @@ Offline）刷新一次，确认样式还在。
   `flex` — otherwise the settings page overflows horizontally on phones.
 - OpenAI's `/chat/completions` has no CORS headers; the README tells users to go
   through OpenRouter for GPT models.
+- No emoji in the UI. Icons come from the inline Lucide sprite
+  (`<svg class="ico"><use href="#i-name"/></svg>` or `icon(name)`); categories
+  store a Lucide name + colour and render via `catIcon()`, stores render a colour
+  dot. One accent colour; semantic colours only for low stock / delete, needs
+  confirming, all good.
